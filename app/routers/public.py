@@ -52,6 +52,68 @@ def recent_activity(limit: int = 25, db: Session = Depends(get_db)):
     ]
 
 
+@router.get("/u/{username}/trades")
+def public_trades(username: str, db: Session = Depends(get_db)):
+    """Shareable, no-login trade/wanted board for one user. Gated only by
+    trading_enabled - deliberately independent of cellar_public, so
+    someone can keep their full cellar private while still sharing just
+    what they're trading or looking for."""
+    user = db.query(models.User).filter(models.User.username == username).first()
+    if not user or not user.trading_enabled:
+        raise HTTPException(status_code=404, detail="That trade list is private or doesn't exist.")
+
+    def sort_key(name, brewery_name):
+        return (brewery_name.lower(), name.lower()) if user.default_sort == "brewery" else (name.lower(), brewery_name.lower())
+
+    def serialize_beer(beer):
+        return {
+            "id": beer.id,
+            "name": beer.name,
+            "style": beer.style,
+            "abv": beer.abv,
+            "brewery": {"id": beer.brewery.id, "name": beer.brewery.name},
+        }
+
+    entries = (
+        db.query(models.CellarEntry)
+        .options(joinedload(models.CellarEntry.beer).joinedload(models.Beer.brewery))
+        .filter(models.CellarEntry.user_id == user.id, models.CellarEntry.trade_status != "none")
+        .all()
+    )
+    for_trade = [
+        {"id": e.id, "quantity": e.quantity, "batch_notes": e.batch_notes, "beer": serialize_beer(e.beer)}
+        for e in entries
+        if e.trade_status == "ft" and e.quantity > 0
+    ]
+    for_trade.sort(key=lambda x: sort_key(x["beer"]["name"], x["beer"]["brewery"]["name"]))
+
+    # "Wanted" combines two distinct things: cellar entries marked ISO (you
+    # own some already but want more) and WantedEntry rows (you don't own
+    # any yet) - each tagged so the page can label them differently.
+    wanted = [
+        {"id": f"cellar-{e.id}", "owned": True, "notes": e.batch_notes, "beer": serialize_beer(e.beer)}
+        for e in entries
+        if e.trade_status == "iso"
+    ]
+    wanted_entries = (
+        db.query(models.WantedEntry)
+        .options(joinedload(models.WantedEntry.beer).joinedload(models.Beer.brewery))
+        .filter(models.WantedEntry.user_id == user.id)
+        .all()
+    )
+    wanted += [
+        {"id": f"wanted-{w.id}", "owned": False, "notes": w.notes, "beer": serialize_beer(w.beer)}
+        for w in wanted_entries
+    ]
+    wanted.sort(key=lambda x: sort_key(x["beer"]["name"], x["beer"]["brewery"]["name"]))
+
+    return {
+        "username": user.username,
+        "for_trade": for_trade,
+        "wanted": wanted,
+    }
+
+
 @router.get("/u/{username}")
 def public_cellar(username: str, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.username == username).first()

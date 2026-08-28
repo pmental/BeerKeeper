@@ -109,6 +109,39 @@ def _get_or_create_brewery(db: Session, brewery_id: int | None, new_name: str | 
     raise HTTPException(status_code=400, detail="A brewery_id or new_brewery_name is required.")
 
 
+def resolve_or_create_beer_id(db: Session, beer_id: int | None, beer_in: "schemas.BeerIn | None") -> int:
+    """Shared by any endpoint that accepts either an existing beer_id or
+    inline beer details (CellarEntryIn.beer, WantedEntryIn.beer, ...):
+    reuses a matching existing beer/brewery by name when possible, else
+    creates them. Returns the resolved beer_id."""
+    if beer_id:
+        if not db.query(models.Beer).filter(models.Beer.id == beer_id).first():
+            raise HTTPException(status_code=404, detail="Beer not found.")
+        return beer_id
+
+    if not beer_in:
+        raise HTTPException(status_code=400, detail="Provide a beer_id or beer details.")
+
+    brewery = _get_or_create_brewery(db, beer_in.brewery_id, beer_in.new_brewery_name)
+    beer = (
+        db.query(models.Beer)
+        .filter(models.Beer.brewery_id == brewery.id, models.Beer.name.ilike(beer_in.name))
+        .first()
+    )
+    if not beer:
+        beer = models.Beer(
+            name=beer_in.name.strip(),
+            brewery_id=brewery.id,
+            style=beer_in.style,
+            abv=beer_in.abv,
+            description=beer_in.description,
+            reference_url=beer_in.reference_url,
+        )
+        db.add(beer)
+        db.flush()
+    return beer.id
+
+
 @router.get("", response_model=list[schemas.BeerOut])
 def search_beers(
     q: str = "",

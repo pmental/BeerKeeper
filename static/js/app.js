@@ -76,6 +76,7 @@ const App = (() => {
     { pattern: /^#\/browse$/, page: Pages.browse },
     { pattern: /^#\/consumed$/, page: Pages.consumed },
     { pattern: /^#\/import-export$/, page: Pages.importExport },
+    { pattern: /^#\/u\/([^/]+)\/trades$/, page: Pages.publicTrades, param: true },
     { pattern: /^#\/u\/([^/]+)$/, page: Pages.publicCellar, param: true },
   ];
 

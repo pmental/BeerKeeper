@@ -156,6 +156,24 @@ class ConsumptionLogIn(BaseModel):
     rating: Optional[float] = Field(default=None, ge=0, le=5)
 
 
+# ---------- Wanted (not owned) ----------
+
+class WantedEntryOut(BaseModel):
+    id: int
+    notes: Optional[str] = None
+    created_at: dt.datetime
+    beer: BeerOut
+
+    class Config:
+        from_attributes = True
+
+
+class WantedEntryIn(BaseModel):
+    beer_id: Optional[int] = None
+    beer: Optional[BeerIn] = None  # allow creating the beer inline, same as CellarEntryIn
+    notes: Optional[str] = None
+
+
 # ---------- Account ----------
 
 class AccountOut(BaseModel):

@@ -103,6 +103,12 @@ const Api = (() => {
     browseCellars: () => request("GET", "/api/public/cellars", { auth: false }),
     recentActivity: () => request("GET", "/api/public/recent", { auth: false }),
     publicCellar: (username) => request("GET", "/api/public/u/" + encodeURIComponent(username), { auth: false }),
+    publicTrades: (username) =>
+      request("GET", "/api/public/u/" + encodeURIComponent(username) + "/trades", { auth: false }),
+
+    listWanted: () => request("GET", "/api/wanted"),
+    addWanted: (payload) => request("POST", "/api/wanted", { body: payload }),
+    deleteWanted: (id) => request("DELETE", `/api/wanted/${id}`),
 
     async exportCellar() {
       const token = getToken();

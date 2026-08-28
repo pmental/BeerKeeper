@@ -603,6 +603,95 @@ const Pages = (() => {
     });
   }
 
+  async function openWantedModal(account, onSaved) {
+    const styles = await getBeerStyles();
+    const html = `
+      <button class="modal-close" data-close>&times;</button>
+      <h2>Add to wanted list</h2>
+      <p class="subtle">For a beer you don't have yet - it'll show on your public "Wanted" list, not your cellar count.</p>
+      <form data-wanted-form>
+        <div class="field suggest-wrap">
+          <label>Beer</label>
+          <input class="input" name="beer_search" autocomplete="off" placeholder="Start typing a beer name&hellip;" />
+          <input type="hidden" name="beer_id" value="" />
+          <div class="suggest-list" data-for="beer" style="display:none"></div>
+          <div class="field-hint picked-note"></div>
+        </div>
+        <div class="field-row">
+          <div class="field suggest-wrap">
+            <label>Brewery</label>
+            <input class="input" name="new_brewery_name" autocomplete="off" placeholder="Start typing a brewery name&hellip;" />
+            <input type="hidden" name="brewery_id" value="" />
+            <div class="suggest-list" data-for="brewery" style="display:none"></div>
+          </div>
+          <div class="field suggest-wrap">
+            <label>Style <span class="subtle">(optional)</span></label>
+            <input class="input" name="style" autocomplete="off" placeholder="Start typing a style&hellip;" />
+            <div class="suggest-list" data-for="style" style="display:none"></div>
+          </div>
+        </div>
+        <div class="field">
+          <label>ABV % <span class="subtle">(optional)</span></label>
+          <input class="input" type="number" step="0.1" min="0" max="100" name="abv" />
+        </div>
+        <div class="field">
+          <label>Note <span class="subtle">(optional)</span></label>
+          <textarea class="input" name="notes" placeholder="Which vintage, what you'd trade for it, etc."></textarea>
+        </div>
+        <div class="form-error" data-error style="display:none"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-block">Add to wanted list</button>
+        </div>
+      </form>
+    `;
+    openModal(html, {
+      onMount(modalEl, close) {
+        modalEl.querySelector("[data-close]").addEventListener("click", close);
+        wireBeerAutocomplete(modalEl, {});
+        wireBreweryAutocomplete(modalEl);
+        wireStyleAutocomplete(modalEl, styles);
+
+        const form = modalEl.querySelector("[data-wanted-form]");
+        const errorBox = modalEl.querySelector("[data-error]");
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          errorBox.style.display = "none";
+          const fd = new FormData(form);
+          const submitBtn = form.querySelector('button[type="submit"]');
+          submitBtn.disabled = true;
+          try {
+            const beerId = fd.get("beer_id");
+            const payload = { notes: fd.get("notes")?.trim() || null };
+            if (beerId) {
+              payload.beer_id = Number(beerId);
+            } else {
+              const name = fd.get("beer_search")?.trim();
+              if (!name) throw new Error("Enter a beer name.");
+              const pickedBreweryId = fd.get("brewery_id");
+              payload.beer = {
+                name,
+                brewery_id: pickedBreweryId ? Number(pickedBreweryId) : null,
+                new_brewery_name: pickedBreweryId ? null : fd.get("new_brewery_name")?.trim() || null,
+                style: fd.get("style")?.trim() || null,
+                abv: fd.get("abv") ? Number(fd.get("abv")) : null,
+              };
+              if (!payload.beer.brewery_id && !payload.beer.new_brewery_name) throw new Error("Enter a brewery name.");
+            }
+            await Api.addWanted(payload);
+            close();
+            toast("Added to your wanted list.");
+            onSaved();
+          } catch (err) {
+            errorBox.textContent = err.message;
+            errorBox.style.display = "block";
+          } finally {
+            submitBtn.disabled = false;
+          }
+        });
+      },
+    });
+  }
+
   // ---------- Entry card rendering (used by the cellar dashboard + public view) ----------
 
   function badgeForLocation(entry, account) {
@@ -612,9 +701,13 @@ const Pages = (() => {
       : `<span class="badge badge-cellar">Cellar</span>`;
   }
 
-  function badgeForTrade(status) {
-    if (status === "ft") return `<span class="badge badge-ft">For Trade</span>`;
-    if (status === "iso") return `<span class="badge badge-iso">ISO</span>`;
+  function badgeForTrade(entry) {
+    if (entry.trade_status === "ft") return `<span class="badge badge-ft">For Trade</span>`;
+    if (entry.trade_status === "iso") {
+      return entry.quantity === 0
+        ? `<span class="badge badge-iso">Wanted</span>`
+        : `<span class="badge badge-iso">ISO</span>`;
+    }
     return "";
   }
 
@@ -625,6 +718,8 @@ const Pages = (() => {
     if (entry.size_oz) metaBits.push(`${ozToDisplay(entry.size_oz, account.unit_system)} ${volumeUnitLabel(account.unit_system)}`);
     if (entry.custom_location) metaBits.push(escapeHtml(entry.custom_location));
     if (entry.best_before) metaBits.push(`Best before ${fmtDate(entry.best_before)}`);
+
+    const isWantedOnly = entry.quantity === 0 && entry.trade_status === "iso";
 
     const actions = editable
       ? `<div class="entry-actions">
@@ -654,9 +749,9 @@ const Pages = (() => {
             <span>${escapeHtml(entry.beer.brewery.name)}</span>
             ${metaBits.map((m) => `<span class="dot">&middot;</span><span>${m}</span>`).join("")}
             ${badgeForLocation(entry, account)}
-            ${badgeForTrade(entry.trade_status)}
+            ${badgeForTrade(entry)}
           </div>
-          ${tally(entry.quantity)}
+          ${isWantedOnly ? "" : tally(entry.quantity)}
         </div>
         ${actions}
         ${entry.batch_notes ? `<div class="entry-notes">${escapeHtml(entry.batch_notes)}</div>` : ""}
@@ -904,7 +999,10 @@ const Pages = (() => {
     root.innerHTML = `
       <div class="page-head">
         <h1>My cellar</h1>
-        <button class="btn btn-primary" id="add-bottle">+ Add a bottle</button>
+        <div style="display:flex; gap:8px;">
+          ${ctx.account.trading_enabled ? `<button class="btn btn-ghost" id="add-wanted">+ Add to wanted list</button>` : ""}
+          <button class="btn btn-primary" id="add-bottle">+ Add a bottle</button>
+        </div>
       </div>
       <div class="toolbar">
         <div class="seg" data-sort>
@@ -921,6 +1019,7 @@ const Pages = (() => {
             : ""
         }
         <div class="spacer"></div>
+        ${ctx.account.trading_enabled ? `<a class="btn btn-ghost btn-sm" href="#/u/${encodeURIComponent(ctx.user)}/trades">Trade list</a>` : ""}
         <a class="btn btn-ghost btn-sm" href="#/consumed">History</a>
         <a class="btn btn-ghost btn-sm" href="#/import-export">Import/Export</a>
       </div>
@@ -930,6 +1029,12 @@ const Pages = (() => {
     root.querySelector("#add-bottle").addEventListener("click", () => {
       openEntryModal(null, ctx.account, load);
     });
+    const addWantedBtn = root.querySelector("#add-wanted");
+    if (addWantedBtn) {
+      addWantedBtn.addEventListener("click", () => {
+        openWantedModal(ctx.account, load);
+      });
+    }
 
     root.querySelectorAll("[data-sort] button").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -990,9 +1095,23 @@ const Pages = (() => {
           ${toggleRow("unit_metric", "Use metric units", "Show and enter bottle sizes in millilitres (mL) instead of fluid ounces (oz).", a.unit_system === "metric")}
           ${toggleRow("show_fridge_column", "Track a separate fridge", "Turn off if you only track one shelf.", a.show_fridge_column)}
           ${toggleRow("show_location_column", "Track custom shelf / location", "Adds a free-text location field to each bottle.", a.show_location_column)}
-          ${toggleRow("trading_enabled", "Enable trading labels", "Mark bottles as For Trade or In Search Of.", a.trading_enabled)}
+          ${toggleRow("trading_enabled", "Enable trading labels", "Mark bottles as For Trade or In Search Of, and track beers you don't have yet on a wanted list.", a.trading_enabled)}
         </div>
       </div>
+
+      ${
+        a.trading_enabled
+          ? `<div class="panel" style="margin-bottom:20px">
+              <h3>Your trade list</h3>
+              <p class="subtle">Shareable with anyone, no account or login needed - independent of whether your full cellar is public.</p>
+              <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <input class="input" readonly value="${escapeHtml(location.origin + "/#/u/" + a.username + "/trades")}" style="flex:1; min-width:220px" id="trade-link-input" />
+                <button class="btn btn-ghost btn-sm" id="copy-trade-link">Copy link</button>
+                <a class="btn btn-ghost btn-sm" href="#/u/${encodeURIComponent(a.username)}/trades" target="_blank" rel="noopener">Preview</a>
+              </div>
+            </div>`
+          : ""
+      }
 
       <div class="panel" style="margin-bottom:20px">
         <h3>Privacy</h3>
@@ -1036,12 +1155,30 @@ const Pages = (() => {
           const updated = await Api.patchAccount(payload);
           Object.assign(ctx.account, updated);
           toast("Saved.");
+          if (key === "trading_enabled") {
+            account(root, ctx); // re-render so the trade-list share panel appears/disappears immediately
+            return;
+          }
         } catch (e) {
           toast(e.message, "error");
           input.checked = !input.checked;
         }
       });
     });
+
+    const copyTradeLinkBtn = root.querySelector("#copy-trade-link");
+    if (copyTradeLinkBtn) {
+      copyTradeLinkBtn.addEventListener("click", async () => {
+        const linkInput = root.querySelector("#trade-link-input");
+        try {
+          await navigator.clipboard.writeText(linkInput.value);
+          toast("Link copied.");
+        } catch (e) {
+          linkInput.select();
+          toast("Press Ctrl/Cmd+C to copy.", "error");
+        }
+      });
+    }
 
     const pwForm = root.querySelector("[data-pw-form]");
     if (pwForm) {
@@ -1164,6 +1301,118 @@ const Pages = (() => {
     });
   }
 
+  function tradeCardHtml(item, kind, showDelete) {
+    // kind: "ft" | "wanted". Wanted items are further distinguished by
+    // item.owned: true means "have some already, want more" (came from a
+    // cellar entry marked ISO), false means "don't have any yet" (came
+    // from the separate wanted list). showDelete only applies to the
+    // latter - the only kind manageable from this page.
+    const metaBits = [];
+    if (item.beer.style) metaBits.push(escapeHtml(item.beer.style));
+    if (item.beer.abv !== null && item.beer.abv !== undefined) metaBits.push(`${item.beer.abv}% ABV`);
+
+    let badge = `<span class="badge badge-ft">For Trade</span>`;
+    if (kind === "wanted") {
+      badge = item.owned
+        ? `<span class="badge badge-iso">Have some, want more</span>`
+        : `<span class="badge badge-iso">Wanted</span>`;
+    }
+    const notes = kind === "ft" ? item.batch_notes : item.notes;
+    const canDelete = showDelete && kind === "wanted" && !item.owned;
+
+    return `
+      <div class="entry-card">
+        <div class="entry-main">
+          <h3>${escapeHtml(item.beer.name)}</h3>
+          <div class="entry-meta">
+            <span>${escapeHtml(item.beer.brewery.name)}</span>
+            ${metaBits.map((m) => `<span class="dot">&middot;</span><span>${m}</span>`).join("")}
+            ${badge}
+          </div>
+          ${kind === "ft" ? tally(item.quantity) : ""}
+        </div>
+        ${
+          canDelete
+            ? `<div class="entry-actions"><div class="row"><button class="btn btn-icon" data-del-wanted="${String(
+                item.id
+              ).replace(/^wanted-/, "")}" title="Remove from wanted list">Del</button></div></div>`
+            : ""
+        }
+        ${notes ? `<div class="entry-notes">${escapeHtml(notes)}</div>` : ""}
+      </div>
+    `;
+  }
+
+  async function publicTrades(root, username, ctx) {
+    root.innerHTML = spinnerHtml();
+    let data;
+    try {
+      data = await Api.publicTrades(username);
+    } catch (e) {
+      root.innerHTML = `<div class="page-head"><h1>Not found</h1></div><div class="panel empty-note">${escapeHtml(
+        e.message
+      )}</div>`;
+      return;
+    }
+
+    const isSelf = !!(ctx && ctx.user && ctx.user === data.username);
+    const shareUrl = `${location.origin}${location.pathname}#/u/${encodeURIComponent(data.username)}/trades`;
+
+    function render() {
+      root.innerHTML = `
+        <div class="page-head">
+          <h1>${escapeHtml(data.username)}'s trade list</h1>
+          ${isSelf ? `<button class="btn btn-primary btn-sm" id="add-wanted-here">+ Add to wanted list</button>` : ""}
+        </div>
+        ${
+          isSelf
+            ? `<div class="panel" style="margin-bottom:20px">
+                 <div class="field-hint" style="margin-bottom:6px">Share this link so people can see it without logging in:</div>
+                 <input class="input" readonly value="${escapeHtml(shareUrl)}" onclick="this.select()" />
+               </div>`
+            : ""
+        }
+        <div class="section-label">For Trade (${data.for_trade.length})</div>
+        ${
+          data.for_trade.length
+            ? `<div class="entry-list">${data.for_trade.map((e) => tradeCardHtml(e, "ft")).join("")}</div>`
+            : `<div class="panel empty-note">Nothing up for trade right now.</div>`
+        }
+        <div class="section-label">Wanted (${data.wanted.length})</div>
+        ${
+          data.wanted.length
+            ? `<div class="entry-list">${data.wanted.map((e) => tradeCardHtml(e, "wanted", isSelf)).join("")}</div>`
+            : `<div class="panel empty-note">Nothing on the wanted list right now.</div>`
+        }
+      `;
+
+      if (!isSelf) return;
+
+      root.querySelector("#add-wanted-here").addEventListener("click", () => {
+        openWantedModal(ctx.account, async () => {
+          data = await Api.publicTrades(username);
+          render();
+        });
+      });
+      root.querySelectorAll("[data-del-wanted]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          confirmDelete("Remove this from your wanted list?", async () => {
+            try {
+              await Api.deleteWanted(Number(btn.dataset.delWanted));
+              toast("Removed.");
+              data = await Api.publicTrades(username);
+              render();
+            } catch (e) {
+              toast(e.message, "error");
+            }
+          });
+        });
+      });
+    }
+
+    render();
+  }
+
   async function consumed(root, ctx) {
     if (!ctx.user) {
       location.hash = "#/login";
@@ -1276,6 +1525,7 @@ const Pages = (() => {
     account,
     browse,
     publicCellar,
+    publicTrades,
     consumed,
     importExport,
   };

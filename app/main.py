@@ -10,7 +10,7 @@ from app.database import Base, engine, run_migrations, SessionLocal
 from app import models  # noqa: F401  (ensures models are registered before create_all)
 from app.brewery_seed import seed_breweries_if_needed
 from app.routers import auth as auth_router
-from app.routers import beers, cellar, consumption, account, public, import_export, oidc, beer_styles
+from app.routers import beers, cellar, consumption, account, public, import_export, oidc, beer_styles, wanted
 
 Base.metadata.create_all(bind=engine)
 run_migrations()
@@ -39,6 +39,7 @@ app.include_router(account.router)
 app.include_router(public.router)
 app.include_router(import_export.router)
 app.include_router(beer_styles.router)
+app.include_router(wanted.router)
 
 
 @app.get("/api/health")
