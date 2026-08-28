@@ -1,0 +1,62 @@
+import os
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import sessionmaker, declarative_base
+
+DATA_DIR = os.environ.get("CELLAR_DATA_DIR", "/data")
+os.makedirs(DATA_DIR, exist_ok=True)
+DB_PATH = os.path.join(DATA_DIR, "cellar.db")
+DATABASE_URL = f"sqlite:///{DB_PATH}"
+
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False},
+)
+
+
+@event.listens_for(engine, "connect")
+def _set_sqlite_pragma(dbapi_connection, connection_record):
+    # Foreign keys are off by default in SQLite; turn them on per-connection.
+    # WAL mode lets reads proceed while a write is in flight, which matters
+    # once more than one person is using the same self-hosted instance.
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.close()
+
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+
+def run_migrations():
+    """Lightweight additive migrations for SQLite: add any columns that
+    exist in the ORM models but not yet in an existing database file.
+    Safe to run on every startup; a fresh database has nothing to add."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    if "users" not in inspector.get_table_names():
+        return  # fresh install; create_all() will make the table with all columns
+
+    existing_cols = {c["name"] for c in inspector.get_columns("users")}
+    with engine.begin() as conn:
+        if "unit_system" not in existing_cols:
+            conn.execute(
+                text("ALTER TABLE users ADD COLUMN unit_system VARCHAR(8) NOT NULL DEFAULT 'imperial'")
+            )
+        if "oidc_subject" not in existing_cols:
+            conn.execute(text("ALTER TABLE users ADD COLUMN oidc_subject VARCHAR(255)"))
+            # SQLite treats each NULL as distinct for UNIQUE purposes, so a plain
+            # unique index here still allows any number of password-only users
+            # (oidc_subject IS NULL) to coexist.
+            conn.execute(
+                text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_oidc_subject ON users (oidc_subject)")
+            )
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

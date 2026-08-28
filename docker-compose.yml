@@ -1,0 +1,30 @@
+services:
+  beerkeeper:
+    build: .
+    # Or, once you've published an image somewhere, swap the line above for:
+    # image: yourname/beerkeeper:latest
+    restart: unless-stopped
+    ports:
+      - "${CELLAR_PORT:-8000}:8000"
+    environment:
+      - CELLAR_SECRET_KEY=${CELLAR_SECRET_KEY:?Set CELLAR_SECRET_KEY in your .env file - see .env.example}
+      - CELLAR_DATA_DIR=/data
+      - CELLAR_PASSWORD_AUTH_ENABLED=${CELLAR_PASSWORD_AUTH_ENABLED:-true}
+      - CELLAR_OIDC_ENABLED=${CELLAR_OIDC_ENABLED:-false}
+      - CELLAR_OIDC_ISSUER=${CELLAR_OIDC_ISSUER:-}
+      - CELLAR_OIDC_CLIENT_ID=${CELLAR_OIDC_CLIENT_ID:-}
+      - CELLAR_OIDC_CLIENT_SECRET=${CELLAR_OIDC_CLIENT_SECRET:-}
+      - CELLAR_OIDC_SCOPES=${CELLAR_OIDC_SCOPES:-openid email profile}
+      - CELLAR_OIDC_BUTTON_LABEL=${CELLAR_OIDC_BUTTON_LABEL:-Continue with SSO}
+      - CELLAR_BASE_URL=${CELLAR_BASE_URL:-}
+    volumes:
+      # Deliberately still named "cellar-data", even post-rename: this is
+      # the literal Docker volume holding your database. Renaming it here
+      # would point at a brand new, empty volume instead of your existing
+      # one. Cosmetics aren't worth risking your data over - see the
+      # "Upgrading" section below before you deploy this on top of an
+      # existing install.
+      - cellar-data:/data
+
+volumes:
+  cellar-data:

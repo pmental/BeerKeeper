@@ -1,0 +1,1283 @@
+const Pages = (() => {
+  const { escapeHtml, toast, fmtDate, openModal, tally, starsReadonly, starPicker, wireStarPicker, debounce, volumeUnitLabel, ozToDisplay, displayToOz } = UI;
+
+  // Beer styles are fetched once per page load and cached - they rarely
+  // change mid-session, and this list can be fairly long.
+  let _stylesCache = null;
+  async function getBeerStyles() {
+    if (_stylesCache) return _stylesCache;
+    try {
+      const res = await Api.beerStyles();
+      _stylesCache = res.styles || [];
+    } catch (e) {
+      _stylesCache = [];
+    }
+    return _stylesCache;
+  }
+
+  // ---------- Beer/brewery autocomplete used inside the add/edit entry modal ----------
+
+  function wireBeerAutocomplete(root, { onPick }) {
+    const input = root.querySelector('[name="beer_search"]');
+    const list = root.querySelector(".suggest-list[data-for=beer]");
+    const hiddenId = root.querySelector('input[name="beer_id"]');
+    const breweryInput = root.querySelector('[name="new_brewery_name"]');
+    const breweryHiddenId = root.querySelector('input[name="brewery_id"]');
+    const styleInput = root.querySelector('[name="style"]');
+    const abvInput = root.querySelector('[name="abv"]');
+    const pickedNote = root.querySelector(".picked-note");
+
+    const search = debounce(async (q) => {
+      if (!q || q.length < 2) {
+        list.innerHTML = "";
+        list.style.display = "none";
+        return;
+      }
+      try {
+        const results = await Api.searchBeers(q);
+        if (!results.length) {
+          list.innerHTML = `<div class="suggest-item">No matches &mdash; a new beer will be created</div>`;
+        } else {
+          list.innerHTML = results
+            .map(
+              (b) =>
+                `<div class="suggest-item" data-id="${b.id}" data-name="${escapeHtml(b.name)}" data-brewery="${escapeHtml(
+                  b.brewery.name
+                )}" data-style="${escapeHtml(b.style || "")}" data-abv="${b.abv ?? ""}">
+                  ${escapeHtml(b.name)}<div class="b">${escapeHtml(b.brewery.name)}${b.style ? " &middot; " + escapeHtml(b.style) : ""}</div>
+                </div>`
+            )
+            .join("");
+        }
+        list.style.display = "block";
+      } catch (e) {
+        list.style.display = "none";
+      }
+    }, 220);
+
+    input.addEventListener("input", () => {
+      hiddenId.value = "";
+      pickedNote.textContent = "";
+      search(input.value.trim());
+    });
+    input.addEventListener("focus", () => {
+      if (list.innerHTML) list.style.display = "block";
+    });
+    document.addEventListener("click", (e) => {
+      if (!list.contains(e.target) && e.target !== input) list.style.display = "none";
+    });
+
+    list.addEventListener("click", (e) => {
+      const item = e.target.closest(".suggest-item[data-id]");
+      if (!item) return;
+      hiddenId.value = item.dataset.id;
+      input.value = item.dataset.name;
+      breweryInput.value = item.dataset.brewery;
+      breweryInput.disabled = true;
+      if (breweryHiddenId) breweryHiddenId.value = "";
+      styleInput.value = item.dataset.style || "";
+      abvInput.value = item.dataset.abv || "";
+      pickedNote.textContent = `Using the existing entry for ${item.dataset.name} (${item.dataset.brewery}).`;
+      list.style.display = "none";
+      if (onPick) onPick(item.dataset.id);
+    });
+
+    // Typing again after a pick should free up the brewery field
+    input.addEventListener("input", () => {
+      if (!hiddenId.value) breweryInput.disabled = false;
+    });
+  }
+
+  function isoDateInputHtml(name, value) {
+    return `<div class="date-field">
+      <input class="input" type="text" inputmode="numeric" autocomplete="off" placeholder="YYYY-MM-DD" maxlength="10" name="${name}" value="${escapeHtml(value || "")}" data-iso-date />
+      <button type="button" class="date-picker-btn" aria-label="Pick a date">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+      </button>
+    </div>`;
+  }
+
+  function wireIsoDateInputs(root) {
+    root.querySelectorAll("[data-iso-date]").forEach((input) => {
+      input.addEventListener("input", () => {
+        const digits = input.value.replace(/\D/g, "").slice(0, 8);
+        let out = digits;
+        if (digits.length > 4) out = digits.slice(0, 4) + "-" + digits.slice(4);
+        if (digits.length > 6) out = digits.slice(0, 4) + "-" + digits.slice(4, 6) + "-" + digits.slice(6);
+        input.value = out;
+      });
+      wireDatePickerPopup(input);
+    });
+  }
+
+  // Only one calendar popup should be open at a time across the whole form.
+  let _closeActiveDatePopup = null;
+
+  function wireDatePickerPopup(input) {
+    const wrap = input.closest(".date-field");
+    const btn = wrap && wrap.querySelector(".date-picker-btn");
+    if (!wrap || !btn) return;
+
+    let popupEl = null;
+    let viewYear, viewMonth; // viewMonth is 0-indexed
+
+    function parseInputDate() {
+      const m = input.value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return m ? { y: Number(m[1]), m: Number(m[2]) - 1, d: Number(m[3]) } : null;
+    }
+
+    function setValue(y, m, d) {
+      const pad = (n) => String(n).padStart(2, "0");
+      input.value = `${y}-${pad(m + 1)}-${pad(d)}`;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+
+    function onDocClick(e) {
+      if (popupEl && !popupEl.contains(e.target) && e.target !== btn) closePopup();
+    }
+    function onKeydown(e) {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        closePopup();
+      }
+    }
+
+    function closePopup() {
+      if (!popupEl) return;
+      popupEl.remove();
+      popupEl = null;
+      document.removeEventListener("click", onDocClick);
+      document.removeEventListener("keydown", onKeydown, true);
+      if (_closeActiveDatePopup === closePopup) _closeActiveDatePopup = null;
+    }
+
+    function renderCalendar() {
+      const selected = parseInputDate();
+      const firstOfMonth = new Date(viewYear, viewMonth, 1);
+      const startWeekday = firstOfMonth.getDay();
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      const today = new Date();
+      const monthLabel = firstOfMonth.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+      let cells = "";
+      for (let i = 0; i < startWeekday; i++) cells += `<span class="cal-day empty"></span>`;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const isSelected = !!selected && selected.y === viewYear && selected.m === viewMonth && selected.d === d;
+        const isToday = today.getFullYear() === viewYear && today.getMonth() === viewMonth && today.getDate() === d;
+        cells += `<button type="button" class="cal-day${isSelected ? " selected" : ""}${isToday ? " today" : ""}" data-day="${d}">${d}</button>`;
+      }
+
+      popupEl.innerHTML = `
+        <div class="cal-header">
+          <button type="button" class="cal-nav" data-nav="-1" aria-label="Previous month">&lsaquo;</button>
+          <span class="cal-month-label">${escapeHtml(monthLabel)}</span>
+          <button type="button" class="cal-nav" data-nav="1" aria-label="Next month">&rsaquo;</button>
+        </div>
+        <div class="cal-weekdays"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+        <div class="cal-grid">${cells}</div>
+        <div class="cal-footer">
+          <button type="button" class="cal-today-btn">Today</button>
+          <button type="button" class="cal-clear-btn">Clear</button>
+        </div>
+      `;
+    }
+
+    function openPopup() {
+      if (popupEl) return;
+      if (_closeActiveDatePopup) _closeActiveDatePopup();
+      _closeActiveDatePopup = closePopup;
+
+      const selected = parseInputDate();
+      const now = new Date();
+      viewYear = selected ? selected.y : now.getFullYear();
+      viewMonth = selected ? selected.m : now.getMonth();
+
+      popupEl = document.createElement("div");
+      popupEl.className = "date-popup";
+      wrap.appendChild(popupEl);
+      renderCalendar();
+
+      popupEl.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const dayBtn = e.target.closest(".cal-day[data-day]");
+        if (dayBtn) {
+          setValue(viewYear, viewMonth, Number(dayBtn.dataset.day));
+          closePopup();
+          return;
+        }
+        const navBtn = e.target.closest(".cal-nav");
+        if (navBtn) {
+          viewMonth += Number(navBtn.dataset.nav);
+          if (viewMonth < 0) {
+            viewMonth = 11;
+            viewYear--;
+          } else if (viewMonth > 11) {
+            viewMonth = 0;
+            viewYear++;
+          }
+          renderCalendar();
+          return;
+        }
+        if (e.target.closest(".cal-today-btn")) {
+          const t = new Date();
+          setValue(t.getFullYear(), t.getMonth(), t.getDate());
+          closePopup();
+          return;
+        }
+        if (e.target.closest(".cal-clear-btn")) {
+          input.value = "";
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          closePopup();
+        }
+      });
+
+      document.addEventListener("click", onDocClick);
+      document.addEventListener("keydown", onKeydown, true); // capture: must intercept Escape before the modal's own (bubble-phase) Escape-to-close handler sees it
+    }
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (popupEl) closePopup();
+      else openPopup();
+    });
+  }
+
+  function isValidIsoDateOrEmpty(value) {
+    if (!value) return true;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const d = new Date(value + "T00:00:00");
+    return !isNaN(d) && d.toISOString().slice(0, 10) === value;
+  }
+
+  function wireBreweryAutocomplete(root) {
+    const input = root.querySelector('[name="new_brewery_name"]');
+    const list = root.querySelector(".suggest-list[data-for=brewery]");
+    const hiddenId = root.querySelector('input[name="brewery_id"]');
+    if (!input || !list || !hiddenId) return;
+
+    const search = debounce(async (q) => {
+      if (input.disabled || !q || q.length < 2) {
+        list.innerHTML = "";
+        list.style.display = "none";
+        return;
+      }
+      try {
+        const results = await Api.searchBreweries(q);
+        if (!results.length) {
+          list.style.display = "none";
+          return;
+        }
+        list.innerHTML = results
+          .map((b) => `<div class="suggest-item" data-id="${b.id}" data-name="${escapeHtml(b.name)}">${escapeHtml(b.name)}</div>`)
+          .join("");
+        list.style.display = "block";
+      } catch (e) {
+        list.style.display = "none";
+      }
+    }, 220);
+
+    input.addEventListener("input", () => {
+      hiddenId.value = "";
+      search(input.value.trim());
+    });
+    input.addEventListener("focus", () => {
+      if (!input.disabled && list.innerHTML) list.style.display = "block";
+    });
+    document.addEventListener("click", (e) => {
+      if (!list.contains(e.target) && e.target !== input) list.style.display = "none";
+    });
+    list.addEventListener("click", (e) => {
+      const item = e.target.closest(".suggest-item[data-id]");
+      if (!item) return;
+      hiddenId.value = item.dataset.id;
+      input.value = item.dataset.name;
+      list.style.display = "none";
+    });
+  }
+
+  function wireStyleAutocomplete(root, styles) {
+    const input = root.querySelector('[name="style"]');
+    const list = root.querySelector(".suggest-list[data-for=style]");
+    if (!input || !list || !styles || !styles.length) return;
+
+    function render(q) {
+      const query = q.trim().toLowerCase();
+      const matches = (query ? styles.filter((s) => s.toLowerCase().includes(query)) : styles).slice(0, 8);
+      if (!matches.length) {
+        list.style.display = "none";
+        return;
+      }
+      list.innerHTML = matches.map((s) => `<div class="suggest-item" data-value="${escapeHtml(s)}">${escapeHtml(s)}</div>`).join("");
+      list.style.display = "block";
+    }
+
+    input.addEventListener("input", () => render(input.value));
+    input.addEventListener("focus", () => {
+      if (!input.disabled) render(input.value);
+    });
+    document.addEventListener("click", (e) => {
+      if (!list.contains(e.target) && e.target !== input) list.style.display = "none";
+    });
+    list.addEventListener("click", (e) => {
+      const item = e.target.closest(".suggest-item[data-value]");
+      if (!item) return;
+      input.value = item.dataset.value;
+      list.style.display = "none";
+    });
+  }
+
+  function entryFormHtml(entry, account, styles) {
+    const tradingRow = account.trading_enabled
+      ? `<div class="field">
+           <label>Trading status</label>
+           <select class="input" name="trade_status">
+             <option value="none" ${entry?.trade_status === "none" || !entry ? "selected" : ""}>Not trading</option>
+             <option value="ft" ${entry?.trade_status === "ft" ? "selected" : ""}>For Trade (FT)</option>
+             <option value="iso" ${entry?.trade_status === "iso" ? "selected" : ""}>In Search Of (ISO)</option>
+           </select>
+         </div>`
+      : "";
+    const locationRow = account.show_fridge_column
+      ? `<div class="field">
+           <label>Location</label>
+           <select class="input" name="location">
+             <option value="cellar" ${!entry || entry.location === "cellar" ? "selected" : ""}>In Cellar</option>
+             <option value="fridge" ${entry?.location === "fridge" ? "selected" : ""}>In Fridge</option>
+           </select>
+         </div>`
+      : `<input type="hidden" name="location" value="cellar" />`;
+    const customLocationRow = account.show_location_column
+      ? `<div class="field">
+           <label>Shelf / custom location <span class="subtle">(optional)</span></label>
+           <input class="input" name="custom_location" value="${escapeHtml(entry?.custom_location || "")}" placeholder="e.g. Rack 3, back left" />
+         </div>`
+      : "";
+
+    return `
+      <button class="modal-close" data-close>&times;</button>
+      <h2>${entry ? "Edit bottle" : "Add a bottle"}</h2>
+      <form data-entry-form>
+        <div class="field suggest-wrap">
+          <label>Beer</label>
+          <input class="input" name="beer_search" autocomplete="off" placeholder="Start typing a beer name&hellip;"
+                 value="${entry ? escapeHtml(entry.beer.name) : ""}" ${entry ? "disabled" : ""} />
+          <input type="hidden" name="beer_id" value="${entry ? entry.beer.id : ""}" />
+          <div class="suggest-list" data-for="beer" style="display:none"></div>
+          <div class="field-hint picked-note"></div>
+        </div>
+        <div class="field-row">
+          <div class="field suggest-wrap">
+            <label>Brewery</label>
+            <input class="input" name="new_brewery_name" autocomplete="off" placeholder="Start typing a brewery name&hellip;"
+                   value="${entry ? escapeHtml(entry.beer.brewery.name) : ""}" ${entry ? "disabled" : ""} />
+            <input type="hidden" name="brewery_id" value="" />
+            <div class="suggest-list" data-for="brewery" style="display:none"></div>
+          </div>
+          <div class="field suggest-wrap">
+            <label>Style <span class="subtle">(optional)</span></label>
+            <input class="input" name="style" autocomplete="off" placeholder="Start typing a style&hellip;"
+                   value="${entry ? escapeHtml(entry.beer.style || "") : ""}" ${entry ? "disabled" : ""} />
+            <div class="suggest-list" data-for="style" style="display:none"></div>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>ABV % <span class="subtle">(optional)</span></label>
+            <input class="input" type="number" step="0.1" min="0" max="100" name="abv"
+                   value="${entry?.beer.abv ?? ""}" ${entry ? "disabled" : ""} />
+          </div>
+          <div class="field">
+            <label>Bottle size, ${volumeUnitLabel(account.unit_system)} <span class="subtle">(optional)</span></label>
+            <input class="input" type="number" step="${account.unit_system === "metric" ? "1" : "0.1"}" min="0" name="size_display" value="${ozToDisplay(entry?.size_oz, account.unit_system)}" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Quantity</label>
+            <input class="input" type="number" min="0" step="1" name="quantity" value="${entry ? entry.quantity : 1}" required />
+          </div>
+          ${locationRow}
+        </div>
+        ${customLocationRow}
+        <div class="field-row">
+          <div class="field">
+            <label>Bottle date <span class="subtle">(optional)</span></label>
+            ${isoDateInputHtml("bottle_date", entry?.bottle_date)}
+          </div>
+          <div class="field">
+            <label>Best before / drink by <span class="subtle">(optional)</span></label>
+            ${isoDateInputHtml("best_before", entry?.best_before)}
+          </div>
+        </div>
+        ${tradingRow}
+        <div class="field">
+          <label>Batch notes <span class="subtle">(optional)</span></label>
+          <textarea class="input" name="batch_notes" placeholder="Batch #, where you got it, aging plan&hellip;">${escapeHtml(
+            entry?.batch_notes || ""
+          )}</textarea>
+        </div>
+        <div class="form-error" data-error style="display:none"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-block">${entry ? "Save changes" : "Add to cellar"}</button>
+        </div>
+      </form>
+    `;
+  }
+
+  async function openEntryModal(entry, account, onSaved) {
+    const styles = await getBeerStyles();
+    openModal(entryFormHtml(entry, account, styles), {
+      onMount(modalEl, close) {
+        modalEl.querySelector("[data-close]").addEventListener("click", close);
+        wireIsoDateInputs(modalEl);
+        if (!entry) {
+          wireBeerAutocomplete(modalEl, {});
+          wireBreweryAutocomplete(modalEl);
+          wireStyleAutocomplete(modalEl, styles);
+        }
+        const form = modalEl.querySelector("[data-entry-form]");
+        const errorBox = modalEl.querySelector("[data-error]");
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          errorBox.style.display = "none";
+          const fd = new FormData(form);
+          const submitBtn = form.querySelector('button[type="submit"]');
+          submitBtn.disabled = true;
+          try {
+            const bottleDate = fd.get("bottle_date")?.trim() || "";
+            const bestBefore = fd.get("best_before")?.trim() || "";
+            if (!isValidIsoDateOrEmpty(bottleDate)) throw new Error(`"${bottleDate}" isn't a valid date - use YYYY-MM-DD.`);
+            if (!isValidIsoDateOrEmpty(bestBefore)) throw new Error(`"${bestBefore}" isn't a valid date - use YYYY-MM-DD.`);
+            if (entry) {
+              const payload = {
+                quantity: Number(fd.get("quantity")),
+                size_oz: displayToOz(fd.get("size_display"), account.unit_system),
+                location: fd.get("location") || "cellar",
+                custom_location: fd.get("custom_location") || null,
+                bottle_date: bottleDate || null,
+                best_before: bestBefore || null,
+                batch_notes: fd.get("batch_notes") || null,
+              };
+              if (account.trading_enabled) payload.trade_status = fd.get("trade_status") || "none";
+              await Api.patchEntry(entry.id, payload);
+            } else {
+              const beerId = fd.get("beer_id");
+              const payload = {
+                location: fd.get("location") || "cellar",
+                custom_location: fd.get("custom_location") || null,
+                quantity: Number(fd.get("quantity")),
+                size_oz: displayToOz(fd.get("size_display"), account.unit_system),
+                bottle_date: bottleDate || null,
+                best_before: bestBefore || null,
+                batch_notes: fd.get("batch_notes") || null,
+                trade_status: account.trading_enabled ? fd.get("trade_status") || "none" : "none",
+              };
+              if (beerId) {
+                payload.beer_id = Number(beerId);
+              } else {
+                const name = fd.get("beer_search")?.trim();
+                if (!name) throw new Error("Enter a beer name.");
+                const pickedBreweryId = fd.get("brewery_id");
+                payload.beer = {
+                  name,
+                  brewery_id: pickedBreweryId ? Number(pickedBreweryId) : null,
+                  new_brewery_name: pickedBreweryId ? null : fd.get("new_brewery_name")?.trim() || null,
+                  style: fd.get("style")?.trim() || null,
+                  abv: fd.get("abv") ? Number(fd.get("abv")) : null,
+                };
+                if (!payload.beer.brewery_id && !payload.beer.new_brewery_name) throw new Error("Enter a brewery name.");
+              }
+              await Api.addEntry(payload);
+            }
+            close();
+            toast(entry ? "Bottle updated." : "Added to your cellar.");
+            onSaved();
+          } catch (err) {
+            errorBox.textContent = err.message;
+            errorBox.style.display = "block";
+          } finally {
+            submitBtn.disabled = false;
+          }
+        });
+      },
+    });
+  }
+
+  function openDrinkModal(entry, onDone) {
+    const html = `
+      <button class="modal-close" data-close>&times;</button>
+      <h2>Drink &mdash; ${escapeHtml(entry.beer.name)}</h2>
+      <p class="subtle">${escapeHtml(entry.beer.brewery.name)}${entry.beer.style ? " &middot; " + escapeHtml(entry.beer.style) : ""}</p>
+      <form data-drink-form>
+        <div class="field-row">
+          <div class="field">
+            <label>Quantity</label>
+            <input class="input" type="number" min="1" max="${entry.quantity}" step="1" name="quantity" value="1" required />
+          </div>
+          <div class="field">
+            <label>Date</label>
+            ${isoDateInputHtml("consumed_on", new Date().toISOString().slice(0, 10))}
+          </div>
+        </div>
+        <div class="field">
+          <label>Rating <span class="subtle">(optional)</span></label>
+          ${starPicker("rating", 0)}
+        </div>
+        <div class="field">
+          <label>Tasting note <span class="subtle">(optional)</span></label>
+          <textarea class="input" name="note" placeholder="How was it?"></textarea>
+        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" name="delete_if_empty" ${entry.quantity <= 1 ? "checked" : ""} />
+          Remove this cellar entry once it hits zero
+        </label>
+        <div class="form-error" data-error style="display:none"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-block">Log it</button>
+        </div>
+      </form>
+    `;
+    openModal(html, {
+      onMount(modalEl, close) {
+        modalEl.querySelector("[data-close]").addEventListener("click", close);
+        wireStarPicker(modalEl);
+        wireIsoDateInputs(modalEl);
+        const form = modalEl.querySelector("[data-drink-form]");
+        const errorBox = modalEl.querySelector("[data-error]");
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          errorBox.style.display = "none";
+          const fd = new FormData(form);
+          const submitBtn = form.querySelector('button[type="submit"]');
+          submitBtn.disabled = true;
+          try {
+            const consumedOn = fd.get("consumed_on")?.trim() || "";
+            if (!isValidIsoDateOrEmpty(consumedOn)) throw new Error(`"${consumedOn}" isn't a valid date - use YYYY-MM-DD.`);
+            const rating = Number(fd.get("rating") || 0);
+            await Api.drinkEntry(entry.id, {
+              quantity: Number(fd.get("quantity")),
+              consumed_on: consumedOn || null,
+              note: fd.get("note")?.trim() || null,
+              rating: rating > 0 ? rating : null,
+              delete_if_empty: fd.get("delete_if_empty") === "on",
+            });
+            close();
+            toast("Cheers! Logged.");
+            onDone();
+          } catch (err) {
+            errorBox.textContent = err.message;
+            errorBox.style.display = "block";
+          } finally {
+            submitBtn.disabled = false;
+          }
+        });
+      },
+    });
+  }
+
+  function confirmDelete(message, onConfirm) {
+    const html = `
+      <button class="modal-close" data-close>&times;</button>
+      <h2>Are you sure?</h2>
+      <p>${escapeHtml(message)}</p>
+      <div class="form-actions">
+        <button class="btn btn-ghost btn-block" data-cancel>Cancel</button>
+        <button class="btn btn-danger btn-block" data-confirm>Delete</button>
+      </div>
+    `;
+    openModal(html, {
+      onMount(modalEl, close) {
+        modalEl.querySelector("[data-close]").addEventListener("click", close);
+        modalEl.querySelector("[data-cancel]").addEventListener("click", close);
+        modalEl.querySelector("[data-confirm]").addEventListener("click", async () => {
+          close();
+          await onConfirm();
+        });
+      },
+    });
+  }
+
+  // ---------- Entry card rendering (used by the cellar dashboard + public view) ----------
+
+  function badgeForLocation(entry, account) {
+    if (!account.show_fridge_column) return "";
+    return entry.location === "fridge"
+      ? `<span class="badge badge-fridge">Fridge</span>`
+      : `<span class="badge badge-cellar">Cellar</span>`;
+  }
+
+  function badgeForTrade(status) {
+    if (status === "ft") return `<span class="badge badge-ft">For Trade</span>`;
+    if (status === "iso") return `<span class="badge badge-iso">ISO</span>`;
+    return "";
+  }
+
+  function entryCardHtml(entry, account, { editable }) {
+    const metaBits = [];
+    if (entry.beer.style) metaBits.push(escapeHtml(entry.beer.style));
+    if (entry.beer.abv !== null && entry.beer.abv !== undefined) metaBits.push(`${entry.beer.abv}% ABV`);
+    if (entry.size_oz) metaBits.push(`${ozToDisplay(entry.size_oz, account.unit_system)} ${volumeUnitLabel(account.unit_system)}`);
+    if (entry.custom_location) metaBits.push(escapeHtml(entry.custom_location));
+    if (entry.best_before) metaBits.push(`Best before ${fmtDate(entry.best_before)}`);
+
+    const actions = editable
+      ? `<div class="entry-actions">
+           <div class="row">
+             <button class="btn btn-icon" data-act="add" title="Add one to stock">&plus;1</button>
+             <button class="btn btn-ghost btn-sm" data-act="drink">Drink</button>
+           </div>
+           <div class="row">
+             ${
+               account.show_fridge_column
+                 ? `<button class="btn btn-icon" data-act="move" title="Move to ${
+                     entry.location === "fridge" ? "cellar" : "fridge"
+                   }">${entry.location === "fridge" ? "&#8594;Cellar" : "&#8594;Fridge"}</button>`
+                 : ""
+             }
+             <button class="btn btn-icon" data-act="edit" title="Edit">Edit</button>
+             <button class="btn btn-icon" data-act="delete" title="Delete">Del</button>
+           </div>
+         </div>`
+      : "";
+
+    return `
+      <div class="entry-card" data-entry-id="${entry.id}">
+        <div class="entry-main">
+          <h3>${escapeHtml(entry.beer.name)}</h3>
+          <div class="entry-meta">
+            <span>${escapeHtml(entry.beer.brewery.name)}</span>
+            ${metaBits.map((m) => `<span class="dot">&middot;</span><span>${m}</span>`).join("")}
+            ${badgeForLocation(entry, account)}
+            ${badgeForTrade(entry.trade_status)}
+          </div>
+          ${tally(entry.quantity)}
+        </div>
+        ${actions}
+        ${entry.batch_notes ? `<div class="entry-notes">${escapeHtml(entry.batch_notes)}</div>` : ""}
+      </div>
+    `;
+  }
+
+  function wireEntryCards(root, entries, account, reload) {
+    root.querySelectorAll("[data-entry-id]").forEach((card) => {
+      const id = Number(card.dataset.entryId);
+      const entry = entries.find((e) => e.id === id);
+      if (!entry) return;
+
+      const addBtn = card.querySelector('[data-act="add"]');
+      if (addBtn)
+        addBtn.addEventListener("click", async () => {
+          addBtn.disabled = true;
+          try {
+            await Api.patchEntry(id, { quantity: entry.quantity + 1 });
+            toast("Added one bottle.");
+            reload();
+          } catch (e) {
+            toast(e.message, "error");
+          } finally {
+            addBtn.disabled = false;
+          }
+        });
+
+      const drinkBtn = card.querySelector('[data-act="drink"]');
+      if (drinkBtn)
+        drinkBtn.addEventListener("click", () => {
+          if (entry.quantity < 1) {
+            toast("Nothing left to drink.", "error");
+            return;
+          }
+          openDrinkModal(entry, reload);
+        });
+
+      const moveBtn = card.querySelector('[data-act="move"]');
+      if (moveBtn)
+        moveBtn.addEventListener("click", async () => {
+          const to = entry.location === "fridge" ? "cellar" : "fridge";
+          try {
+            await Api.moveEntry(id, to);
+            toast(`Moved to ${to === "fridge" ? "the fridge" : "the cellar"}.`);
+            reload();
+          } catch (e) {
+            toast(e.message, "error");
+          }
+        });
+
+      const editBtn = card.querySelector('[data-act="edit"]');
+      if (editBtn) editBtn.addEventListener("click", () => openEntryModal(entry, account, reload));
+
+      const delBtn = card.querySelector('[data-act="delete"]');
+      if (delBtn)
+        delBtn.addEventListener("click", () => {
+          confirmDelete(`Remove ${entry.beer.name} from your cellar? This won't erase past tasting notes.`, async () => {
+            try {
+              await Api.deleteEntry(id);
+              toast("Removed.");
+              reload();
+            } catch (e) {
+              toast(e.message, "error");
+            }
+          });
+        });
+    });
+  }
+
+  // ---------- Pages ----------
+
+  async function home(root, ctx) {
+    root.innerHTML = `
+      <div class="hero">
+        <h1>Keep count of what's <span class="glow">aging in the dark</span>.</h1>
+        <p class="lede">A self-hosted tracker for your cellar and fridge &mdash; bottles, batches, tasting notes, and who's willing to trade.</p>
+        <div class="hero-actions" id="hero-actions"></div>
+      </div>
+      <div class="section-label">Recently uncorked</div>
+      <div class="feed-list" id="feed">${spinnerHtml()}</div>
+    `;
+    const heroActions = root.querySelector("#hero-actions");
+    if (ctx.user) {
+      heroActions.innerHTML = `<a class="btn btn-primary" href="#/cellar">Go to my cellar</a>
+        <a class="btn btn-ghost" href="#/browse">Browse cellars</a>`;
+    } else {
+      heroActions.innerHTML = `<a class="btn btn-primary" href="#/register">Create an account</a>
+        <a class="btn btn-ghost" href="#/login">Log in</a>`;
+    }
+    try {
+      const recent = await Api.recentActivity();
+      const feed = root.querySelector("#feed");
+      if (!recent.length) {
+        feed.innerHTML = `<div class="empty-note">Nothing logged yet &mdash; be the first to crack one open.</div>`;
+      } else {
+        feed.innerHTML = recent
+          .map(
+            (r) => `<div class="feed-row">
+              <span class="who">${escapeHtml(r.username)}</span>
+              <span class="what">drank ${escapeHtml(r.beer_name)} <span class="subtle">(${escapeHtml(r.brewery_name)})</span></span>
+              <span class="meta">${fmtDate(r.consumed_on)}</span>
+            </div>`
+          )
+          .join("");
+      }
+    } catch (e) {
+      root.querySelector("#feed").innerHTML = `<div class="empty-note">Couldn't load recent activity.</div>`;
+    }
+  }
+
+  function spinnerHtml() {
+    return `<div class="spinner"></div>`;
+  }
+
+  function authForm({ title, submitLabel, fields, switchHtml, extraHtml }) {
+    return `
+      <div class="auth-shell panel">
+        <h1>${title}</h1>
+        <form data-auth-form>
+          ${fields}
+          <div class="form-error" data-error style="display:none"></div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-block">${submitLabel}</button>
+          </div>
+        </form>
+        ${extraHtml || ""}
+        <div class="auth-switch">${switchHtml || ""}</div>
+      </div>
+    `;
+  }
+
+  function ssoBlockHtml(authConfig, { withDivider }) {
+    if (!authConfig.oidc_enabled) return "";
+    return `
+      ${withDivider ? `<div class="auth-divider"><span>or</span></div>` : ""}
+      <a class="btn btn-ghost btn-block" href="/api/auth/oidc/login">${escapeHtml(authConfig.oidc_button_label)}</a>
+    `;
+  }
+
+  function login(root, ctx, query) {
+    const cfg = ctx.authConfig;
+    const oidcError = query && query.get("oidc_error");
+    const errorBanner = oidcError
+      ? `<div class="form-error" style="margin-bottom:16px">SSO sign-in failed: ${escapeHtml(oidcError)}</div>`
+      : "";
+
+    if (!cfg.password_auth_enabled && !cfg.oidc_enabled) {
+      root.innerHTML = `
+        <div class="auth-shell panel">
+          <h1>Sign-in unavailable</h1>
+          ${errorBanner}
+          <p>This instance doesn't have a login method configured yet. Ask whoever runs it to enable password login or SSO.</p>
+        </div>
+      `;
+      return;
+    }
+
+    if (!cfg.password_auth_enabled) {
+      root.innerHTML = `
+        <div class="auth-shell panel">
+          <h1>Welcome back</h1>
+          ${errorBanner}
+          <p class="subtle">Password sign-in is disabled on this instance.</p>
+          ${ssoBlockHtml(cfg, { withDivider: false })}
+        </div>
+      `;
+      return;
+    }
+
+    root.innerHTML = authForm({
+      title: "Welcome back",
+      submitLabel: "Log in",
+      fields: `
+        ${errorBanner}
+        <div class="field"><label>Username</label><input class="input" name="username" required autofocus /></div>
+        <div class="field"><label>Password</label><input class="input" type="password" name="password" required /></div>
+      `,
+      extraHtml: ssoBlockHtml(cfg, { withDivider: true }),
+      switchHtml: `Don't have a cellar yet? <a href="#/register">Create one</a>`,
+    });
+    const form = root.querySelector("[data-auth-form]");
+    const errorBox = root.querySelector("[data-error]");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorBox.style.display = "none";
+      const fd = new FormData(form);
+      try {
+        const { access_token } = await Api.login(fd.get("username"), fd.get("password"));
+        Api.setToken(access_token);
+        await ctx.refreshUser();
+        toast(`Welcome back, ${fd.get("username")}.`);
+        location.hash = "#/cellar";
+      } catch (err) {
+        errorBox.textContent = err.message;
+        errorBox.style.display = "block";
+      }
+    });
+  }
+
+  function register(root, ctx) {
+    if (!ctx.authConfig.password_auth_enabled) {
+      location.hash = "#/login";
+      return;
+    }
+    root.innerHTML = authForm({
+      title: "Set up your cellar",
+      submitLabel: "Create account",
+      fields: `
+        <div class="field"><label>Username</label><input class="input" name="username" pattern="[a-zA-Z0-9_\\-]{3,32}" required autofocus /></div>
+        <div class="field"><label>Email</label><input class="input" type="email" name="email" required /></div>
+        <div class="field"><label>Password</label><input class="input" type="password" name="password" minlength="8" required /></div>
+        <div class="field-hint">At least 8 characters.</div>
+      `,
+      extraHtml: ssoBlockHtml(ctx.authConfig, { withDivider: true }),
+      switchHtml: `Already have an account? <a href="#/login">Log in</a>`,
+    });
+    const form = root.querySelector("[data-auth-form]");
+    const errorBox = root.querySelector("[data-error]");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorBox.style.display = "none";
+      const fd = new FormData(form);
+      try {
+        const { access_token } = await Api.register(fd.get("username"), fd.get("email"), fd.get("password"));
+        Api.setToken(access_token);
+        await ctx.refreshUser();
+        toast("Cellar created. Welcome!");
+        location.hash = "#/cellar";
+      } catch (err) {
+        errorBox.textContent = err.message;
+        errorBox.style.display = "block";
+      }
+    });
+  }
+
+  async function cellar(root, ctx) {
+    if (!ctx.user) {
+      location.hash = "#/login";
+      return;
+    }
+    let sort = ctx.account.default_sort;
+    let locationFilter = null;
+
+    root.innerHTML = `
+      <div class="page-head">
+        <h1>My cellar</h1>
+        <button class="btn btn-primary" id="add-bottle">+ Add a bottle</button>
+      </div>
+      <div class="toolbar">
+        <div class="seg" data-sort>
+          <button data-val="beer" class="${sort === "beer" ? "active" : ""}">By beer</button>
+          <button data-val="brewery" class="${sort === "brewery" ? "active" : ""}">By brewery</button>
+        </div>
+        ${
+          ctx.account.show_fridge_column
+            ? `<div class="seg" data-loc>
+                 <button data-val="" class="active">All</button>
+                 <button data-val="cellar">Cellar</button>
+                 <button data-val="fridge">Fridge</button>
+               </div>`
+            : ""
+        }
+        <div class="spacer"></div>
+        <a class="btn btn-ghost btn-sm" href="#/consumed">History</a>
+        <a class="btn btn-ghost btn-sm" href="#/import-export">Import/Export</a>
+      </div>
+      <div id="entries">${spinnerHtml()}</div>
+    `;
+
+    root.querySelector("#add-bottle").addEventListener("click", () => {
+      openEntryModal(null, ctx.account, load);
+    });
+
+    root.querySelectorAll("[data-sort] button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        sort = btn.dataset.val;
+        root.querySelectorAll("[data-sort] button").forEach((b) => b.classList.toggle("active", b === btn));
+        load();
+      });
+    });
+    const locSeg = root.querySelector("[data-loc]");
+    if (locSeg) {
+      locSeg.querySelectorAll("button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          locationFilter = btn.dataset.val || null;
+          locSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b === btn));
+          load();
+        });
+      });
+    }
+
+    async function load() {
+      const container = root.querySelector("#entries");
+      container.innerHTML = spinnerHtml();
+      try {
+        const entries = await Api.listCellar(sort, locationFilter);
+        if (!entries.length) {
+          container.innerHTML = `<div class="panel empty-note">Your cellar's empty. Add your first bottle to start tracking it.</div>`;
+          return;
+        }
+        container.innerHTML = `<div class="entry-list">${entries
+          .map((e) => entryCardHtml(e, ctx.account, { editable: true }))
+          .join("")}</div>`;
+        wireEntryCards(container, entries, ctx.account, load);
+      } catch (e) {
+        container.innerHTML = `<div class="panel empty-note">Couldn't load your cellar: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+    load();
+  }
+
+  async function account(root, ctx) {
+    if (!ctx.user) {
+      location.hash = "#/login";
+      return;
+    }
+    const a = ctx.account;
+    root.innerHTML = `
+      <div class="page-head"><h1>Account</h1></div>
+
+      <div class="panel" style="margin-bottom:20px">
+        <h3>Signed in as ${escapeHtml(a.username)}</h3>
+        <p class="subtle">${escapeHtml(a.email)}</p>
+      </div>
+
+      <div class="panel" style="margin-bottom:20px">
+        <h3>Cellar preferences</h3>
+        <div class="settings-grid">
+          ${toggleRow("default_sort_brewery", "Sort by brewery by default", "Otherwise your cellar sorts by beer name.", a.default_sort === "brewery")}
+          ${toggleRow("unit_metric", "Use metric units", "Show and enter bottle sizes in millilitres (mL) instead of fluid ounces (oz).", a.unit_system === "metric")}
+          ${toggleRow("show_fridge_column", "Track a separate fridge", "Turn off if you only track one shelf.", a.show_fridge_column)}
+          ${toggleRow("show_location_column", "Track custom shelf / location", "Adds a free-text location field to each bottle.", a.show_location_column)}
+          ${toggleRow("trading_enabled", "Enable trading labels", "Mark bottles as For Trade or In Search Of.", a.trading_enabled)}
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:20px">
+        <h3>Privacy</h3>
+        <div class="settings-grid">
+          ${toggleRow("cellar_public", "Make my cellar public", "Others can find you via Browse cellars and view your bottles.", a.cellar_public)}
+          ${toggleRow("notes_public", "Show my tasting notes publicly", "Only applies if your cellar is public.", a.notes_public)}
+          ${toggleRow("drinkby_public", "Show best-before dates publicly", "Only applies if your cellar is public.", a.drinkby_public)}
+        </div>
+      </div>
+
+      ${
+        ctx.authConfig.password_auth_enabled
+          ? `<div class="panel">
+              <h3>Change password</h3>
+              <form data-pw-form>
+                <div class="field"><label>Current password</label><input class="input" type="password" name="current_password" required /></div>
+                <div class="field"><label>New password</label><input class="input" type="password" name="new_password" minlength="8" required /></div>
+                <div class="form-error" data-pw-error style="display:none"></div>
+                <button type="submit" class="btn btn-ghost">Update password</button>
+              </form>
+            </div>`
+          : `<div class="panel">
+              <h3>Password sign-in</h3>
+              <p class="subtle">Password-based sign-in is disabled on this instance. Manage your login through your SSO provider instead.</p>
+            </div>`
+      }
+    `;
+
+    root.querySelectorAll("[data-toggle]").forEach((input) => {
+      input.addEventListener("change", async () => {
+        const key = input.dataset.toggle;
+        const payload = {};
+        if (key === "default_sort_brewery") {
+          payload.default_sort = input.checked ? "brewery" : "beer";
+        } else if (key === "unit_metric") {
+          payload.unit_system = input.checked ? "metric" : "imperial";
+        } else {
+          payload[key] = input.checked;
+        }
+        try {
+          const updated = await Api.patchAccount(payload);
+          Object.assign(ctx.account, updated);
+          toast("Saved.");
+        } catch (e) {
+          toast(e.message, "error");
+          input.checked = !input.checked;
+        }
+      });
+    });
+
+    const pwForm = root.querySelector("[data-pw-form]");
+    if (pwForm) {
+      const pwError = root.querySelector("[data-pw-error]");
+      pwForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        pwError.style.display = "none";
+        const fd = new FormData(pwForm);
+        try {
+          await Api.changePassword(fd.get("current_password"), fd.get("new_password"));
+          toast("Password updated.");
+          pwForm.reset();
+        } catch (err) {
+          pwError.textContent = err.message;
+          pwError.style.display = "block";
+        }
+      });
+    }
+  }
+
+  function toggleRow(key, label, desc, checked) {
+    return `
+      <div class="toggle-row">
+        <div>
+          <div class="label">${label}</div>
+          <div class="desc">${desc}</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" data-toggle="${key}" ${checked ? "checked" : ""} />
+          <span class="track"></span>
+          <span class="thumb"></span>
+        </label>
+      </div>
+    `;
+  }
+
+  async function browse(root) {
+    root.innerHTML = `<div class="page-head"><h1>Browse cellars</h1></div><div id="list">${spinnerHtml()}</div>`;
+    try {
+      const users = await Api.browseCellars();
+      const list = root.querySelector("#list");
+      if (!users.length) {
+        list.innerHTML = `<div class="panel empty-note">No public cellars yet.</div>`;
+        return;
+      }
+      list.innerHTML = `<div class="user-list">${users
+        .map(
+          (u) => `<a class="user-row" href="#/u/${encodeURIComponent(u.username)}">
+            <span class="name">${escapeHtml(u.username)}</span>
+            <span class="stat">${u.cellar_count} bottle${u.cellar_count === 1 ? "" : "s"}${
+            u.trading_enabled ? " &middot; trades" : ""
+          }</span>
+          </a>`
+        )
+        .join("")}</div>`;
+    } catch (e) {
+      root.querySelector("#list").innerHTML = `<div class="panel empty-note">Couldn't load the directory.</div>`;
+    }
+  }
+
+  async function publicCellar(root, username, ctx) {
+    root.innerHTML = spinnerHtml();
+    let data;
+    try {
+      data = await Api.publicCellar(username);
+    } catch (e) {
+      root.innerHTML = `<div class="page-head"><h1>Not found</h1></div><div class="panel empty-note">${escapeHtml(
+        e.message
+      )}</div>`;
+      return;
+    }
+    const fakeAccount = {
+      show_fridge_column: true,
+      trading_enabled: data.trading_enabled,
+      unit_system: (ctx && ctx.account && ctx.account.unit_system) || "imperial",
+    };
+    root.innerHTML = `
+      <div class="page-head">
+        <h1>${escapeHtml(data.username)}'s cellar</h1>
+        <span class="subtle">${data.total_consumed} bottle${data.total_consumed === 1 ? "" : "s"} logged all-time</span>
+      </div>
+      <div class="tabs">
+        <button class="active" data-tab="bottles">Bottles (${data.entries.length})</button>
+        <button data-tab="notes">Tasting notes (${data.tasting_notes.length})</button>
+      </div>
+      <div data-pane="bottles">
+        ${
+          data.entries.length
+            ? `<div class="entry-list">${data.entries
+                .map((e) => entryCardHtml(e, fakeAccount, { editable: false }))
+                .join("")}</div>`
+            : `<div class="panel empty-note">Nothing on the shelf right now.</div>`
+        }
+      </div>
+      <div data-pane="notes" style="display:none">
+        ${
+          data.tasting_notes.length
+            ? `<div class="feed-list">${data.tasting_notes
+                .map(
+                  (n) => `<div class="feed-row" style="display:block">
+                    <div><span class="what"><strong>${escapeHtml(n.beer_name)}</strong> &mdash; ${escapeHtml(
+                    n.brewery_name
+                  )}</span> <span class="meta">${fmtDate(n.consumed_on)}</span></div>
+                    ${n.rating ? `<div>${starsReadonly(n.rating)}</div>` : ""}
+                    <div class="subtle">${escapeHtml(n.note)}</div>
+                  </div>`
+                )
+                .join("")}</div>`
+            : `<div class="panel empty-note">No public tasting notes.</div>`
+        }
+      </div>
+    `;
+    root.querySelectorAll("[data-tab]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        root.querySelectorAll("[data-tab]").forEach((b) => b.classList.toggle("active", b === btn));
+        root.querySelectorAll("[data-pane]").forEach((p) => {
+          p.style.display = p.dataset.pane === btn.dataset.tab ? "block" : "none";
+        });
+      });
+    });
+  }
+
+  async function consumed(root, ctx) {
+    if (!ctx.user) {
+      location.hash = "#/login";
+      return;
+    }
+    root.innerHTML = `<div class="page-head"><h1>Drinking history</h1></div><div id="list">${spinnerHtml()}</div>`;
+    try {
+      const logs = await Api.listConsumption();
+      const list = root.querySelector("#list");
+      if (!logs.length) {
+        list.innerHTML = `<div class="panel empty-note">Nothing logged yet. Drink something and log a note!</div>`;
+        return;
+      }
+      list.innerHTML = `<div class="feed-list">${logs
+        .map(
+          (log) => `<div class="feed-row" style="display:block; position:relative">
+            <button class="btn btn-icon" data-del="${log.id}" style="float:right">Del</button>
+            <div><strong>${escapeHtml(log.beer.name)}</strong> <span class="subtle">&mdash; ${escapeHtml(
+            log.beer.brewery.name
+          )}</span> <span class="meta">${fmtDate(log.consumed_on)} &middot; &times;${log.quantity}</span></div>
+            ${log.rating ? `<div>${starsReadonly(log.rating)}</div>` : ""}
+            ${log.note ? `<div class="subtle">${escapeHtml(log.note)}</div>` : ""}
+          </div>`
+        )
+        .join("")}</div>`;
+      list.querySelectorAll("[data-del]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          confirmDelete("Delete this log entry?", async () => {
+            try {
+              await Api.deleteConsumption(Number(btn.dataset.del));
+              toast("Deleted.");
+              consumed(root, ctx);
+            } catch (e) {
+              toast(e.message, "error");
+            }
+          });
+        });
+      });
+    } catch (e) {
+      root.querySelector("#list").innerHTML = `<div class="panel empty-note">Couldn't load your history.</div>`;
+    }
+  }
+
+  async function importExport(root, ctx) {
+    if (!ctx.user) {
+      location.hash = "#/login";
+      return;
+    }
+    root.innerHTML = `
+      <div class="page-head"><h1>Import / Export</h1></div>
+      <div class="panel" style="margin-bottom:20px">
+        <h3>Export</h3>
+        <p>Download your entire cellar as a CSV file.</p>
+        <button class="btn btn-primary" id="export-btn">Download CSV</button>
+      </div>
+      <div class="panel">
+        <h3>Import</h3>
+        <p>Upload a CSV with columns: <code>brewery, beer, style, abv, location, custom_location, quantity, size_oz, bottle_date, best_before, batch_notes, trade_status</code></p>
+        <div class="csv-drop">
+          <input type="file" accept=".csv" id="import-file" />
+        </div>
+        <div id="import-result" style="margin-top:14px"></div>
+      </div>
+    `;
+    root.querySelector("#export-btn").addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      try {
+        const { blob, filename } = await Api.exportCellar();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        toast(err.message, "error");
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    root.querySelector("#import-file").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const resultBox = root.querySelector("#import-result");
+      resultBox.innerHTML = spinnerHtml();
+      try {
+        const result = await Api.importCellar(file);
+        resultBox.innerHTML = `<div class="form-error" style="background:var(--secondary-wash);border-color:var(--secondary);color:var(--text)">
+          Imported ${result.created} bottle${result.created === 1 ? "" : "s"}${
+          result.skipped ? `, skipped ${result.skipped}` : ""
+        }.
+          ${result.errors && result.errors.length ? "<br>" + result.errors.map(escapeHtml).join("<br>") : ""}
+        </div>`;
+      } catch (err) {
+        resultBox.innerHTML = `<div class="form-error">${escapeHtml(err.message)}</div>`;
+      }
+      e.target.value = "";
+    });
+  }
+
+  return {
+    home,
+    login,
+    register,
+    cellar,
+    account,
+    browse,
+    publicCellar,
+    consumed,
+    importExport,
+  };
+})();
+
