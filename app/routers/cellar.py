@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 from app import models, schemas
 from app.database import get_db
 from app.deps import get_current_user
-from app.routers.beers import _get_or_create_brewery
+from app.routers.beers import resolve_or_create_beer_id
 
 router = APIRouter(prefix="/api/cellar", tags=["cellar"])
 
@@ -45,31 +45,7 @@ def add_entry(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    beer_id = payload.beer_id
-    if not beer_id and payload.beer:
-        brewery = _get_or_create_brewery(db, payload.beer.brewery_id, payload.beer.new_brewery_name)
-        beer = (
-            db.query(models.Beer)
-            .filter(models.Beer.brewery_id == brewery.id, models.Beer.name.ilike(payload.beer.name))
-            .first()
-        )
-        if not beer:
-            beer = models.Beer(
-                name=payload.beer.name.strip(),
-                brewery_id=brewery.id,
-                style=payload.beer.style,
-                abv=payload.beer.abv,
-                description=payload.beer.description,
-                reference_url=payload.beer.reference_url,
-            )
-            db.add(beer)
-            db.flush()
-        beer_id = beer.id
-
-    if not beer_id:
-        raise HTTPException(status_code=400, detail="Provide a beer_id or beer details.")
-    if not db.query(models.Beer).filter(models.Beer.id == beer_id).first():
-        raise HTTPException(status_code=404, detail="Beer not found.")
+    beer_id = resolve_or_create_beer_id(db, payload.beer_id, payload.beer)
 
     entry = models.CellarEntry(
         user_id=current_user.id,

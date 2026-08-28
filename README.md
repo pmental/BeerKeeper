@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.5**
+**Current version: 0.0.6**
 
 A self-hosted tracker for a beer cellar and fridge: bottles, batches, tasting
 notes, drinking history, and trading labels. It's an original build inspired
@@ -16,6 +16,15 @@ or API keys required.
 
 ## Changelog
 
+- **0.0.6** — Added a public, no-login trade/wanted list per account:
+  a "+ Add to wanted list" flow for tracking beers you don't own yet
+  (they show up separately from your inventory, never counted in your
+  cellar total), and a shareable `#/u/<username>/trades` page listing
+  just your For Trade and Wanted bottles. Gated only by the existing
+  "Enable trading labels" account toggle, deliberately independent of
+  whether your full cellar is public — you can keep your whole
+  collection private and still share just a trade list. Get the
+  shareable link from Account once trading is enabled.
 - **0.0.5** — Substantially expanded the US (24 → 53) and Belgian (7 → 29)
   brewery lists, including all six official Belgian Trappist breweries
   (Achel, Chimay, Orval, Rochefort, Westmalle, Westvleteren). Also fixed
@@ -79,7 +88,9 @@ or API keys required.
   note + rating and decrements your count), **Move** between cellar/fridge
 - Tasting notes and drinking history are stored independently of your
   cellar entries, so they survive even after you delete an empty entry
-- Optional trading labels (For Trade / In Search Of)
+- Optional trading labels (For Trade / In Search Of), plus a "wanted"
+  list for beers you don't own yet, and a public trade/wanted page you
+  can share without a login — see "Trading and wanted lists" below
 - Per-account privacy controls: make your cellar public or private, and
   separately choose whether tasting notes and best-before dates show up
   on your public profile
@@ -140,6 +151,33 @@ outage), you'll land back on the login page with a readable error message
 instead of a blank 500 page; check `docker compose logs` for the full
 traceback if the on-page message isn't enough to diagnose it.
 
+## Trading and wanted lists
+
+Turn on **Enable trading labels** (Account → Cellar preferences) to mark
+individual bottles as **For Trade** or **In Search Of** from the add/edit
+bottle form, and to track beers you don't own yet on a separate **wanted
+list** (Cellar page → "+ Add to wanted list", or from your trade page
+directly). Wanted entries are just a beer and an optional note — no
+quantity or location, since you don't have any yet — and never affect
+your cellar count.
+
+Once trading is enabled, everyone gets a page at `#/u/<username>/trades`
+combining:
+- **For Trade**: your bottles marked FT (with quantity, matching what's
+  on your cellar entry)
+- **Wanted**: both kinds of "want" — beers you don't own at all, and
+  beers you already have some of but marked ISO because you want more
+  (labeled "Have some, want more" so it's clear which is which)
+
+This page is public and requires no login to view, and is **deliberately
+independent of your cellar-privacy setting** — you can keep your whole
+cellar private while still sharing just this focused trade/wanted list.
+Get your shareable link (with a one-click copy button) from Account once
+trading is enabled, or from the trade page itself when you're viewing
+your own. Visiting someone else's trade page only ever shows what they're
+trading or looking for — no management controls, no matter who's logged
+in.
+
 ## Beer styles
 
 The Style field on the add/edit bottle form suggests from a list of beer
@@ -189,10 +227,11 @@ change the default for a fresh install.
 
 If you already have this running with data in it, just pull the new code
 and rebuild/restart — `docker compose up -d --build` (or the non-Docker
-equivalent). The app adds any new database columns it needs automatically
-on startup; nothing manual is required, and existing bottles, notes, and
-accounts are untouched. New accounts default to imperial units and get the
-new preference available immediately in **Account → Cellar preferences**.
+equivalent). The app adds any new database columns or tables it needs
+automatically on startup; nothing manual is required, and existing
+bottles, notes, and accounts are untouched. New accounts default to
+imperial units and get the new preference available immediately in
+**Account → Cellar preferences**.
 
 **Deploy from the same folder you originally used.** Docker Compose
 derives its default project name (and therefore the actual name of your
@@ -204,10 +243,10 @@ named `<something>_cellar-data`), then either move back to the original
 folder name or add `- <that-exact-name>:/data` under `volumes:` in place
 of the default `cellar-data` entry.
 
-As of this version, the service inside `docker-compose.yml` was renamed
-from `cellar` to `beerkeeper` (purely cosmetic — it doesn't touch your
-data, since the volume name itself is unchanged). If an old `cellar`
-container is still around afterwards, `docker compose up -d --remove-orphans`
+The Docker Compose service is named `beerkeeper` (renamed from `cellar`
+in an earlier release — purely cosmetic, it never touched your data since
+the volume name itself is unchanged). If an old `cellar` container is
+still around from before that rename, `docker compose up -d --remove-orphans`
 will clean it up.
 
 ## Quick start (Docker)

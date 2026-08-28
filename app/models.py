@@ -47,6 +47,7 @@ class User(Base):
 
     entries = relationship("CellarEntry", back_populates="user", cascade="all, delete-orphan")
     logs = relationship("ConsumptionLog", back_populates="user", cascade="all, delete-orphan")
+    wanted = relationship("WantedEntry", back_populates="user", cascade="all, delete-orphan")
 
 
 class Brewery(Base):
@@ -124,3 +125,22 @@ class ConsumptionLog(Base):
 
     user = relationship("User", back_populates="logs")
     beer = relationship("Beer", back_populates="logs")
+
+
+class WantedEntry(Base):
+    """A beer a user wants but does not currently own - distinct from a
+    CellarEntry marked ISO (trade_status), which is for a beer you already
+    have some of but want more. This is for "don't have it at all yet"."""
+
+    __tablename__ = "wanted_entries"
+    __table_args__ = (UniqueConstraint("user_id", "beer_id", name="uq_wanted_user_beer"),)
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    beer_id = Column(Integer, ForeignKey("beers.id"), nullable=False, index=True)
+
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+
+    user = relationship("User", back_populates="wanted")
+    beer = relationship("Beer")
