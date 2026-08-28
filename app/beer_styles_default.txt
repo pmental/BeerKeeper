@@ -1,0 +1,137 @@
+# Beer styles for BeerKeeper
+#
+# One style per line. Blank lines and lines starting with "#" are ignored.
+# This list seeds static/user data only once, on first boot (if
+# beer_styles.txt doesn't already exist in your data directory) - after
+# that, edit THIS FILE directly (it lives in your CELLAR_DATA_DIR, e.g. the
+# `cellar-data` Docker volume, not in the app's source code) and restart
+# the app to pick up changes. There's no in-app editor for it on purpose.
+#
+# Starting point compiled from the general/public beer style taxonomy
+# (style names only - no descriptions), organized similarly to how
+# BeerAdvocate groups its own style guide. Add, remove, rename, or
+# reorder freely; styles here are just suggestions offered while typing,
+# never a restriction on what you can enter.
+
+# --- American ales ---
+American Amber / Red Ale
+American Barleywine
+American Black Ale / Cascadian Dark Ale
+American Blonde Ale
+American Brown Ale
+American Dark Wheat Ale
+American IPA
+American Pale Ale
+American Pale Wheat Ale
+American Porter
+American Stout
+American Strong Ale
+American Wild Ale
+Brut IPA
+California Common / Steam Beer
+Cream Ale
+Imperial IPA / Double IPA
+Imperial Stout
+New England IPA / Hazy IPA
+Rye Beer
+Session IPA
+Triple IPA
+
+# --- Belgian ales ---
+Belgian Blonde Ale
+Belgian Dark Ale
+Belgian IPA
+Belgian Pale Ale
+Belgian Strong Dark Ale
+Belgian Strong Pale Ale
+Biere de Garde
+Dubbel
+Faro
+Flanders Oud Bruin
+Flanders Red Ale
+Fruit Lambic
+Gueuze
+Lambic
+Quadrupel (Quad)
+Saison
+Tripel
+Witbier
+
+# --- British & Irish ales ---
+English Barleywine
+English Bitter
+English Brown Ale
+English Dark Mild Ale
+English India Pale Ale (IPA)
+English Pale Ale
+English Pale Mild Ale
+English Porter
+English Stout
+English Strong Ale
+Extra Special / Strong Bitter (ESB)
+Irish Dry Stout
+Irish Red Ale
+Old Ale
+Scotch Ale / Wee Heavy
+Scottish Ale
+Winter Warmer
+
+# --- German & other European ales ---
+Altbier
+Berliner Weissbier
+Dunkelweizen
+Gose
+Hefeweizen
+Kolsch
+Roggenbier
+Weizenbock
+
+# --- Stouts & porters (general) ---
+Baltic Porter
+Milk / Sweet Stout
+Oatmeal Stout
+Oyster Stout
+Russian Imperial Stout
+
+# --- American lagers ---
+American Adjunct Lager
+American Amber / Red Lager
+American Double / Imperial Pilsner
+American Malt Liquor
+American Pale Lager
+
+# --- European lagers ---
+Bock
+Bohemian / Czech Pilsener
+Doppelbock
+Dortmunder / Export Lager
+Eisbock
+European Dark Lager
+European Pale Lager
+European Strong Lager
+German Pilsener
+Helles
+Kellerbier / Zwickelbier
+Maibock / Helles Bock
+Marzen / Oktoberfest
+Munich Dunkel Lager
+Munich Helles Lager
+Rauchbier
+Schwarzbier
+Vienna Lager
+Winter Lager
+
+# --- Other lagers ---
+Light Lager
+Low Alcohol Beer
+
+# --- Hybrid / mixed & specialty ---
+Braggot
+Chile Beer
+Fruit and Field Beer
+Herbed / Spiced Beer
+Kvass
+Pumpkin Ale
+Sahti
+Smoked Beer
+Wheat Ale

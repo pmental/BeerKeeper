@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BeerKeeper</title>
+  <script>
+    // Resolve and apply the theme before first paint, so there's no flash
+    // of the wrong theme. Kept inline and tiny on purpose.
+    (function () {
+      try {
+        var stored = localStorage.getItem("cellar_theme") || "system";
+        var resolved =
+          stored === "system"
+            ? (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+            : stored;
+        document.documentElement.setAttribute("data-theme", resolved);
+      } catch (e) {
+        document.documentElement.setAttribute("data-theme", "dark");
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="/assets/css/style.css?v=__APP_VERSION__" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <span>Beer<span class="glow">Keeper</span></span>
+        <span class="tag">self-hosted</span>
+      </div>
+      <nav class="nav-links" id="nav-links"></nav>
+      <div class="theme-picker">
+        <label for="theme-select" class="sr-only">Theme</label>
+        <select id="theme-select" class="theme-select">
+          <option value="system">System</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+      <div class="nav-right" id="nav-right"></div>
+    </header>
+    <main class="container" id="main"></main>
+    <footer class="site-footer">
+      A self-hosted cellar &amp; fridge tracker. Your data lives on your own server.
+      <span id="app-version-tag"></span>
+    </footer>
+  </div>
+  <div class="toast-wrap" id="toast-wrap"></div>
+
+  <script src="/assets/js/theme.js?v=__APP_VERSION__"></script>
+  <script src="/assets/js/api.js?v=__APP_VERSION__"></script>
+  <script src="/assets/js/ui.js?v=__APP_VERSION__"></script>
+  <script src="/assets/js/pages.js?v=__APP_VERSION__"></script>
+  <script src="/assets/js/app.js?v=__APP_VERSION__"></script>
+</body>
+</html>

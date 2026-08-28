@@ -1,0 +1,168 @@
+# Breweries for BeerKeeper
+#
+# One brewery per line: either just a name, or "Name | https://website.com"
+# if you want a website attached. Blank lines and lines starting with "#"
+# are ignored.
+#
+# This file seeds the breweries TABLE, once, the first time the app boots
+# with an empty database - unlike beer_styles.txt (which is read fresh on
+# every request), these become real Brewery rows from that point on and
+# are managed like any other brewery: rename, delete, or add more through
+# the app itself. Editing this file after first boot has no effect; it's
+# only a seed, not a live source. See the README for details.
+#
+# Compiled from public sources (mainly a mix of Wikipedia and craft-beer
+# press coverage, cross-checked where possible) - not an exhaustive or
+# official registry, and brewery details (name spelling, active status)
+# can drift over time. It's just a helpful starting point; add, remove,
+# or fix entries freely through the app once it's running.
+
+# --- Sweden ---
+Omnipollo | https://omnipollo.com
+Stigbergets Bryggeri | https://stigbergetsbryggeri.se
+Dugges Bryggeri | https://dugges.se
+Brewski | https://www.brewski.se
+Beerbliotek | https://beerbliotek.com
+Brekeriet | https://brekeriet.se
+Poppels Bryggeri | https://www.poppels.se
+Nerdbrewing | https://nerdbrewing.com
+Närke Kulturbryggeri | https://www.kulturbryggeri.se
+Jämtlands Bryggeri | https://jamtlandsbryggeri.se
+Gotlands Bryggeri | https://gotlandsbryggeri.se
+Oppigårds Bryggeri | https://oppigards.com
+Nynäshamns Ångbryggeri | https://www.nyab.se
+Malmö Brewing Co. | https://malmobrewing.com
+Hyllie Bryggeri | https://www.hylliebryggeri.se
+Bryggverket
+Benchwarmers Brewing Co. | https://benchwarmers.se
+Apex Brewing Company
+Potum Brewery | https://www.potumbrewery.se
+Sigtuna Brygghus
+Slottskällans Bryggeri
+Helsingborgs Bryggeri
+Krönleins Bryggeri
+Grebbestad Bryggeri
+Fjäderholmarnas Bryggeri
+Falcon Bryggeri
+Spendrups Bryggeri | https://www.spendrups.se
+Åbro Bryggeri | https://www.abro.se
+St. Eriks Bryggeri
+
+# --- United States ---
+Sierra Nevada Brewing Co. | https://sierranevada.com
+Stone Brewing | https://www.stonebrewing.com
+Dogfish Head Craft Brewery | https://www.dogfish.com
+Rogue Ales | https://rogue.com
+Russian River Brewing Company | https://russianriverbrewing.com
+Tree House Brewing Company
+Trillium Brewing Company | https://trilliumbrewing.com
+Bell's Brewery | https://bellsbeer.com
+Founders Brewing Co. | https://foundersbrewing.com
+Firestone Walker Brewing Company | https://www.firestonebeer.com
+Deschutes Brewery | https://www.deschutesbrewery.com
+New Belgium Brewing | https://www.newbelgium.com
+Lagunitas Brewing Company | https://lagunitas.com
+Great Divide Brewing Co. | https://greatdivide.com
+Anchor Brewing Company
+Boston Beer Company (Samuel Adams) | https://www.samueladams.com
+Brooklyn Brewery | https://brooklynbrewery.com
+Goose Island Beer Co. | https://gooseisland.com
+Allagash Brewing Company | https://www.allagash.com
+Hill Farmstead Brewery | https://hillfarmstead.com
+Cigar City Brewing | https://cigarcitybrewing.com
+Other Half Brewing Co. | https://otherhalfbrewing.com
+The Alchemist | https://alchemistbeer.com
+Bear Republic Brewing Co.
+Ballast Point Brewing Company
+D. G. Yuengling & Son | https://www.yuengling.com
+Boulevard Brewing Co. | https://www.boulevard.com
+Brewery Ommegang | https://www.ommegang.com
+Oskar Blues Brewery | https://oskarblues.com
+Great Lakes Brewing Company | https://www.greatlakesbrewing.com
+Toppling Goliath Brewing Co. | https://tgbrews.com
+AleSmith Brewing Company | https://alesmith.com
+Modern Times Beer | https://moderntimesbeer.com
+Maui Brewing Co. | https://mauibrewing.com
+Abita Brewing Company | https://abita.com
+Wicked Weed Brewing | https://wickedweedbrewing.com
+Burial Beer Co. | https://burialbeer.com
+Creature Comforts Brewing Co. | https://creaturecomfortsbeer.com
+WeldWerks Brewing Co. | https://weldwerksbrewing.com
+Westbrook Brewing Co. | https://westbrookbrewing.com
+Fat Head's Brewery | https://fatheadsbeer.com
+Three Floyds Brewing Co. | https://3floyds.com
+Jester King Brewery | https://jesterkingbrewery.com
+Fremont Brewing | https://fremontbrewing.com
+Elysian Brewing Company | https://elysianbrewing.com
+Pizza Port Brewing Company | https://pizzaport.com
+Avery Brewing Co. | https://www.averybrewing.com
+Victory Brewing Company | https://www.victorybeer.com
+Troegs Independent Brewing | https://www.troegs.com
+Sixpoint Brewery | https://sixpoint.com
+Two Roads Brewing Company | https://tworoadsbrewing.com
+Revolution Brewing | https://revbrew.com
+Half Acre Beer Company | https://halfacrebeer.com
+
+# --- United Kingdom ---
+BrewDog | https://www.brewdog.com
+Cloudwater Brew Co. | https://cloudwaterbrew.co
+Thornbridge Brewery | https://thornbridgebrewery.co.uk
+Magic Rock Brewing | https://www.magicrockbrewing.com
+Buxton Brewery | https://buxtonbrewery.co.uk
+Verdant Brewing Co. | https://verdantbrewing.co
+Wild Beer Co.
+Fuller's | https://www.fullers.co.uk
+
+# --- Belgium ---
+Cantillon | https://cantillon.be
+Duvel Moortgat | https://www.duvel.be
+Brasserie de Rochefort | https://www.trappistes-rochefort.com
+Brouwerij Westmalle | https://www.trappistwestmalle.be
+Bières de Chimay | https://www.chimay.com
+Brasserie d'Orval | https://www.orval.be
+Brouwerij Westvleteren (Sint-Sixtusabdij)
+St. Benedictusabdij de Achelse Kluis (Achel)
+Brouwerij Boon | https://www.boon.be
+Brouwerij Lindemans | https://lindemans.be
+Drie Fonteinen | https://www.3fonteinen.be
+Timmermans
+Hanssens Artisanaal
+Brouwerij De Dolle Brouwers
+Brouwerij De Struise Brouwers | https://www.struise.com
+Brouwerij St. Bernardus | https://www.sintbernardus.be
+Brasserie d'Achouffe (La Chouffe) | https://www.achouffe.be
+Brouwerij Corsendonk | https://www.corsendonk.com
+Affligem Brewery | https://www.affligembeer.be
+Leffe | https://www.leffe.com
+Hoegaarden | https://www.hoegaarden.com
+Stella Artois | https://www.stellaartois.com
+Brouwerij Palm | https://www.palm.be
+Brouwerij Bosteels | https://www.bosteels.com
+Brouwerij Rodenbach | https://www.rodenbach.be
+Liefmans Brewery | https://www.liefmans.be
+Brasserie Dupont | https://www.brasseriedupont.com
+Brasserie Fantôme
+Brouwerij De Ranke | https://www.deranke.be
+
+# --- Germany ---
+Weihenstephaner | https://www.weihenstephaner.de
+Schneider Weisse | https://www.schneider-weisse.de
+Ayinger | https://www.ayinger.de
+Paulaner | https://www.paulaner.de
+Erdinger Weissbräu | https://www.erdinger.de
+
+# --- Netherlands ---
+Brouwerij De Molen | https://www.brouwerijdemolen.nl
+
+# --- Denmark ---
+Mikkeller | https://mikkeller.com
+To Øl | https://to-ol.dk
+Evil Twin Brewing | https://eviltwin.beer
+
+# --- Norway ---
+Nøgne Ø | https://nogne-o.com
+Lervig Bryggeri | https://lervig.no
+Ægir Bryggeri | https://aegir.no
+
+# --- Estonia ---
+Põhjala Brewery | https://pohjalabrewery.com
