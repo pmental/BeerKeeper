@@ -29,11 +29,12 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     oidc_subject = Column(String(255), unique=True, nullable=True, index=True)
+    display_name = Column(String(255), nullable=True)  # from OIDC's "name" claim; falls back to username
     is_admin = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=utcnow, nullable=False)
 
     # Account preferences
-    default_sort = Column(String(16), default="beer", nullable=False)  # 'beer' | 'brewery'
+    default_sort = Column(String(16), default="beer", nullable=False)  # 'beer' | 'brewery' | 'drinkby'
     unit_system = Column(String(8), default="imperial", nullable=False)  # 'imperial' | 'metric'
     show_fridge_column = Column(Boolean, default=True, nullable=False)
     show_location_column = Column(Boolean, default=False, nullable=False)
@@ -144,3 +145,15 @@ class WantedEntry(Base):
 
     user = relationship("User", back_populates="wanted")
     beer = relationship("Beer")
+
+
+class InstanceSettings(Base):
+    """A single-row table (id is always 1) for instance-wide settings that
+    an admin can change at runtime, as opposed to env-var config that needs
+    a restart. Currently just the registration toggle, but built to hold
+    more if that's ever needed."""
+
+    __tablename__ = "instance_settings"
+
+    id = Column(Integer, primary_key=True)
+    registration_enabled = Column(Boolean, default=True, nullable=False)

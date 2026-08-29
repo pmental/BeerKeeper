@@ -100,8 +100,17 @@ const Api = (() => {
     getAccount: () => request("GET", "/api/account"),
     patchAccount: (payload) => request("PATCH", "/api/account", { body: payload }),
 
+    adminListUsers: () => request("GET", "/api/admin/users"),
+    adminCreateUser: (payload) => request("POST", "/api/admin/users", { body: payload }),
+    adminPatchUser: (id, payload) => request("PATCH", `/api/admin/users/${id}`, { body: payload }),
+    adminResetPassword: (id, newPassword) =>
+      request("POST", `/api/admin/users/${id}/reset-password`, { body: { new_password: newPassword } }),
+    adminDeleteUser: (id) => request("DELETE", `/api/admin/users/${id}`),
+    adminGetSettings: () => request("GET", "/api/admin/settings"),
+    adminPatchSettings: (payload) => request("PATCH", "/api/admin/settings", { body: payload }),
+
     browseCellars: () => request("GET", "/api/public/cellars", { auth: false }),
-    recentActivity: () => request("GET", "/api/public/recent", { auth: false }),
+    recentActivity: () => request("GET", "/api/public/recent"),
     publicCellar: (username) => request("GET", "/api/public/u/" + encodeURIComponent(username), { auth: false }),
     publicTrades: (username) =>
       request("GET", "/api/public/u/" + encodeURIComponent(username) + "/trades", { auth: false }),

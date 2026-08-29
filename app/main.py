@@ -9,8 +9,9 @@ from app import auth, config
 from app.database import Base, engine, run_migrations, SessionLocal
 from app import models  # noqa: F401  (ensures models are registered before create_all)
 from app.brewery_seed import seed_breweries_if_needed
+from app.admin_bootstrap import ensure_instance_settings, ensure_admin_exists
 from app.routers import auth as auth_router
-from app.routers import beers, cellar, consumption, account, public, import_export, oidc, beer_styles, wanted
+from app.routers import beers, cellar, consumption, account, public, import_export, oidc, beer_styles, wanted, admin
 
 Base.metadata.create_all(bind=engine)
 run_migrations()
@@ -18,6 +19,8 @@ run_migrations()
 _seed_db = SessionLocal()
 try:
     seed_breweries_if_needed(_seed_db)
+    ensure_instance_settings(_seed_db)
+    ensure_admin_exists(_seed_db)
 finally:
     _seed_db.close()
 
@@ -40,6 +43,7 @@ app.include_router(public.router)
 app.include_router(import_export.router)
 app.include_router(beer_styles.router)
 app.include_router(wanted.router)
+app.include_router(admin.router)
 
 
 @app.get("/api/health")

@@ -1,5 +1,5 @@
 const App = (() => {
-  const state = { user: null, account: null, authConfig: { password_auth_enabled: true, oidc_enabled: false, oidc_button_label: "Continue with SSO" } };
+  const state = { user: null, displayName: null, account: null, authConfig: { password_auth_enabled: true, oidc_enabled: false, oidc_button_label: "Continue with SSO" } };
 
   async function refreshAuthConfig() {
     try {
@@ -13,15 +13,18 @@ const App = (() => {
   async function refreshUser() {
     if (!Api.getToken()) {
       state.user = null;
+      state.displayName = null;
       state.account = null;
       return;
     }
     try {
       const account = await Api.me();
       state.user = account.username;
+      state.displayName = UI.firstName(account.display_name) || account.username;
       state.account = account;
     } catch (e) {
       state.user = null;
+      state.displayName = null;
       state.account = null;
       Api.setToken(null);
     }
@@ -35,6 +38,9 @@ const App = (() => {
     if (state.user) {
       links.push({ href: "#/cellar", label: "My cellar" });
     }
+    if (state.account && state.account.is_admin) {
+      links.push({ href: "#/admin", label: "Admin" });
+    }
     navLinks.innerHTML = links
       .map(
         (l) =>
@@ -44,7 +50,7 @@ const App = (() => {
 
     if (state.user) {
       navRight.innerHTML = `
-        <div class="user-chip">Hi, <strong>${UI.escapeHtml(state.user)}</strong></div>
+        <div class="user-chip">Hi, <strong>${UI.escapeHtml(state.displayName || state.user)}</strong></div>
         <a class="btn btn-ghost btn-sm" href="#/account">Account</a>
         <button class="btn btn-ghost btn-sm" id="logout-btn">Log out</button>
       `;
@@ -62,7 +68,11 @@ const App = (() => {
     } else {
       navRight.innerHTML = `
         <a class="btn btn-ghost btn-sm" href="#/login">Log in</a>
-        ${state.authConfig.password_auth_enabled ? `<a class="btn btn-primary btn-sm" href="#/register">Sign up</a>` : ""}
+        ${
+          state.authConfig.password_auth_enabled && state.authConfig.registration_enabled
+            ? `<a class="btn btn-primary btn-sm" href="#/register">Sign up</a>`
+            : ""
+        }
       `;
     }
   }
@@ -73,6 +83,7 @@ const App = (() => {
     { pattern: /^#\/register$/, page: Pages.register },
     { pattern: /^#\/cellar$/, page: Pages.cellar },
     { pattern: /^#\/account$/, page: Pages.account },
+    { pattern: /^#\/admin$/, page: Pages.admin },
     { pattern: /^#\/browse$/, page: Pages.browse },
     { pattern: /^#\/consumed$/, page: Pages.consumed },
     { pattern: /^#\/import-export$/, page: Pages.importExport },
@@ -83,6 +94,9 @@ const App = (() => {
   const ctx = {
     get user() {
       return state.user;
+    },
+    get displayName() {
+      return state.displayName;
     },
     get account() {
       return state.account;
@@ -108,7 +122,7 @@ const App = (() => {
       if (token) {
         Api.setToken(token);
         await refreshUser();
-        UI.toast(`Welcome, ${state.user}.`);
+        UI.toast(`Welcome, ${state.displayName || state.user}.`);
         location.replace("#/cellar");
       } else {
         location.replace("#/login" + (error ? "?oidc_error=" + encodeURIComponent(error) : ""));

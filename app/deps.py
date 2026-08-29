@@ -39,3 +39,9 @@ def get_optional_user(
     if user_id is None:
         return None
     return db.query(models.User).filter(models.User.id == user_id).first()
+
+
+def require_admin(current_user: models.User = Depends(get_current_user)) -> models.User:
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required.")
+    return current_user

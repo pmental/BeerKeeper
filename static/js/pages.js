@@ -1,5 +1,5 @@
 const Pages = (() => {
-  const { escapeHtml, toast, fmtDate, openModal, tally, starsReadonly, starPicker, wireStarPicker, debounce, volumeUnitLabel, ozToDisplay, displayToOz } = UI;
+  const { escapeHtml, firstName, toast, fmtDate, openModal, tally, starsReadonly, starPicker, wireStarPicker, debounce, volumeUnitLabel, ozToDisplay, displayToOz } = UI;
 
   // Beer styles are fetched once per page load and cached - they rarely
   // change mid-session, and this list can be fairly long.
@@ -248,11 +248,32 @@ const Pages = (() => {
     });
   }
 
+  function todayIsoLocal() {
+    // Local calendar date, not UTC - see the note in isValidIsoDateOrEmpty
+    // for why a toISOString()-based approach silently gives the wrong day
+    // for part of the evening/night in any timezone ahead of UTC.
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
   function isValidIsoDateOrEmpty(value) {
     if (!value) return true;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-    const d = new Date(value + "T00:00:00");
-    return !isNaN(d) && d.toISOString().slice(0, 10) === value;
+    const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return false;
+    const year = Number(m[1]);
+    const month = Number(m[2]);
+    const day = Number(m[3]);
+    // Constructed and checked entirely in local time - no UTC round-trip.
+    // (An earlier version used `new Date(value + "T00:00:00")` then compared
+    // against `.toISOString()`, which converts to UTC: for anyone in a
+    // timezone ahead of UTC, local midnight rolls back to the previous
+    // calendar day in UTC, so a perfectly valid date like "2026-08-26"
+    // would come back as "2026-08-25" and fail the comparison. Comparing
+    // local year/month/day components directly sidesteps that entirely,
+    // while still correctly catching bogus dates like "2026-02-30".)
+    const d = new Date(year, month - 1, day);
+    return d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day;
   }
 
   function wireBreweryAutocomplete(root) {
@@ -522,7 +543,7 @@ const Pages = (() => {
           </div>
           <div class="field">
             <label>Date</label>
-            ${isoDateInputHtml("consumed_on", new Date().toISOString().slice(0, 10))}
+            ${isoDateInputHtml("consumed_on", todayIsoLocal())}
           </div>
         </div>
         <div class="field">
@@ -851,7 +872,7 @@ const Pages = (() => {
         feed.innerHTML = recent
           .map(
             (r) => `<div class="feed-row">
-              <span class="who">${escapeHtml(r.username)}</span>
+              <span class="who">${escapeHtml(firstName(r.display_name) || r.username)}</span>
               <span class="what">drank ${escapeHtml(r.beer_name)} <span class="subtle">(${escapeHtml(r.brewery_name)})</span></span>
               <span class="meta">${fmtDate(r.consumed_on)}</span>
             </div>`
@@ -931,7 +952,7 @@ const Pages = (() => {
         <div class="field"><label>Password</label><input class="input" type="password" name="password" required /></div>
       `,
       extraHtml: ssoBlockHtml(cfg, { withDivider: true }),
-      switchHtml: `Don't have a cellar yet? <a href="#/register">Create one</a>`,
+      switchHtml: cfg.registration_enabled ? `Don't have a cellar yet? <a href="#/register">Create one</a>` : "",
     });
     const form = root.querySelector("[data-auth-form]");
     const errorBox = root.querySelector("[data-error]");
@@ -953,7 +974,7 @@ const Pages = (() => {
   }
 
   function register(root, ctx) {
-    if (!ctx.authConfig.password_auth_enabled) {
+    if (!ctx.authConfig.password_auth_enabled || !ctx.authConfig.registration_enabled) {
       location.hash = "#/login";
       return;
     }
@@ -1008,6 +1029,7 @@ const Pages = (() => {
         <div class="seg" data-sort>
           <button data-val="beer" class="${sort === "beer" ? "active" : ""}">By beer</button>
           <button data-val="brewery" class="${sort === "brewery" ? "active" : ""}">By brewery</button>
+          <button data-val="drinkby" class="${sort === "drinkby" ? "active" : ""}">By drink-by date</button>
         </div>
         ${
           ctx.account.show_fridge_column
@@ -1084,14 +1106,24 @@ const Pages = (() => {
       <div class="page-head"><h1>Account</h1></div>
 
       <div class="panel" style="margin-bottom:20px">
-        <h3>Signed in as ${escapeHtml(a.username)}</h3>
-        <p class="subtle">${escapeHtml(a.email)}</p>
+        <h3>Signed in as ${escapeHtml(firstName(a.display_name) || a.username)}</h3>
+        <p class="subtle">${escapeHtml(a.username)} &middot; ${escapeHtml(a.email)}</p>
       </div>
 
       <div class="panel" style="margin-bottom:20px">
         <h3>Cellar preferences</h3>
         <div class="settings-grid">
-          ${toggleRow("default_sort_brewery", "Sort by brewery by default", "Otherwise your cellar sorts by beer name.", a.default_sort === "brewery")}
+          ${selectRow(
+            "default_sort",
+            "Default sort order",
+            "How your cellar list sorts by default. You can still switch it temporarily from the cellar page.",
+            [
+              { value: "beer", label: "By beer" },
+              { value: "brewery", label: "By brewery" },
+              { value: "drinkby", label: "By drink-by date" },
+            ],
+            a.default_sort
+          )}
           ${toggleRow("unit_metric", "Use metric units", "Show and enter bottle sizes in millilitres (mL) instead of fluid ounces (oz).", a.unit_system === "metric")}
           ${toggleRow("show_fridge_column", "Track a separate fridge", "Turn off if you only track one shelf.", a.show_fridge_column)}
           ${toggleRow("show_location_column", "Track custom shelf / location", "Adds a free-text location field to each bottle.", a.show_location_column)}
@@ -1144,9 +1176,7 @@ const Pages = (() => {
       input.addEventListener("change", async () => {
         const key = input.dataset.toggle;
         const payload = {};
-        if (key === "default_sort_brewery") {
-          payload.default_sort = input.checked ? "brewery" : "beer";
-        } else if (key === "unit_metric") {
+        if (key === "unit_metric") {
           payload.unit_system = input.checked ? "metric" : "imperial";
         } else {
           payload[key] = input.checked;
@@ -1162,6 +1192,21 @@ const Pages = (() => {
         } catch (e) {
           toast(e.message, "error");
           input.checked = !input.checked;
+        }
+      });
+    });
+
+    root.querySelectorAll("[data-select]").forEach((select) => {
+      select.addEventListener("change", async () => {
+        const key = select.dataset.select;
+        const previous = ctx.account[key];
+        try {
+          const updated = await Api.patchAccount({ [key]: select.value });
+          Object.assign(ctx.account, updated);
+          toast("Saved.");
+        } catch (e) {
+          toast(e.message, "error");
+          select.value = previous;
         }
       });
     });
@@ -1215,6 +1260,22 @@ const Pages = (() => {
     `;
   }
 
+  function selectRow(key, label, desc, options, value) {
+    return `
+      <div class="toggle-row">
+        <div>
+          <div class="label">${label}</div>
+          <div class="desc">${desc}</div>
+        </div>
+        <select class="input" data-select="${key}" style="width:auto; flex-shrink:0;">
+          ${options
+            .map((o) => `<option value="${o.value}" ${o.value === value ? "selected" : ""}>${escapeHtml(o.label)}</option>`)
+            .join("")}
+        </select>
+      </div>
+    `;
+  }
+
   async function browse(root) {
     root.innerHTML = `<div class="page-head"><h1>Browse cellars</h1></div><div id="list">${spinnerHtml()}</div>`;
     try {
@@ -1227,7 +1288,7 @@ const Pages = (() => {
       list.innerHTML = `<div class="user-list">${users
         .map(
           (u) => `<a class="user-row" href="#/u/${encodeURIComponent(u.username)}">
-            <span class="name">${escapeHtml(u.username)}</span>
+            <span class="name">${escapeHtml(firstName(u.display_name) || u.username)}</span>
             <span class="stat">${u.cellar_count} bottle${u.cellar_count === 1 ? "" : "s"}${
             u.trading_enabled ? " &middot; trades" : ""
           }</span>
@@ -1257,7 +1318,7 @@ const Pages = (() => {
     };
     root.innerHTML = `
       <div class="page-head">
-        <h1>${escapeHtml(data.username)}'s cellar</h1>
+        <h1>${escapeHtml(firstName(data.display_name) || data.username)}'s cellar</h1>
         <span class="subtle">${data.total_consumed} bottle${data.total_consumed === 1 ? "" : "s"} logged all-time</span>
       </div>
       <div class="tabs">
@@ -1361,7 +1422,7 @@ const Pages = (() => {
     function render() {
       root.innerHTML = `
         <div class="page-head">
-          <h1>${escapeHtml(data.username)}'s trade list</h1>
+          <h1>${escapeHtml(firstName(data.display_name) || data.username)}'s trade list</h1>
           ${isSelf ? `<button class="btn btn-primary btn-sm" id="add-wanted-here">+ Add to wanted list</button>` : ""}
         </div>
         ${
@@ -1517,12 +1578,254 @@ const Pages = (() => {
     });
   }
 
+  function adminUserRowHtml(u, ctx) {
+    const isSelf = ctx.account.id === u.id;
+    return `
+      <div class="entry-card" data-user-id="${u.id}">
+        <div class="entry-main">
+          <h3>${escapeHtml(u.display_name || u.username)}${isSelf ? ` <span class="subtle">(you)</span>` : ""}</h3>
+          <div class="entry-meta">
+            <span>${escapeHtml(u.username)}</span>
+            <span class="dot">&middot;</span><span>${escapeHtml(u.email)}</span>
+            <span class="dot">&middot;</span><span>${u.cellar_count} bottle${u.cellar_count === 1 ? "" : "s"}</span>
+            ${u.is_admin ? `<span class="badge badge-admin">Admin</span>` : ""}
+            ${u.has_oidc ? `<span class="badge badge-cellar">OIDC</span>` : ""}
+          </div>
+        </div>
+        <div class="entry-actions">
+          <div class="row">
+            <button class="btn btn-icon" data-act="reset-pw" title="Reset password">Reset PW</button>
+            <button class="btn btn-icon" data-act="toggle-admin" title="${u.is_admin ? "Remove admin" : "Make admin"}">${
+      u.is_admin ? "&minus;Admin" : "+Admin"
+    }</button>
+          </div>
+          <div class="row">
+            <button class="btn btn-icon" data-act="delete" ${isSelf ? "disabled" : ""} title="${
+      isSelf ? "Delete your own account from the Account page instead" : "Delete user"
+    }">Delete</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function wireAdminUserRows(container, users, ctx, reload) {
+    container.querySelectorAll("[data-user-id]").forEach((card) => {
+      const id = Number(card.dataset.userId);
+      const u = users.find((x) => x.id === id);
+      if (!u) return;
+
+      card.querySelector('[data-act="reset-pw"]').addEventListener("click", () => {
+        openResetPasswordModal(u, reload);
+      });
+
+      card.querySelector('[data-act="toggle-admin"]').addEventListener("click", async () => {
+        try {
+          await Api.adminPatchUser(u.id, { is_admin: !u.is_admin });
+          toast(u.is_admin ? "Admin removed." : "Now an admin.");
+          reload();
+        } catch (e) {
+          toast(e.message, "error");
+        }
+      });
+
+      const delBtn = card.querySelector('[data-act="delete"]');
+      if (!delBtn.disabled) {
+        delBtn.addEventListener("click", () => {
+          confirmDelete(
+            `Delete ${u.username}? This removes their entire cellar, history, and account. This can't be undone.`,
+            async () => {
+              try {
+                await Api.adminDeleteUser(u.id);
+                toast("User deleted.");
+                reload();
+              } catch (e) {
+                toast(e.message, "error");
+              }
+            }
+          );
+        });
+      }
+    });
+  }
+
+  function openResetPasswordModal(user, onDone) {
+    const html = `
+      <button class="modal-close" data-close>&times;</button>
+      <h2>Reset password for ${escapeHtml(user.username)}</h2>
+      <p class="subtle">Sets their password directly - they aren't notified, so you'll need to tell them the new one yourself.</p>
+      <form data-reset-form>
+        <div class="field">
+          <label>New password</label>
+          <input class="input" type="password" name="new_password" minlength="8" required autofocus />
+          <div class="field-hint">At least 8 characters.</div>
+        </div>
+        <div class="form-error" data-error style="display:none"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-block">Set new password</button>
+        </div>
+      </form>
+    `;
+    openModal(html, {
+      onMount(modalEl, close) {
+        modalEl.querySelector("[data-close]").addEventListener("click", close);
+        const form = modalEl.querySelector("[data-reset-form]");
+        const errorBox = modalEl.querySelector("[data-error]");
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          errorBox.style.display = "none";
+          const fd = new FormData(form);
+          const submitBtn = form.querySelector('button[type="submit"]');
+          submitBtn.disabled = true;
+          try {
+            await Api.adminResetPassword(user.id, fd.get("new_password"));
+            close();
+            toast("Password updated.");
+            onDone();
+          } catch (err) {
+            errorBox.textContent = err.message;
+            errorBox.style.display = "block";
+          } finally {
+            submitBtn.disabled = false;
+          }
+        });
+      },
+    });
+  }
+
+  function openAddUserModal(onSaved) {
+    const html = `
+      <button class="modal-close" data-close>&times;</button>
+      <h2>Add a user</h2>
+      <form data-adduser-form>
+        <div class="field"><label>Username</label><input class="input" name="username" pattern="[a-zA-Z0-9_\\-]{3,32}" required autofocus /></div>
+        <div class="field"><label>Email</label><input class="input" type="email" name="email" required /></div>
+        <div class="field">
+          <label>Password</label>
+          <input class="input" type="password" name="password" minlength="8" required />
+          <div class="field-hint">At least 8 characters. Share it with them yourself - there's no email step.</div>
+        </div>
+        <label class="checkbox-row"><input type="checkbox" name="is_admin" /> Make this user an admin</label>
+        <div class="form-error" data-error style="display:none"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-block">Create user</button>
+        </div>
+      </form>
+    `;
+    openModal(html, {
+      onMount(modalEl, close) {
+        modalEl.querySelector("[data-close]").addEventListener("click", close);
+        const form = modalEl.querySelector("[data-adduser-form]");
+        const errorBox = modalEl.querySelector("[data-error]");
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          errorBox.style.display = "none";
+          const fd = new FormData(form);
+          const submitBtn = form.querySelector('button[type="submit"]');
+          submitBtn.disabled = true;
+          try {
+            await Api.adminCreateUser({
+              username: fd.get("username"),
+              email: fd.get("email"),
+              password: fd.get("password"),
+              is_admin: fd.get("is_admin") === "on",
+            });
+            close();
+            toast("User created.");
+            onSaved();
+          } catch (err) {
+            errorBox.textContent = err.message;
+            errorBox.style.display = "block";
+          } finally {
+            submitBtn.disabled = false;
+          }
+        });
+      },
+    });
+  }
+
+  async function admin(root, ctx) {
+    if (!ctx.user) {
+      location.hash = "#/login";
+      return;
+    }
+    if (!ctx.account.is_admin) {
+      root.innerHTML = `<div class="page-head"><h1>Admin</h1></div><div class="panel empty-note">You don't have access to this page.</div>`;
+      return;
+    }
+
+    root.innerHTML = `
+      <div class="page-head"><h1>Admin</h1></div>
+      <div class="panel" style="margin-bottom:20px" id="settings-panel">${spinnerHtml()}</div>
+      <div class="page-head" style="margin-bottom:12px">
+        <h2 style="font-size:19px; margin:0">Users</h2>
+        <button class="btn btn-primary btn-sm" id="add-user-btn">+ Add user</button>
+      </div>
+      <div id="users-list">${spinnerHtml()}</div>
+    `;
+
+    async function loadSettings() {
+      const panel = root.querySelector("#settings-panel");
+      try {
+        const settings = await Api.adminGetSettings();
+        panel.innerHTML = `
+          <h3>Instance settings</h3>
+          <div class="settings-grid">
+            ${toggleRow(
+              "registration_enabled",
+              "Allow new registrations",
+              "Turn off to stop new password sign-ups while existing accounts keep working.",
+              settings.registration_enabled
+            )}
+          </div>
+          <div class="field-hint" style="margin-top:10px">
+            Password login: ${settings.password_auth_enabled ? "enabled" : "disabled"} &middot;
+            OIDC/SSO: ${settings.oidc_enabled ? "enabled" : "disabled"}
+            &mdash; both are set via environment variables and need a restart to change.
+          </div>
+        `;
+        panel.querySelector('[data-toggle="registration_enabled"]').addEventListener("change", async (e) => {
+          const checked = e.target.checked;
+          try {
+            await Api.adminPatchSettings({ registration_enabled: checked });
+            toast("Saved.");
+          } catch (err) {
+            toast(err.message, "error");
+            e.target.checked = !checked;
+          }
+        });
+      } catch (e) {
+        panel.innerHTML = `<div class="empty-note">Couldn't load settings: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    async function loadUsers() {
+      const container = root.querySelector("#users-list");
+      container.innerHTML = spinnerHtml();
+      try {
+        const users = await Api.adminListUsers();
+        container.innerHTML = `<div class="entry-list">${users.map((u) => adminUserRowHtml(u, ctx)).join("")}</div>`;
+        wireAdminUserRows(container, users, ctx, loadUsers);
+      } catch (e) {
+        container.innerHTML = `<div class="panel empty-note">Couldn't load users: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    root.querySelector("#add-user-btn").addEventListener("click", () => {
+      openAddUserModal(loadUsers);
+    });
+
+    loadSettings();
+    loadUsers();
+  }
+
   return {
     home,
     login,
     register,
     cellar,
     account,
+    admin,
     browse,
     publicCellar,
     publicTrades,

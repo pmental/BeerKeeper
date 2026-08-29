@@ -19,6 +19,20 @@ def _entry_query(db: Session, user_id: int):
     )
 
 
+def sort_entries(entries: list, sort_key: str) -> list:
+    """Shared by list_cellar and the public cellar view so 'beer' / 'brewery'
+    / 'drinkby' mean the same thing everywhere. Entries with no best_before
+    date sort after ones that have it, rather than being scattered in
+    among a default (e.g. today's) date."""
+    if sort_key == "brewery":
+        entries.sort(key=lambda e: (e.beer.brewery.name.lower(), e.beer.name.lower()))
+    elif sort_key == "drinkby":
+        entries.sort(key=lambda e: (e.best_before is None, e.best_before, e.beer.name.lower()))
+    else:
+        entries.sort(key=lambda e: (e.beer.name.lower(), e.beer.brewery.name.lower()))
+    return entries
+
+
 @router.get("", response_model=list[schemas.CellarEntryOut])
 def list_cellar(
     sort: str | None = None,
@@ -32,11 +46,7 @@ def list_cellar(
     entries = query.all()
 
     sort_key = sort or current_user.default_sort
-    if sort_key == "brewery":
-        entries.sort(key=lambda e: (e.beer.brewery.name.lower(), e.beer.name.lower()))
-    else:
-        entries.sort(key=lambda e: (e.beer.name.lower(), e.beer.brewery.name.lower()))
-    return entries
+    return sort_entries(entries, sort_key)
 
 
 @router.post("", response_model=schemas.CellarEntryOut)

@@ -32,7 +32,7 @@ PASSWORD_AUTH_ENABLED = _bool_env("CELLAR_PASSWORD_AUTH_ENABLED", True)
 APP_NAME = "BeerKeeper"
 # Bump this with every set of changes: 0.0.1, 0.0.2, ... until told to
 # bump the minor/major version instead.
-APP_VERSION = "0.0.6"
+APP_VERSION = "0.0.13"
 
 OIDC_ENABLED = _bool_env("CELLAR_OIDC_ENABLED", False)
 OIDC_ISSUER = _ensure_scheme(os.environ.get("CELLAR_OIDC_ISSUER", ""), "CELLAR_OIDC_ISSUER")
@@ -55,4 +55,14 @@ if not PASSWORD_AUTH_ENABLED and not OIDC_ENABLED:
         "CELLAR_PASSWORD_AUTH_ENABLED is false and OIDC is not configured/enabled - "
         "nobody will be able to log in. Enable one of them."
     )
+
+# Comma/whitespace-separated usernames that should always be admins,
+# re-applied on every boot. Mainly a recovery lever: if you ever end up
+# with zero admins (shouldn't happen - see the auto-promotion logic in
+# admin_bootstrap.py - but self-hosted things go sideways sometimes), set
+# this and restart to get back in, rather than needing to edit the
+# database by hand.
+ADMIN_USERNAMES = [
+    u.strip() for u in re.split(r"[,\s]+", os.environ.get("CELLAR_ADMIN_USERNAMES", "")) if u.strip()
+]
 
