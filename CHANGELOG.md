@@ -1,5 +1,19 @@
 # Changelog
 
+- **0.0.16** — SMTP settings now have an actual place to type them in: a
+  new "Email (SMTP)" panel on the admin page, with a "send test email"
+  button for immediate feedback. This was a real gap in 0.0.15 - SMTP was
+  entirely environment-variable-only, with the admin page only ever
+  showing read-only status, never anywhere to enter host/port/credentials.
+  The `CELLAR_SMTP_*` env vars from 0.0.15 still work exactly as before
+  and now act as the fallback default for any field left blank in the
+  admin panel, so nothing already deployed breaks. Caught and fixed one
+  real bug of my own while building this: the password field can never
+  show its stored value back (same as any password field anywhere), so a
+  first draft would have silently wiped a saved password every time you
+  saved an unrelated setting without retyping it - confirmed fixed by
+  testing that exact sequence through the actual UI.
+
 - **0.0.15** — Added SMTP support (`smtplib` from the standard library —
   no new dependency), with STARTTLS, implicit SSL, or no encryption, and
   optional auth. Two things it powers: a proper self-service "forgot

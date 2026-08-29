@@ -150,13 +150,23 @@ class WantedEntry(Base):
 class InstanceSettings(Base):
     """A single-row table (id is always 1) for instance-wide settings that
     an admin can change at runtime, as opposed to env-var config that needs
-    a restart. Currently just the registration toggle, but built to hold
-    more if that's ever needed."""
+    a restart. All the SMTP fields are optional overrides: an empty value
+    here means "fall back to whatever CELLAR_SMTP_* env var (if any) is
+    set" - see app/email.py's settings resolver."""
 
     __tablename__ = "instance_settings"
 
     id = Column(Integer, primary_key=True)
     registration_enabled = Column(Boolean, default=True, nullable=False)
+
+    smtp_host = Column(String(255), nullable=True)
+    smtp_port = Column(Integer, nullable=True)
+    smtp_security = Column(String(16), nullable=True)  # 'starttls' | 'ssl' | 'none'
+    smtp_username = Column(String(255), nullable=True)
+    smtp_password = Column(String(255), nullable=True)
+    smtp_from_email = Column(String(255), nullable=True)
+    smtp_from_name = Column(String(255), nullable=True)
+    smtp_skip_cert_verify = Column(Boolean, nullable=True)
 
 
 class PasswordResetToken(Base):

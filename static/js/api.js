@@ -111,6 +111,7 @@ const Api = (() => {
     adminDeleteUser: (id) => request("DELETE", `/api/admin/users/${id}`),
     adminGetSettings: () => request("GET", "/api/admin/settings"),
     adminPatchSettings: (payload) => request("PATCH", "/api/admin/settings", { body: payload }),
+    adminSendTestEmail: (toEmail) => request("POST", "/api/admin/settings/smtp/test", { body: { to_email: toEmail } }),
 
     browseCellars: () => request("GET", "/api/public/cellars", { auth: false }),
     recentActivity: () => request("GET", "/api/public/recent"),

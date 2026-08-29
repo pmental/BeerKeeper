@@ -1852,6 +1852,7 @@ const Pages = (() => {
     root.innerHTML = `
       <div class="page-head"><h1>Admin</h1></div>
       <div class="panel" style="margin-bottom:20px" id="settings-panel">${spinnerHtml()}</div>
+      <div class="panel" style="margin-bottom:20px" id="smtp-panel">${spinnerHtml()}</div>
       <div class="page-head" style="margin-bottom:12px">
         <h2 style="font-size:19px; margin:0">Users</h2>
         <button class="btn btn-primary btn-sm" id="add-user-btn">+ Add user</button>
@@ -1877,9 +1878,8 @@ const Pages = (() => {
           </div>
           <div class="field-hint" style="margin-top:10px">
             Password login: ${currentSettings.password_auth_enabled ? "enabled" : "disabled"} &middot;
-            OIDC/SSO: ${currentSettings.oidc_enabled ? "enabled" : "disabled"} &middot;
-            Outgoing email: ${currentSettings.smtp_enabled ? "configured" : "not configured"}
-            &mdash; all three are set via environment variables and need a restart to change.
+            OIDC/SSO: ${currentSettings.oidc_enabled ? "enabled" : "disabled"}
+            &mdash; both are set via environment variables and need a restart to change. Email is configured below.
           </div>
         `;
         panel.querySelector('[data-toggle="registration_enabled"]').addEventListener("change", async (e) => {
@@ -1894,6 +1894,134 @@ const Pages = (() => {
         });
       } catch (e) {
         panel.innerHTML = `<div class="empty-note">Couldn't load settings: ${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function renderSmtpPanel(s) {
+      currentSettings = s;
+      const panel = root.querySelector("#smtp-panel");
+      panel.innerHTML = `
+        <h3>Email (SMTP)</h3>
+        <p class="field-hint" style="margin-top:-4px; margin-bottom:14px">
+          ${
+            s.smtp_enabled
+              ? `Currently sending via <strong>${escapeHtml(s.smtp_effective_summary)}</strong>.`
+              : `Not configured. Fill in at least a host and from-address below (or set the matching <code>CELLAR_SMTP_*</code> env vars) to enable password reset and welcome emails.`
+          }
+          Anything left blank here falls back to its environment variable, if one is set.
+        </p>
+        <form data-smtp-form>
+          <div class="field-row">
+            <div class="field"><label>Host</label><input class="input" name="smtp_host" value="${escapeHtml(s.smtp_host || "")}" placeholder="smtp.example.com" /></div>
+            <div class="field"><label>Port</label><input class="input" type="number" name="smtp_port" value="${s.smtp_port || ""}" placeholder="587" /></div>
+          </div>
+          <div class="field">
+            <label>Security</label>
+            <select class="input" name="smtp_security" style="width:auto">
+              <option value="starttls" ${(s.smtp_security || "starttls") === "starttls" ? "selected" : ""}>STARTTLS</option>
+              <option value="ssl" ${s.smtp_security === "ssl" ? "selected" : ""}>Implicit SSL/TLS</option>
+              <option value="none" ${s.smtp_security === "none" ? "selected" : ""}>None (trusted local relay only)</option>
+            </select>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Username <span class="subtle">(optional)</span></label><input class="input" name="smtp_username" value="${escapeHtml(s.smtp_username || "")}" autocomplete="off" /></div>
+            <div class="field">
+              <label>Password <span class="subtle">(optional)</span></label>
+              <input class="input" type="password" name="smtp_password" placeholder="${s.smtp_password_set ? "•••••••• (unchanged)" : ""}" autocomplete="new-password" />
+            </div>
+          </div>
+          ${
+            s.smtp_password_set
+              ? `<label class="checkbox-row"><input type="checkbox" name="clear_password" /> Clear the stored password</label>`
+              : ""
+          }
+          <div class="field-row">
+            <div class="field"><label>From address</label><input class="input" type="email" name="smtp_from_email" value="${escapeHtml(s.smtp_from_email || "")}" placeholder="beerkeeper@yourdomain.com" /></div>
+            <div class="field"><label>From name</label><input class="input" name="smtp_from_name" value="${escapeHtml(s.smtp_from_name || "")}" placeholder="BeerKeeper" /></div>
+          </div>
+          <label class="checkbox-row"><input type="checkbox" name="smtp_skip_cert_verify" ${s.smtp_skip_cert_verify ? "checked" : ""} /> Skip certificate verification <span class="subtle">(only for a self-signed internal relay)</span></label>
+          <div class="form-error" data-smtp-error style="display:none"></div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save email settings</button>
+          </div>
+        </form>
+        <div class="auth-divider"><span>test it</span></div>
+        <form data-smtp-test-form>
+          <div class="field">
+            <label>Send a test email to</label>
+            <input class="input" type="email" name="test_email" placeholder="you@example.com" required />
+          </div>
+          <div class="form-error" data-test-error style="display:none"></div>
+          <div class="field-hint" data-test-success style="display:none; color:var(--secondary)"></div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-ghost">Send test email</button>
+          </div>
+        </form>
+      `;
+
+      const smtpForm = panel.querySelector("[data-smtp-form]");
+      const smtpError = panel.querySelector("[data-smtp-error]");
+      smtpForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        smtpError.style.display = "none";
+        const fd = new FormData(smtpForm);
+        const payload = {
+          smtp_host: fd.get("smtp_host") || "",
+          smtp_port: fd.get("smtp_port") ? Number(fd.get("smtp_port")) : null,
+          smtp_security: fd.get("smtp_security"),
+          smtp_username: fd.get("smtp_username") || "",
+          smtp_from_email: fd.get("smtp_from_email") || "",
+          smtp_from_name: fd.get("smtp_from_name") || "",
+          smtp_skip_cert_verify: fd.get("smtp_skip_cert_verify") === "on",
+        };
+        if (fd.get("clear_password") === "on") {
+          payload.smtp_password = "";
+        } else if (fd.get("smtp_password")) {
+          payload.smtp_password = fd.get("smtp_password");
+        }
+        const submitBtn = smtpForm.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        try {
+          const updated = await Api.adminPatchSettings(payload);
+          renderSmtpPanel(updated);
+          toast("Email settings saved.");
+        } catch (err) {
+          smtpError.textContent = err.message;
+          smtpError.style.display = "block";
+          submitBtn.disabled = false;
+        }
+      });
+
+      const testForm = panel.querySelector("[data-smtp-test-form]");
+      const testError = panel.querySelector("[data-test-error]");
+      const testSuccess = panel.querySelector("[data-test-success]");
+      testForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        testError.style.display = "none";
+        testSuccess.style.display = "none";
+        const fd = new FormData(testForm);
+        const submitBtn = testForm.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        try {
+          await Api.adminSendTestEmail(fd.get("test_email"));
+          testSuccess.textContent = `Sent to ${fd.get("test_email")}.`;
+          testSuccess.style.display = "block";
+        } catch (err) {
+          testError.textContent = err.message;
+          testError.style.display = "block";
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    }
+
+    async function loadSmtpPanel() {
+      const panel = root.querySelector("#smtp-panel");
+      try {
+        const s = currentSettings || (await Api.adminGetSettings());
+        renderSmtpPanel(s);
+      } catch (e) {
+        panel.innerHTML = `<div class="empty-note">Couldn't load email settings: ${escapeHtml(e.message)}</div>`;
       }
     }
 
@@ -1914,6 +2042,7 @@ const Pages = (() => {
     });
 
     await loadSettings();
+    loadSmtpPanel();
     loadUsers();
   }
 

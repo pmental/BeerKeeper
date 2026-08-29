@@ -12,7 +12,7 @@ from app.admin_bootstrap import promote_earliest_if_no_admin
 from app.auth import create_access_token, hash_password, verify_password
 from app.database import get_db
 from app.deps import get_current_user
-from app.email import send_password_reset_email, send_welcome_email
+from app.email import is_smtp_enabled, send_password_reset_email, send_welcome_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -63,7 +63,7 @@ def auth_config(db: Session = Depends(get_db)):
         oidc_enabled=config.OIDC_ENABLED,
         oidc_button_label=config.OIDC_BUTTON_LABEL,
         registration_enabled=_get_instance_settings(db).registration_enabled,
-        smtp_enabled=config.SMTP_ENABLED,
+        smtp_enabled=is_smtp_enabled(db),
     )
 
 
@@ -86,7 +86,7 @@ def register(payload: schemas.RegisterIn, background_tasks: BackgroundTasks, db:
     db.refresh(user)
     promote_earliest_if_no_admin(db)
     db.refresh(user)  # pick up is_admin if this was the promotion
-    if config.SMTP_ENABLED:
+    if is_smtp_enabled(db):
         background_tasks.add_task(send_welcome_email, user.email, user.username)
     token = create_access_token(user.id, user.username)
     return schemas.TokenOut(access_token=token)
@@ -124,7 +124,7 @@ def change_password(
 @router.post("/forgot-password")
 def forgot_password(payload: schemas.ForgotPasswordIn, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     _require_password_auth()
-    if not config.SMTP_ENABLED:
+    if not is_smtp_enabled(db):
         raise HTTPException(
             status_code=403, detail="Email isn't configured on this instance - ask an admin to reset your password."
         )
