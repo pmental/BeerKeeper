@@ -18,6 +18,14 @@ services:
       - CELLAR_OIDC_BUTTON_LABEL=${CELLAR_OIDC_BUTTON_LABEL:-Continue with SSO}
       - CELLAR_BASE_URL=${CELLAR_BASE_URL:-}
       - CELLAR_ADMIN_USERNAMES=${CELLAR_ADMIN_USERNAMES:-}
+      - CELLAR_SMTP_HOST=${CELLAR_SMTP_HOST:-}
+      - CELLAR_SMTP_PORT=${CELLAR_SMTP_PORT:-587}
+      - CELLAR_SMTP_SECURITY=${CELLAR_SMTP_SECURITY:-starttls}
+      - CELLAR_SMTP_USERNAME=${CELLAR_SMTP_USERNAME:-}
+      - CELLAR_SMTP_PASSWORD=${CELLAR_SMTP_PASSWORD:-}
+      - CELLAR_SMTP_FROM_EMAIL=${CELLAR_SMTP_FROM_EMAIL:-}
+      - CELLAR_SMTP_FROM_NAME=${CELLAR_SMTP_FROM_NAME:-BeerKeeper}
+      - CELLAR_SMTP_SKIP_CERT_VERIFY=${CELLAR_SMTP_SKIP_CERT_VERIFY:-false}
     volumes:
       # Deliberately still named "cellar-data", even post-rename: this is
       # the literal Docker volume holding your database. Renaming it here

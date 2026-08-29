@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.14** — see [CHANGELOG.md](CHANGELOG.md) for release history.
+**Current version: 0.0.15** — see [CHANGELOG.md](CHANGELOG.md) for release history.
 
 A self-hosted tracker for a beer cellar and fridge: bottles, batches, tasting
 notes, drinking history, and trading labels. It's an original build inspired
@@ -25,6 +25,8 @@ or API keys required.
 - An admin page for resetting passwords, creating/deleting accounts, and
   turning registration on or off without touching env vars — see "Admin"
   below
+- Optional SMTP email: self-service password reset and welcome emails on
+  new accounts — see "Email (SMTP)" below
 - Dark, light, or system-matched theme, switchable from the top bar
 - Track bottles In Cellar and/or In Fridge, with quantity, size, bottle
   date, best-before date, and free-form batch notes
@@ -141,6 +143,32 @@ the auto-promotion above, but self-hosted things go sideways sometimes),
 set `CELLAR_ADMIN_USERNAMES` to a comma-separated list of usernames and
 restart — each one is granted admin on boot, every boot, as a recovery
 lever rather than the normal way to manage admins.
+
+## Email (SMTP)
+
+Set `CELLAR_SMTP_HOST` and `CELLAR_SMTP_FROM_EMAIL` (see `.env.example`
+for the full list, including auth and security-mode options) to enable
+outgoing email. Uses Python's built-in `smtplib` — no new dependency.
+Supports STARTTLS (the default), implicit SSL, or no encryption at all
+for a trusted local relay. Also requires `CELLAR_BASE_URL` to already be
+set, since emailed links need to be absolute.
+
+Two things this powers:
+
+- **Forgot password**, a proper self-service flow (a "Forgot password?"
+  link appears on the login page once email is configured) — previously
+  the only option was an admin resetting your password for you. Reset
+  links are single-use and expire after an hour; only a hash of the token
+  is ever stored, the raw token exists only in the email itself.
+- **Welcome emails** on new accounts — sent automatically for
+  self-registration and for a brand-new OIDC identity's first login, and
+  optionally for admin-created users via a checkbox in the "Add user"
+  form (unchecked automatically, with an explanatory note, if email isn't
+  configured).
+
+If your mail server is on a self-signed certificate (common for an
+internal relay), set `CELLAR_SMTP_SKIP_CERT_VERIFY=true` — off by default,
+since it does weaken the connection to that server specifically.
 
 ## Trading and wanted lists
 
@@ -294,6 +322,12 @@ created automatically on first boot.
 | `CELLAR_OIDC_BUTTON_LABEL` | `Continue with SSO` | Text on the login page's SSO button. |
 | `CELLAR_BASE_URL`   | *(none)*          | This app's externally-reachable URL, no trailing slash. Required for OIDC's redirect URI. |
 | `CELLAR_ADMIN_USERNAMES` | *(none)*     | Comma/whitespace-separated usernames to force-grant admin on every boot. Recovery lever, not the normal way to manage admins — see "Admin" above. |
+| `CELLAR_SMTP_HOST` / `CELLAR_SMTP_FROM_EMAIL` | *(none)* | Both required to enable outgoing email — see "Email (SMTP)" above. |
+| `CELLAR_SMTP_PORT` | `587`            | SMTP server port. |
+| `CELLAR_SMTP_SECURITY` | `starttls`   | `starttls`, `ssl` (implicit TLS), or `none`. |
+| `CELLAR_SMTP_USERNAME` / `CELLAR_SMTP_PASSWORD` | *(none)* | Leave blank if your relay doesn't require auth. |
+| `CELLAR_SMTP_FROM_NAME` | `BeerKeeper` | Display name on outgoing mail. |
+| `CELLAR_SMTP_SKIP_CERT_VERIFY` | `false` | Only for a self-signed internal relay — weakens that connection specifically. |
 
 If `CELLAR_PASSWORD_AUTH_ENABLED=false` and OIDC isn't properly configured,
 the app logs a startup warning (visible via `docker compose logs`) and the

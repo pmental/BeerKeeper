@@ -2,7 +2,7 @@ import re
 import secrets
 
 from authlib.integrations.starlette_client import OAuth
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -10,6 +10,7 @@ from app import config, models
 from app.admin_bootstrap import promote_earliest_if_no_admin
 from app.auth import create_access_token, hash_password
 from app.database import SessionLocal
+from app.email import send_welcome_email
 
 router = APIRouter(prefix="/api/auth/oidc", tags=["oidc"])
 
@@ -59,7 +60,7 @@ def _placeholder_email(username: str) -> str:
 
 def _find_or_create_user(
     db: Session, sub: str, email: str | None, preferred_username: str | None, display_name: str | None
-) -> models.User:
+) -> tuple[models.User, bool]:
     user = db.query(models.User).filter(models.User.oidc_subject == sub).first()
     if user:
         # Keep the display name in sync with the provider on every login
@@ -69,7 +70,7 @@ def _find_or_create_user(
             user.display_name = display_name
             db.commit()
             db.refresh(user)
-        return user
+        return user, False
 
     # First-time login for this OIDC identity. Link to a matching local
     # account by email if one exists and isn't already linked elsewhere;
@@ -82,7 +83,7 @@ def _find_or_create_user(
                 existing.display_name = display_name
             db.commit()
             db.refresh(existing)
-            return existing
+            return existing, False
 
     base_username = _sanitize_username(preferred_username or (email.split("@")[0] if email else None))
     username = _unique_username(db, base_username)
@@ -101,7 +102,7 @@ def _find_or_create_user(
     db.refresh(user)
     promote_earliest_if_no_admin(db)
     db.refresh(user)  # pick up is_admin if this was the promotion
-    return user
+    return user, True
 
 
 @router.get("/login")
@@ -119,7 +120,7 @@ async def oidc_login(request: Request):
 
 
 @router.get("/callback")
-async def oidc_callback(request: Request):
+async def oidc_callback(request: Request, background_tasks: BackgroundTasks):
     _require_oidc()
     try:
         token = await oauth.oidc.authorize_access_token(request)
@@ -165,10 +166,13 @@ async def oidc_callback(request: Request):
 
     db = SessionLocal()
     try:
-        user = _find_or_create_user(db, sub, email, preferred_username, display_name)
+        user, is_new = _find_or_create_user(db, sub, email, preferred_username, display_name)
         jwt_token = create_access_token(user.id, user.username)
     finally:
         db.close()
+
+    if is_new and config.SMTP_ENABLED and user.email and not user.email.endswith("@no-reply.beerkeeper.internal"):
+        background_tasks.add_task(send_welcome_email, user.email, user.username)
 
     # Diagnostic line for exactly the situation that prompted adding it:
     # "my provider has a name claim but the app isn't showing it." Doesn't

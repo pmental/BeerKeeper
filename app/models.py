@@ -157,3 +157,21 @@ class InstanceSettings(Base):
 
     id = Column(Integer, primary_key=True)
     registration_enabled = Column(Boolean, default=True, nullable=False)
+
+
+class PasswordResetToken(Base):
+    """A one-time, expiring token for the self-service "forgot password"
+    flow. Only a SHA-256 hash of the token is stored - the raw token only
+    ever exists in the emailed link, the same way a password itself is
+    never stored in plain text."""
+
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    token_hash = Column(String(64), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+
+    user = relationship("User")

@@ -27,11 +27,21 @@ class ChangePasswordIn(BaseModel):
     new_password: str = Field(min_length=8, max_length=200)
 
 
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordIn(BaseModel):
+    token: str
+    new_password: str = Field(min_length=8, max_length=200)
+
+
 class AuthConfigOut(BaseModel):
     password_auth_enabled: bool
     oidc_enabled: bool
     oidc_button_label: str
     registration_enabled: bool
+    smtp_enabled: bool
 
 
 # ---------- Brewery / Beer ----------
@@ -245,6 +255,7 @@ class AdminUserCreateIn(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=200)
     is_admin: bool = False
+    send_welcome_email: bool = True
 
 
 class AdminUserPatch(BaseModel):
@@ -261,6 +272,7 @@ class InstanceSettingsOut(BaseModel):
     # these need a restart to change, not editable here.
     password_auth_enabled: bool
     oidc_enabled: bool
+    smtp_enabled: bool
 
 
 class InstanceSettingsPatch(BaseModel):

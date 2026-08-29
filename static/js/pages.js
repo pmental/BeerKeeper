@@ -949,7 +949,11 @@ const Pages = (() => {
       fields: `
         ${errorBanner}
         <div class="field"><label>Username</label><input class="input" name="username" required autofocus /></div>
-        <div class="field"><label>Password</label><input class="input" type="password" name="password" required /></div>
+        <div class="field">
+          <label>Password</label>
+          <input class="input" type="password" name="password" required />
+          ${cfg.smtp_enabled ? `<div class="field-hint"><a href="#/forgot-password">Forgot password?</a></div>` : ""}
+        </div>
       `,
       extraHtml: ssoBlockHtml(cfg, { withDivider: true }),
       switchHtml: cfg.registration_enabled ? `Don't have a cellar yet? <a href="#/register">Create one</a>` : "",
@@ -1005,6 +1009,91 @@ const Pages = (() => {
       } catch (err) {
         errorBox.textContent = err.message;
         errorBox.style.display = "block";
+      }
+    });
+  }
+
+  function forgotPassword(root, ctx) {
+    if (!ctx.authConfig.password_auth_enabled || !ctx.authConfig.smtp_enabled) {
+      location.hash = "#/login";
+      return;
+    }
+    root.innerHTML = authForm({
+      title: "Reset your password",
+      submitLabel: "Send reset link",
+      fields: `
+        <p class="subtle" style="margin-top:0">Enter the email on your account and we'll send a link to set a new password.</p>
+        <div class="field"><label>Email</label><input class="input" type="email" name="email" required autofocus /></div>
+      `,
+      switchHtml: `<a href="#/login">Back to login</a>`,
+    });
+    const form = root.querySelector("[data-auth-form]");
+    const errorBox = root.querySelector("[data-error]");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorBox.style.display = "none";
+      const fd = new FormData(form);
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      try {
+        await Api.forgotPassword(fd.get("email"));
+        root.innerHTML = `
+          <div class="auth-shell panel">
+            <h1>Check your email</h1>
+            <p>If that email is registered here, a reset link is on its way. It's valid for one hour.</p>
+            <div class="auth-switch"><a href="#/login">Back to login</a></div>
+          </div>
+        `;
+      } catch (err) {
+        errorBox.textContent = err.message;
+        errorBox.style.display = "block";
+        submitBtn.disabled = false;
+      }
+    });
+  }
+
+  function resetPassword(root, ctx, query) {
+    const token = query && query.get("token");
+    if (!token) {
+      root.innerHTML = `
+        <div class="auth-shell panel">
+          <h1>Invalid link</h1>
+          <p>This password reset link is missing its token. Request a new one from the login page.</p>
+          <div class="auth-switch"><a href="#/forgot-password">Request a new link</a></div>
+        </div>
+      `;
+      return;
+    }
+    root.innerHTML = authForm({
+      title: "Set a new password",
+      submitLabel: "Set password",
+      fields: `
+        <div class="field">
+          <label>New password</label>
+          <input class="input" type="password" name="new_password" minlength="8" required autofocus />
+          <div class="field-hint">At least 8 characters.</div>
+        </div>
+      `,
+      switchHtml: `<a href="#/login">Back to login</a>`,
+    });
+    const form = root.querySelector("[data-auth-form]");
+    const errorBox = root.querySelector("[data-error]");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorBox.style.display = "none";
+      const fd = new FormData(form);
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      try {
+        const { access_token } = await Api.resetPassword(token, fd.get("new_password"));
+        Api.setToken(access_token);
+        await ctx.refreshUser();
+        toast("Password set. You're logged in.");
+        location.hash = "#/cellar";
+      } catch (err) {
+        errorBox.textContent = err.message;
+        errorBox.style.display = "block";
+        submitBtn.disabled = false;
       }
     });
   }
@@ -1693,7 +1782,7 @@ const Pages = (() => {
     });
   }
 
-  function openAddUserModal(onSaved) {
+  function openAddUserModal(onSaved, smtpEnabled) {
     const html = `
       <button class="modal-close" data-close>&times;</button>
       <h2>Add a user</h2>
@@ -1706,6 +1795,11 @@ const Pages = (() => {
           <div class="field-hint">At least 8 characters. Share it with them yourself - there's no email step.</div>
         </div>
         <label class="checkbox-row"><input type="checkbox" name="is_admin" /> Make this user an admin</label>
+        ${
+          smtpEnabled
+            ? `<label class="checkbox-row"><input type="checkbox" name="send_welcome_email" checked /> Send them a welcome email</label>`
+            : `<div class="field-hint">Outgoing email isn't configured on this instance, so no welcome email will be sent.</div>`
+        }
         <div class="form-error" data-error style="display:none"></div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary btn-block">Create user</button>
@@ -1729,6 +1823,7 @@ const Pages = (() => {
               email: fd.get("email"),
               password: fd.get("password"),
               is_admin: fd.get("is_admin") === "on",
+              send_welcome_email: smtpEnabled && fd.get("send_welcome_email") === "on",
             });
             close();
             toast("User created.");
@@ -1764,10 +1859,12 @@ const Pages = (() => {
       <div id="users-list">${spinnerHtml()}</div>
     `;
 
+    let currentSettings = null;
+
     async function loadSettings() {
       const panel = root.querySelector("#settings-panel");
       try {
-        const settings = await Api.adminGetSettings();
+        currentSettings = await Api.adminGetSettings();
         panel.innerHTML = `
           <h3>Instance settings</h3>
           <div class="settings-grid">
@@ -1775,13 +1872,14 @@ const Pages = (() => {
               "registration_enabled",
               "Allow new registrations",
               "Turn off to stop new password sign-ups while existing accounts keep working.",
-              settings.registration_enabled
+              currentSettings.registration_enabled
             )}
           </div>
           <div class="field-hint" style="margin-top:10px">
-            Password login: ${settings.password_auth_enabled ? "enabled" : "disabled"} &middot;
-            OIDC/SSO: ${settings.oidc_enabled ? "enabled" : "disabled"}
-            &mdash; both are set via environment variables and need a restart to change.
+            Password login: ${currentSettings.password_auth_enabled ? "enabled" : "disabled"} &middot;
+            OIDC/SSO: ${currentSettings.oidc_enabled ? "enabled" : "disabled"} &middot;
+            Outgoing email: ${currentSettings.smtp_enabled ? "configured" : "not configured"}
+            &mdash; all three are set via environment variables and need a restart to change.
           </div>
         `;
         panel.querySelector('[data-toggle="registration_enabled"]').addEventListener("change", async (e) => {
@@ -1812,10 +1910,10 @@ const Pages = (() => {
     }
 
     root.querySelector("#add-user-btn").addEventListener("click", () => {
-      openAddUserModal(loadUsers);
+      openAddUserModal(loadUsers, !!(currentSettings && currentSettings.smtp_enabled));
     });
 
-    loadSettings();
+    await loadSettings();
     loadUsers();
   }
 
@@ -1823,6 +1921,8 @@ const Pages = (() => {
     home,
     login,
     register,
+    forgotPassword,
+    resetPassword,
     cellar,
     account,
     admin,
