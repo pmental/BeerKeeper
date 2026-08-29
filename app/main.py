@@ -1,7 +1,7 @@
 import os
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -58,6 +58,16 @@ def version():
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 
 app.mount("/assets", StaticFiles(directory=STATIC_DIR), name="assets")
+
+
+@app.get("/favicon.ico")
+def favicon():
+    # Browsers (and crawlers, RSS readers, etc.) probe /favicon.ico at the
+    # domain root directly, independent of the <link rel="icon"> tags in
+    # index.html - without this, the SPA catch-all below would swallow
+    # that request and hand back the HTML page instead of an icon. Must be
+    # registered before the catch-all route to take precedence.
+    return FileResponse(os.path.join(STATIC_DIR, "icons", "favicon.ico"))
 
 
 @app.get("/{full_path:path}")

@@ -1,5 +1,19 @@
 # Changelog
 
+- **0.0.17** — Added a favicon: an amber pint glass on the app's own dark
+  background, using the existing brand colors rather than a generic icon.
+  Designed and checked at actual browser-tab size (16px), not just at a
+  large preview — an earlier, more detailed draft looked fine zoomed in
+  but turned into an illegible blur at real size, so it was simplified
+  until it read clearly as a glass of beer at true resolution against
+  both light and dark browser chrome. Ships as SVG (crisp at any size, used
+  by modern browsers), PNG fallbacks, a proper multi-resolution .ico, and
+  an Apple touch icon for iOS home-screen/bookmarks. Also added a direct
+  route for `/favicon.ico` at the domain root — without it, the app's
+  catch-all page router would have swallowed browsers' and crawlers'
+  automatic favicon lookup and handed back the HTML page instead of an
+  icon, regardless of what the `<link>` tags said.
+
 - **0.0.16** — SMTP settings now have an actual place to type them in: a
   new "Email (SMTP)" panel on the admin page, with a "send test email"
   button for immediate feedback. This was a real gap in 0.0.15 - SMTP was

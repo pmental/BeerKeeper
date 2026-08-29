@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="beer" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#9c5e14"/>
+      <stop offset="100%" stop-color="#f5b544"/>
+    </linearGradient>
+  </defs>
+
+  <!-- brand backdrop -->
+  <rect width="32" height="32" rx="7" fill="#16110c"/>
+
+  <!-- glass body: tapered pint shape, narrower at the base -->
+  <path d="M 8.5 11 L 23.5 11 L 21 27 L 11 27 Z"
+        fill="url(#beer)" stroke="#ede6d6" stroke-width="1.4" stroke-linejoin="round"/>
+
+  <!-- foam: one bold rounded cap, no fussy detail -->
+  <path d="M 7.6 11.6
+           C 7.2 8.6 10.4 6.7 12.7 8.2
+           C 13.7 6 17.9 5.9 19.1 8.1
+           C 21.7 6.9 24.6 9.4 23.3 12
+           L 8.3 12
+           C 7.9 12 7.7 11.8 7.6 11.6 Z"
+        fill="#ede6d6"/>
+</svg>
