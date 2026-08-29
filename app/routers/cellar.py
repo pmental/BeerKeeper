@@ -1,6 +1,7 @@
 import datetime as dt
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app import models, schemas
@@ -47,6 +48,22 @@ def list_cellar(
 
     sort_key = sort or current_user.default_sort
     return sort_entries(entries, sort_key)
+
+
+@router.get("/sizes", response_model=list[float])
+def list_used_sizes(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Distinct bottle/can sizes (in oz, the canonical storage unit) this
+    user has entered before, most-used first - so a size they've typed
+    once shows up as a suggestion without retyping, on top of the fixed
+    common-sizes list the frontend already offers."""
+    rows = (
+        db.query(models.CellarEntry.size_oz, func.count(models.CellarEntry.id).label("uses"))
+        .filter(models.CellarEntry.user_id == current_user.id, models.CellarEntry.size_oz.isnot(None))
+        .group_by(models.CellarEntry.size_oz)
+        .order_by(func.count(models.CellarEntry.id).desc())
+        .all()
+    )
+    return [r[0] for r in rows]
 
 
 @router.post("", response_model=schemas.CellarEntryOut)

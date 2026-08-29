@@ -90,6 +90,7 @@ const Api = (() => {
     patchEntry: (id, payload) => request("PATCH", `/api/cellar/${id}`, { body: payload }),
     deleteEntry: (id) => request("DELETE", `/api/cellar/${id}`),
     moveEntry: (id, location) => request("POST", `/api/cellar/${id}/move`, { body: { location } }),
+    usedSizes: () => request("GET", "/api/cellar/sizes"),
     drinkEntry: (id, payload) => request("POST", `/api/cellar/${id}/drink`, { body: payload }),
 
     listConsumption: (beerId) => {
