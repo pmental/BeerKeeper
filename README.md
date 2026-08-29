@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.16** — see [CHANGELOG.md](CHANGELOG.md) for release history.
+**Current version: 0.0.17** — see [CHANGELOG.md](CHANGELOG.md) for release history.
 
 A self-hosted tracker for a beer cellar and fridge: bottles, batches, tasting
 notes, drinking history, and trading labels. It's an original build inspired
