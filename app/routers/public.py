@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app import models, schemas
 from app.database import get_db
+from app.deps import get_optional_user
+from app.routers.cellar import sort_entries
 
 router = APIRouter(prefix="/api/public", tags=["public"])
 
@@ -19,20 +21,37 @@ def browse_cellars(db: Session = Depends(get_db)):
             .scalar()
         )
         out.append(
-            schemas.PublicUserOut(username=u.username, cellar_count=count, trading_enabled=u.trading_enabled)
+            schemas.PublicUserOut(
+                username=u.username,
+                display_name=u.display_name,
+                cellar_count=count,
+                trading_enabled=u.trading_enabled,
+            )
         )
     out.sort(key=lambda p: p.username.lower())
     return out
 
 
 @router.get("/recent", response_model=list[schemas.RecentConsumedOut])
-def recent_activity(limit: int = 25, db: Session = Depends(get_db)):
+def recent_activity(
+    limit: int = 25,
+    db: Session = Depends(get_db),
+    current_user: models.User | None = Depends(get_optional_user),
+):
+    # Everyone sees activity from users with a public cellar; if you're
+    # logged in, your own activity is included too regardless of your own
+    # privacy setting - this only ever adds YOUR rows for YOUR request, it
+    # doesn't expose a private user's activity to anyone else.
+    visibility = models.User.cellar_public.is_(True)
+    if current_user:
+        visibility = or_(visibility, models.User.id == current_user.id)
+
     logs = (
         db.query(models.ConsumptionLog)
         .join(models.User)
         .join(models.Beer)
         .join(models.Brewery)
-        .filter(models.User.cellar_public.is_(True))
+        .filter(visibility)
         .options(
             joinedload(models.ConsumptionLog.user),
             joinedload(models.ConsumptionLog.beer).joinedload(models.Beer.brewery),
@@ -44,6 +63,7 @@ def recent_activity(limit: int = 25, db: Session = Depends(get_db)):
     return [
         schemas.RecentConsumedOut(
             username=log.user.username,
+            display_name=log.user.display_name,
             beer_name=log.beer.name,
             brewery_name=log.beer.brewery.name,
             consumed_on=log.consumed_on,
@@ -109,6 +129,7 @@ def public_trades(username: str, db: Session = Depends(get_db)):
 
     return {
         "username": user.username,
+        "display_name": user.display_name,
         "for_trade": for_trade,
         "wanted": wanted,
     }
@@ -126,10 +147,13 @@ def public_cellar(username: str, db: Session = Depends(get_db)):
         .filter(models.CellarEntry.user_id == user.id, models.CellarEntry.quantity > 0)
         .all()
     )
-    if user.default_sort == "brewery":
-        entries.sort(key=lambda e: (e.beer.brewery.name.lower(), e.beer.name.lower()))
-    else:
-        entries.sort(key=lambda e: (e.beer.name.lower(), e.beer.brewery.name.lower()))
+    # Sorting by drink-by date would leak the relative ordering of best-before
+    # dates even when drinkby_public is off (which hides the dates themselves
+    # in the response below) - fall back to the beer-name sort in that case.
+    effective_sort = user.default_sort
+    if effective_sort == "drinkby" and not user.drinkby_public:
+        effective_sort = "beer"
+    sort_entries(entries, effective_sort)
 
     def serialize(e: models.CellarEntry):
         return {
@@ -179,6 +203,7 @@ def public_cellar(username: str, db: Session = Depends(get_db)):
 
     return {
         "username": user.username,
+        "display_name": user.display_name,
         "messaging_enabled": user.messaging_enabled,
         "trading_enabled": user.trading_enabled,
         "total_consumed": consumed_count,

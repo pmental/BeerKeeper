@@ -31,6 +31,7 @@ class AuthConfigOut(BaseModel):
     password_auth_enabled: bool
     oidc_enabled: bool
     oidc_button_label: str
+    registration_enabled: bool
 
 
 # ---------- Brewery / Beer ----------
@@ -179,7 +180,9 @@ class WantedEntryIn(BaseModel):
 class AccountOut(BaseModel):
     id: int
     username: str
+    display_name: Optional[str] = None
     email: EmailStr
+    is_admin: bool
     default_sort: str
     unit_system: str
     show_fridge_column: bool
@@ -195,7 +198,7 @@ class AccountOut(BaseModel):
 
 
 class AccountPatch(BaseModel):
-    default_sort: Optional[str] = Field(default=None, pattern="^(beer|brewery)$")
+    default_sort: Optional[str] = Field(default=None, pattern="^(beer|brewery|drinkby)$")
     unit_system: Optional[str] = Field(default=None, pattern="^(imperial|metric)$")
     show_fridge_column: Optional[bool] = None
     show_location_column: Optional[bool] = None
@@ -211,12 +214,54 @@ class AccountPatch(BaseModel):
 
 class PublicUserOut(BaseModel):
     username: str
+    display_name: Optional[str] = None
     cellar_count: int
     trading_enabled: bool
 
 
 class RecentConsumedOut(BaseModel):
     username: str
+    display_name: Optional[str] = None
     beer_name: str
     brewery_name: str
     consumed_on: dt.date
+
+
+# ---------- Admin ----------
+
+class AdminUserOut(BaseModel):
+    id: int
+    username: str
+    display_name: Optional[str] = None
+    email: str  # plain str, not EmailStr: admin listing must never 500 over one bad legacy row
+    is_admin: bool
+    has_oidc: bool
+    created_at: dt.datetime
+    cellar_count: int
+
+
+class AdminUserCreateIn(BaseModel):
+    username: str = Field(min_length=3, max_length=32, pattern=r"^[a-zA-Z0-9_\-]+$")
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=200)
+    is_admin: bool = False
+
+
+class AdminUserPatch(BaseModel):
+    is_admin: Optional[bool] = None
+
+
+class AdminPasswordResetIn(BaseModel):
+    new_password: str = Field(min_length=8, max_length=200)
+
+
+class InstanceSettingsOut(BaseModel):
+    registration_enabled: bool
+    # Read-only context from env-var config, shown for admin visibility -
+    # these need a restart to change, not editable here.
+    password_auth_enabled: bool
+    oidc_enabled: bool
+
+
+class InstanceSettingsPatch(BaseModel):
+    registration_enabled: Optional[bool] = None

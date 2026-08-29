@@ -8,6 +8,17 @@ const UI = (() => {
       .replace(/"/g, "&quot;");
   }
 
+  function firstName(fullName) {
+    // Wherever a display name is shown, we only want the first name -
+    // handles hyphenated first names correctly ("Mary-Jane Smith" -> "Mary-Jane")
+    // since it's just the first whitespace-separated token, and returns null
+    // (not an empty string) for anything blank so `firstName(x) || fallback`
+    // reads naturally at call sites.
+    if (!fullName) return null;
+    const trimmed = String(fullName).trim();
+    return trimmed ? trimmed.split(/\s+/)[0] : null;
+  }
+
   function toast(message, type = "info") {
     const wrap = document.getElementById("toast-wrap");
     const el = document.createElement("div");
@@ -153,6 +164,7 @@ const UI = (() => {
 
   return {
     escapeHtml,
+    firstName,
     toast,
     fmtDate,
     fmtDateTime,

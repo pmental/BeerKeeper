@@ -17,6 +17,7 @@ services:
       - CELLAR_OIDC_SCOPES=${CELLAR_OIDC_SCOPES:-openid email profile}
       - CELLAR_OIDC_BUTTON_LABEL=${CELLAR_OIDC_BUTTON_LABEL:-Continue with SSO}
       - CELLAR_BASE_URL=${CELLAR_BASE_URL:-}
+      - CELLAR_ADMIN_USERNAMES=${CELLAR_ADMIN_USERNAMES:-}
     volumes:
       # Deliberately still named "cellar-data", even post-rename: this is
       # the literal Docker volume holding your database. Renaming it here

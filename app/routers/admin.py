@@ -1,0 +1,158 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from app import config, models, schemas
+from app.auth import hash_password
+from app.database import get_db
+from app.deps import require_admin
+
+router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+
+def _get_settings(db: Session) -> models.InstanceSettings:
+    settings = db.query(models.InstanceSettings).filter(models.InstanceSettings.id == 1).first()
+    if not settings:
+        settings = models.InstanceSettings(id=1, registration_enabled=True)
+        db.add(settings)
+        db.commit()
+        db.refresh(settings)
+    return settings
+
+
+def _serialize_user(db: Session, user: models.User) -> schemas.AdminUserOut:
+    cellar_count = (
+        db.query(func.coalesce(func.sum(models.CellarEntry.quantity), 0))
+        .filter(models.CellarEntry.user_id == user.id)
+        .scalar()
+    )
+    return schemas.AdminUserOut(
+        id=user.id,
+        username=user.username,
+        display_name=user.display_name,
+        email=user.email,
+        is_admin=user.is_admin,
+        has_oidc=user.oidc_subject is not None,
+        created_at=user.created_at,
+        cellar_count=cellar_count,
+    )
+
+
+@router.get("/settings", response_model=schemas.InstanceSettingsOut)
+def get_settings(db: Session = Depends(get_db), _admin: models.User = Depends(require_admin)):
+    settings = _get_settings(db)
+    return schemas.InstanceSettingsOut(
+        registration_enabled=settings.registration_enabled,
+        password_auth_enabled=config.PASSWORD_AUTH_ENABLED,
+        oidc_enabled=config.OIDC_ENABLED,
+    )
+
+
+@router.patch("/settings", response_model=schemas.InstanceSettingsOut)
+def patch_settings(
+    payload: schemas.InstanceSettingsPatch,
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(require_admin),
+):
+    settings = _get_settings(db)
+    data = payload.model_dump(exclude_unset=True)
+    for field, value in data.items():
+        setattr(settings, field, value)
+    db.commit()
+    return schemas.InstanceSettingsOut(
+        registration_enabled=settings.registration_enabled,
+        password_auth_enabled=config.PASSWORD_AUTH_ENABLED,
+        oidc_enabled=config.OIDC_ENABLED,
+    )
+
+
+@router.get("/users", response_model=list[schemas.AdminUserOut])
+def list_users(db: Session = Depends(get_db), _admin: models.User = Depends(require_admin)):
+    users = db.query(models.User).order_by(models.User.username.asc()).all()
+    return [_serialize_user(db, u) for u in users]
+
+
+@router.post("/users", response_model=schemas.AdminUserOut)
+def create_user(
+    payload: schemas.AdminUserCreateIn,
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(require_admin),
+):
+    user = models.User(
+        username=payload.username,
+        email=payload.email,
+        password_hash=hash_password(payload.password),
+        is_admin=payload.is_admin,
+    )
+    db.add(user)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="That username or email is already taken.")
+    db.refresh(user)
+    return _serialize_user(db, user)
+
+
+def _admin_count(db: Session) -> int:
+    return db.query(models.User).filter(models.User.is_admin.is_(True)).count()
+
+
+@router.patch("/users/{user_id}", response_model=schemas.AdminUserOut)
+def patch_user(
+    user_id: int,
+    payload: schemas.AdminUserPatch,
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(require_admin),
+):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    data = payload.model_dump(exclude_unset=True)
+    if "is_admin" in data and data["is_admin"] is False and user.is_admin:
+        if _admin_count(db) <= 1:
+            raise HTTPException(status_code=400, detail="Can't remove the last admin.")
+
+    for field, value in data.items():
+        setattr(user, field, value)
+    db.commit()
+    db.refresh(user)
+    return _serialize_user(db, user)
+
+
+@router.post("/users/{user_id}/reset-password")
+def reset_password(
+    user_id: int,
+    payload: schemas.AdminPasswordResetIn,
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(require_admin),
+):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    user.password_hash = hash_password(payload.new_password)
+    db.commit()
+    return {"ok": True}
+
+
+@router.delete("/users/{user_id}")
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: models.User = Depends(require_admin),
+):
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="You can't delete your own account from here.")
+
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    if user.is_admin and _admin_count(db) <= 1:
+        raise HTTPException(status_code=400, detail="Can't delete the last admin.")
+
+    db.delete(user)
+    db.commit()
+    return {"ok": True}

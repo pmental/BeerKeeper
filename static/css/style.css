@@ -658,6 +658,10 @@ textarea.input {
   background: var(--danger-wash);
   color: var(--danger);
 }
+.badge-admin {
+  background: var(--accent-wash);
+  color: var(--accent-bright);
+}
 
 .entry-actions {
   display: flex;

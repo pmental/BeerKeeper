@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app import config, models, schemas
+from app.admin_bootstrap import promote_earliest_if_no_admin
 from app.auth import create_access_token, hash_password, verify_password
 from app.database import get_db
 from app.deps import get_current_user
@@ -16,18 +17,33 @@ def _require_password_auth():
         raise HTTPException(status_code=403, detail="Password-based authentication is disabled on this instance.")
 
 
+def _get_instance_settings(db: Session) -> models.InstanceSettings:
+    settings = db.query(models.InstanceSettings).filter(models.InstanceSettings.id == 1).first()
+    if not settings:
+        # Should always exist by the time a request comes in (seeded at
+        # startup), but don't let a request 500 if it's somehow missing.
+        settings = models.InstanceSettings(id=1, registration_enabled=True)
+        db.add(settings)
+        db.commit()
+        db.refresh(settings)
+    return settings
+
+
 @router.get("/config", response_model=schemas.AuthConfigOut)
-def auth_config():
+def auth_config(db: Session = Depends(get_db)):
     return schemas.AuthConfigOut(
         password_auth_enabled=config.PASSWORD_AUTH_ENABLED,
         oidc_enabled=config.OIDC_ENABLED,
         oidc_button_label=config.OIDC_BUTTON_LABEL,
+        registration_enabled=_get_instance_settings(db).registration_enabled,
     )
 
 
 @router.post("/register", response_model=schemas.TokenOut)
 def register(payload: schemas.RegisterIn, db: Session = Depends(get_db)):
     _require_password_auth()
+    if not _get_instance_settings(db).registration_enabled:
+        raise HTTPException(status_code=403, detail="New registrations are disabled on this instance.")
     user = models.User(
         username=payload.username,
         email=payload.email,
@@ -40,6 +56,8 @@ def register(payload: schemas.RegisterIn, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=400, detail="That username or email is already taken.")
     db.refresh(user)
+    promote_earliest_if_no_admin(db)
+    db.refresh(user)  # pick up is_admin if this was the promotion
     token = create_access_token(user.id, user.username)
     return schemas.TokenOut(access_token=token)
 

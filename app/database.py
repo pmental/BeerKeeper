@@ -52,6 +52,21 @@ def run_migrations():
             conn.execute(
                 text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_oidc_subject ON users (oidc_subject)")
             )
+        if "display_name" not in existing_cols:
+            conn.execute(text("ALTER TABLE users ADD COLUMN display_name VARCHAR(255)"))
+
+        # Fix accounts stuck with an old OIDC placeholder email domain
+        # (@oidc.invalid) that Pydantic's EmailStr rejects outright - left
+        # in place, every response describing that account (starting with
+        # /api/auth/me right after login) would 500 forever. See
+        # oidc.py's _placeholder_email for the full story. Safe to run
+        # every boot: a no-op once no matching rows are left.
+        conn.execute(
+            text(
+                "UPDATE users SET email = REPLACE(email, '@oidc.invalid', '@no-reply.beerkeeper.internal') "
+                "WHERE email LIKE '%@oidc.invalid'"
+            )
+        )
 
 
 def get_db():
