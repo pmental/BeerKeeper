@@ -1,5 +1,20 @@
 # Changelog
 
+- **0.0.15** — Added SMTP support (`smtplib` from the standard library —
+  no new dependency), with STARTTLS, implicit SSL, or no encryption, and
+  optional auth. Two things it powers: a proper self-service "forgot
+  password" flow (previously the only option was an admin resetting it
+  for you), and welcome emails on new accounts — sent for self-registration
+  and OIDC's first-ever login automatically, and optionally for
+  admin-created users via a checkbox. Reset tokens are single-use, expire
+  in an hour, and only a hash of the token is ever stored - the raw token
+  exists only in the emailed link, the same way a password itself is
+  never stored in plain text. Tested against a real local STARTTLS server
+  (not just mocked): actual message delivery, the full reset cycle with a
+  genuine extracted token (old password stops working, new one works,
+  the token can't be reused), and a broken/unreachable mail server
+  confirmed to degrade gracefully rather than break signup or login.
+
 - **0.0.14** — Moved this changelog out of README.md into its own file
   (this one). No functional changes.
 - **0.0.13** — Added an admin page (`#/admin`, linked from the nav for

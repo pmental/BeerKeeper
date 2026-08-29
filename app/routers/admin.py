@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -7,6 +7,7 @@ from app import config, models, schemas
 from app.auth import hash_password
 from app.database import get_db
 from app.deps import require_admin
+from app.email import send_welcome_email
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -46,6 +47,7 @@ def get_settings(db: Session = Depends(get_db), _admin: models.User = Depends(re
         registration_enabled=settings.registration_enabled,
         password_auth_enabled=config.PASSWORD_AUTH_ENABLED,
         oidc_enabled=config.OIDC_ENABLED,
+        smtp_enabled=config.SMTP_ENABLED,
     )
 
 
@@ -64,6 +66,7 @@ def patch_settings(
         registration_enabled=settings.registration_enabled,
         password_auth_enabled=config.PASSWORD_AUTH_ENABLED,
         oidc_enabled=config.OIDC_ENABLED,
+        smtp_enabled=config.SMTP_ENABLED,
     )
 
 
@@ -76,6 +79,7 @@ def list_users(db: Session = Depends(get_db), _admin: models.User = Depends(requ
 @router.post("/users", response_model=schemas.AdminUserOut)
 def create_user(
     payload: schemas.AdminUserCreateIn,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     _admin: models.User = Depends(require_admin),
 ):
@@ -92,6 +96,8 @@ def create_user(
         db.rollback()
         raise HTTPException(status_code=400, detail="That username or email is already taken.")
     db.refresh(user)
+    if payload.send_welcome_email and config.SMTP_ENABLED:
+        background_tasks.add_task(send_welcome_email, user.email, user.username)
     return _serialize_user(db, user)
 
 

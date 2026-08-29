@@ -81,6 +81,8 @@ const App = (() => {
     { pattern: /^#\/?$/, page: Pages.home },
     { pattern: /^#\/login$/, page: Pages.login },
     { pattern: /^#\/register$/, page: Pages.register },
+    { pattern: /^#\/forgot-password$/, page: Pages.forgotPassword },
+    { pattern: /^#\/reset-password$/, page: Pages.resetPassword },
     { pattern: /^#\/cellar$/, page: Pages.cellar },
     { pattern: /^#\/account$/, page: Pages.account },
     { pattern: /^#\/admin$/, page: Pages.admin },

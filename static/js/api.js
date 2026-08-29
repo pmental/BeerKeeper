@@ -62,6 +62,9 @@ const Api = (() => {
     version: () => request("GET", "/api/version", { auth: false }),
     changePassword: (current_password, new_password) =>
       request("POST", "/api/auth/change-password", { body: { current_password, new_password } }),
+    forgotPassword: (email) => request("POST", "/api/auth/forgot-password", { body: { email }, auth: false }),
+    resetPassword: (token, new_password) =>
+      request("POST", "/api/auth/reset-password", { body: { token, new_password }, auth: false }),
 
     searchBeers: (q, breweryId) => {
       const params = new URLSearchParams();
