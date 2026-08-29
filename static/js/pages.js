@@ -1147,6 +1147,10 @@ const Pages = (() => {
     }
     let sort = ctx.account.default_sort;
     let locationFilter = null;
+    // Purely a display preference, not account data - same treatment as
+    // the theme setting, which also lives in localStorage rather than
+    // the account record.
+    let viewMode = localStorage.getItem("cellar_view_mode") === "compact" ? "compact" : "comfortable";
 
     root.innerHTML = `
       <div class="page-head">
@@ -1171,6 +1175,10 @@ const Pages = (() => {
                </div>`
             : ""
         }
+        <div class="seg" data-view>
+          <button data-val="comfortable" class="${viewMode === "comfortable" ? "active" : ""}">Comfortable</button>
+          <button data-val="compact" class="${viewMode === "compact" ? "active" : ""}">Compact</button>
+        </div>
         <div class="spacer"></div>
         ${ctx.account.trading_enabled ? `<a class="btn btn-ghost btn-sm" href="#/u/${encodeURIComponent(ctx.user)}/trades">Trade list</a>` : ""}
         <a class="btn btn-ghost btn-sm" href="#/consumed">History</a>
@@ -1206,6 +1214,15 @@ const Pages = (() => {
         });
       });
     }
+    root.querySelectorAll("[data-view] button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        viewMode = btn.dataset.val;
+        localStorage.setItem("cellar_view_mode", viewMode);
+        root.querySelectorAll("[data-view] button").forEach((b) => b.classList.toggle("active", b === btn));
+        const list = root.querySelector(".entry-list");
+        if (list) list.classList.toggle("compact", viewMode === "compact");
+      });
+    });
 
     async function load() {
       const container = root.querySelector("#entries");
@@ -1216,7 +1233,7 @@ const Pages = (() => {
           container.innerHTML = `<div class="panel empty-note">Your cellar's empty. Add your first bottle to start tracking it.</div>`;
           return;
         }
-        container.innerHTML = `<div class="entry-list">${entries
+        container.innerHTML = `<div class="entry-list${viewMode === "compact" ? " compact" : ""}">${entries
           .map((e) => entryCardHtml(e, ctx.account, { editable: true }))
           .join("")}</div>`;
         wireEntryCards(container, entries, ctx.account, load);
