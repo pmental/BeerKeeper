@@ -15,6 +15,43 @@ const Pages = (() => {
     return _stylesCache;
   }
 
+  // Common bottle/can sizes shown in the size field's suggestions,
+  // defined natively for each unit system rather than converting one into
+  // the other - metric sizes in mL are round European bottle/can
+  // standards, imperial sizes in oz are genuine US customary sizes (a
+  // standard 12 oz bottle, 16 oz pint can, 19.2 oz "stovepipe" single,
+  // 22 oz bomber, 32 oz crowler, 64 oz growler), not a converted 11.2 oz
+  // or 25.4 oz that nobody actually buys.
+  const COMMON_SIZES_ML = [250, 330, 375, 440, 500, 750, 1500];
+  const COMMON_SIZES_OZ = [8, 12, 16, 19.2, 22, 32, 64];
+
+  async function getSizeSuggestions(account) {
+    let rememberedOz = [];
+    try {
+      rememberedOz = await Api.usedSizes(); // this user's own past entries, most-used first
+    } catch (e) {
+      rememberedOz = [];
+    }
+    const commonOz =
+      account.unit_system === "metric" ? COMMON_SIZES_ML.map((ml) => displayToOz(ml, "metric")) : COMMON_SIZES_OZ;
+    // Merge remembered sizes with the fixed common list, then sort
+    // numerically for a sensible dropdown order. Dedup on the rounded
+    // value actually displayed - a remembered size landing on the same
+    // shown number as a common one (e.g. 330 mL either way) should only
+    // appear once; remembered values are deduped first so an exact past
+    // entry (not just something close to a common size) wins that slot.
+    const seen = new Set();
+    const displayValues = [];
+    for (const oz of [...rememberedOz, ...commonOz]) {
+      const displayVal = ozToDisplay(oz, account.unit_system);
+      if (displayVal === "" || seen.has(displayVal)) continue;
+      seen.add(displayVal);
+      displayValues.push(displayVal);
+    }
+    displayValues.sort((a, b) => a - b);
+    return displayValues;
+  }
+
   // ---------- Beer/brewery autocomplete used inside the add/edit entry modal ----------
 
   function wireBeerAutocomplete(root, { onPick }) {
@@ -353,7 +390,8 @@ const Pages = (() => {
     });
   }
 
-  function entryFormHtml(entry, account, styles) {
+  function entryFormHtml(entry, account, styles, sizeSuggestions) {
+    const sizeListId = `size-suggestions-${entry ? entry.id : "new"}-${Math.random().toString(36).slice(2, 8)}`;
     const tradingRow = account.trading_enabled
       ? `<div class="field">
            <label>Trading status</label>
@@ -415,7 +453,10 @@ const Pages = (() => {
           </div>
           <div class="field">
             <label>Bottle size, ${volumeUnitLabel(account.unit_system)} <span class="subtle">(optional)</span></label>
-            <input class="input" type="number" step="${account.unit_system === "metric" ? "1" : "0.1"}" min="0" name="size_display" value="${ozToDisplay(entry?.size_oz, account.unit_system)}" />
+            <input class="input" type="number" step="${account.unit_system === "metric" ? "1" : "0.1"}" min="0" name="size_display" value="${ozToDisplay(entry?.size_oz, account.unit_system)}" list="${sizeListId}" autocomplete="off" />
+            <datalist id="${sizeListId}">
+              ${(sizeSuggestions || []).map((v) => `<option value="${v}"></option>`).join("")}
+            </datalist>
           </div>
         </div>
         <div class="field-row">
@@ -453,7 +494,8 @@ const Pages = (() => {
 
   async function openEntryModal(entry, account, onSaved) {
     const styles = await getBeerStyles();
-    openModal(entryFormHtml(entry, account, styles), {
+    const sizeSuggestions = await getSizeSuggestions(account);
+    openModal(entryFormHtml(entry, account, styles, sizeSuggestions), {
       onMount(modalEl, close) {
         modalEl.querySelector("[data-close]").addEventListener("click", close);
         wireIsoDateInputs(modalEl);

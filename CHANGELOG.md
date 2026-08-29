@@ -1,5 +1,9 @@
 # Changelog
 
+- **0.0.20** — Imperial-account size suggestions are now genuine US customary sizes (8/12/16/19.2/22/32/64 oz — bottle, pint, stovepipe, bomber, crowler, growler) instead of the metric list converted to odd numbers like 11.2 or 25.4 oz.
+
+- **0.0.19** — The bottle size field now suggests common sizes (250/330/375/440/500/750/1500 mL, or the oz equivalent for imperial accounts) plus sizes you've personally used before, most-used first.
+
 - **0.0.18** — Condensed this changelog: each entry is now a line or two instead of a paragraph.
 - **0.0.17** — Added a favicon (amber pint glass, matches the app's colors) as SVG/PNG/ICO + Apple touch icon, plus a dedicated `/favicon.ico` route.
 - **0.0.16** — Added an "Email (SMTP)" panel on the admin page to configure SMTP through the UI, with a send-test-email button. Env vars from 0.0.15 still work as fallback defaults.
