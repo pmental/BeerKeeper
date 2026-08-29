@@ -10,7 +10,7 @@ from app import config, models
 from app.admin_bootstrap import promote_earliest_if_no_admin
 from app.auth import create_access_token, hash_password
 from app.database import SessionLocal
-from app.email import send_welcome_email
+from app.email import is_smtp_enabled, send_welcome_email
 
 router = APIRouter(prefix="/api/auth/oidc", tags=["oidc"])
 
@@ -171,7 +171,7 @@ async def oidc_callback(request: Request, background_tasks: BackgroundTasks):
     finally:
         db.close()
 
-    if is_new and config.SMTP_ENABLED and user.email and not user.email.endswith("@no-reply.beerkeeper.internal"):
+    if is_new and is_smtp_enabled() and user.email and not user.email.endswith("@no-reply.beerkeeper.internal"):
         background_tasks.add_task(send_welcome_email, user.email, user.username)
 
     # Diagnostic line for exactly the situation that prompted adding it:

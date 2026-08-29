@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.15** — see [CHANGELOG.md](CHANGELOG.md) for release history.
+**Current version: 0.0.16** — see [CHANGELOG.md](CHANGELOG.md) for release history.
 
 A self-hosted tracker for a beer cellar and fridge: bottles, batches, tasting
 notes, drinking history, and trading labels. It's an original build inspired
@@ -146,9 +146,14 @@ lever rather than the normal way to manage admins.
 
 ## Email (SMTP)
 
-Set `CELLAR_SMTP_HOST` and `CELLAR_SMTP_FROM_EMAIL` (see `.env.example`
-for the full list, including auth and security-mode options) to enable
-outgoing email. Uses Python's built-in `smtplib` — no new dependency.
+Configure this either in the admin page's "Email (SMTP)" panel (host,
+port, security mode, credentials, from-address, and a "send test email"
+button for immediate feedback — no restart needed) or via `CELLAR_SMTP_*`
+env vars (see `.env.example` for the full list). Both work together: the
+admin panel is a per-field override, so anything left blank there falls
+back to its matching env var if one is set — handy if you want the basics
+baked into your deployment but the admin able to tweak things without
+touching the server. Uses Python's built-in `smtplib` — no new dependency.
 Supports STARTTLS (the default), implicit SSL, or no encryption at all
 for a trusted local relay. Also requires `CELLAR_BASE_URL` to already be
 set, since emailed links need to be absolute.
@@ -167,8 +172,16 @@ Two things this powers:
   configured).
 
 If your mail server is on a self-signed certificate (common for an
-internal relay), set `CELLAR_SMTP_SKIP_CERT_VERIFY=true` — off by default,
+internal relay), turn on "Skip certificate verification" in the admin
+panel (or set `CELLAR_SMTP_SKIP_CERT_VERIFY=true`) — off by default,
 since it does weaken the connection to that server specifically.
+
+The stored password is never sent back to the browser once saved — the
+field always shows blank with a placeholder note that one's already set,
+the same way a login password field never shows what's stored. Saving
+other settings without retyping it leaves it untouched; there's a
+dedicated "clear the stored password" checkbox for when you actually want
+to remove it.
 
 ## Trading and wanted lists
 

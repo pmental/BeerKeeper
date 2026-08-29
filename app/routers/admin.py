@@ -7,7 +7,7 @@ from app import config, models, schemas
 from app.auth import hash_password
 from app.database import get_db
 from app.deps import require_admin
-from app.email import send_welcome_email
+from app.email import resolve_smtp_settings, send_test_email, send_welcome_email
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -20,6 +20,25 @@ def _get_settings(db: Session) -> models.InstanceSettings:
         db.commit()
         db.refresh(settings)
     return settings
+
+
+def _serialize_settings(db: Session, settings: models.InstanceSettings) -> schemas.InstanceSettingsOut:
+    resolved = resolve_smtp_settings(db)
+    return schemas.InstanceSettingsOut(
+        registration_enabled=settings.registration_enabled,
+        password_auth_enabled=config.PASSWORD_AUTH_ENABLED,
+        oidc_enabled=config.OIDC_ENABLED,
+        smtp_host=settings.smtp_host,
+        smtp_port=settings.smtp_port,
+        smtp_security=settings.smtp_security,
+        smtp_username=settings.smtp_username,
+        smtp_password_set=bool(resolved.password),
+        smtp_from_email=settings.smtp_from_email,
+        smtp_from_name=settings.smtp_from_name,
+        smtp_skip_cert_verify=settings.smtp_skip_cert_verify,
+        smtp_enabled=resolved.enabled,
+        smtp_effective_summary=f"{resolved.host}:{resolved.port} via {resolved.security}" if resolved.enabled else None,
+    )
 
 
 def _serialize_user(db: Session, user: models.User) -> schemas.AdminUserOut:
@@ -42,13 +61,7 @@ def _serialize_user(db: Session, user: models.User) -> schemas.AdminUserOut:
 
 @router.get("/settings", response_model=schemas.InstanceSettingsOut)
 def get_settings(db: Session = Depends(get_db), _admin: models.User = Depends(require_admin)):
-    settings = _get_settings(db)
-    return schemas.InstanceSettingsOut(
-        registration_enabled=settings.registration_enabled,
-        password_auth_enabled=config.PASSWORD_AUTH_ENABLED,
-        oidc_enabled=config.OIDC_ENABLED,
-        smtp_enabled=config.SMTP_ENABLED,
-    )
+    return _serialize_settings(db, _get_settings(db))
 
 
 @router.patch("/settings", response_model=schemas.InstanceSettingsOut)
@@ -60,14 +73,31 @@ def patch_settings(
     settings = _get_settings(db)
     data = payload.model_dump(exclude_unset=True)
     for field, value in data.items():
+        # Blank string in a text field means "clear the override, fall
+        # back to the env var" - store as NULL, not "". The frontend is
+        # responsible for only including smtp_password in the request at
+        # all when actually setting or deliberately clearing it (it's
+        # never round-tripped back for display, so "leave it blank" while
+        # editing something else must NOT wipe an already-stored one).
+        if isinstance(value, str) and value == "":
+            value = None
         setattr(settings, field, value)
     db.commit()
-    return schemas.InstanceSettingsOut(
-        registration_enabled=settings.registration_enabled,
-        password_auth_enabled=config.PASSWORD_AUTH_ENABLED,
-        oidc_enabled=config.OIDC_ENABLED,
-        smtp_enabled=config.SMTP_ENABLED,
-    )
+    db.refresh(settings)
+    return _serialize_settings(db, settings)
+
+
+@router.post("/settings/smtp/test")
+def test_smtp(
+    payload: schemas.SmtpTestIn,
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(require_admin),
+):
+    try:
+        send_test_email(payload.to_email)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Couldn't send: {type(e).__name__}: {e}"[:300])
+    return {"ok": True}
 
 
 @router.get("/users", response_model=list[schemas.AdminUserOut])
@@ -96,7 +126,7 @@ def create_user(
         db.rollback()
         raise HTTPException(status_code=400, detail="That username or email is already taken.")
     db.refresh(user)
-    if payload.send_welcome_email and config.SMTP_ENABLED:
+    if payload.send_welcome_email and resolve_smtp_settings(db).enabled:
         background_tasks.add_task(send_welcome_email, user.email, user.username)
     return _serialize_user(db, user)
 

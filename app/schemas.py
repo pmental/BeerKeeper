@@ -272,8 +272,38 @@ class InstanceSettingsOut(BaseModel):
     # these need a restart to change, not editable here.
     password_auth_enabled: bool
     oidc_enabled: bool
+
+    # Raw values as stored in the database - None/empty means "not
+    # overridden here, falls back to the matching CELLAR_SMTP_* env var if
+    # one is set". The password itself is never returned, only whether
+    # one is currently stored here.
+    smtp_host: Optional[str] = None
+    smtp_port: Optional[int] = None
+    smtp_security: Optional[str] = None
+    smtp_username: Optional[str] = None
+    smtp_password_set: bool = False
+    smtp_from_email: Optional[str] = None
+    smtp_from_name: Optional[str] = None
+    smtp_skip_cert_verify: Optional[bool] = None
+
+    # Whether sending actually works right now, after merging the above
+    # with any env var defaults, plus a human-readable summary of what's
+    # actually in effect (e.g. "smtp.example.com:587 via starttls").
     smtp_enabled: bool
+    smtp_effective_summary: Optional[str] = None
 
 
 class InstanceSettingsPatch(BaseModel):
     registration_enabled: Optional[bool] = None
+    smtp_host: Optional[str] = None
+    smtp_port: Optional[int] = None
+    smtp_security: Optional[str] = Field(default=None, pattern="^(starttls|ssl|none)$")
+    smtp_username: Optional[str] = None
+    smtp_password: Optional[str] = None
+    smtp_from_email: Optional[str] = None
+    smtp_from_name: Optional[str] = None
+    smtp_skip_cert_verify: Optional[bool] = None
+
+
+class SmtpTestIn(BaseModel):
+    to_email: EmailStr

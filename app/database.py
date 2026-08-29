@@ -68,6 +68,22 @@ def run_migrations():
             )
         )
 
+        if "instance_settings" in inspector.get_table_names():
+            settings_cols = {c["name"] for c in inspector.get_columns("instance_settings")}
+            smtp_columns = {
+                "smtp_host": "VARCHAR(255)",
+                "smtp_port": "INTEGER",
+                "smtp_security": "VARCHAR(16)",
+                "smtp_username": "VARCHAR(255)",
+                "smtp_password": "VARCHAR(255)",
+                "smtp_from_email": "VARCHAR(255)",
+                "smtp_from_name": "VARCHAR(255)",
+                "smtp_skip_cert_verify": "BOOLEAN",
+            }
+            for name, sql_type in smtp_columns.items():
+                if name not in settings_cols:
+                    conn.execute(text(f"ALTER TABLE instance_settings ADD COLUMN {name} {sql_type}"))
+
 
 def get_db():
     db = SessionLocal()
