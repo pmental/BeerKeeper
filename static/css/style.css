@@ -684,6 +684,65 @@ textarea.input {
   font-style: italic;
 }
 
+/* Compact cellar view: same markup, denser rendering - toggled by adding
+   .compact to the .entry-list container. Dots and full notes text are
+   hidden/truncated rather than removed from the DOM, since the
+   count-label ("N on hand") and notes content should stay
+   screen-reader-accessible even when visually condensed. */
+.entry-list.compact .entry-card {
+  padding: 7px 14px;
+  gap: 10px;
+  align-items: center;
+}
+.entry-list.compact .entry-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
+  row-gap: 2px;
+}
+.entry-list.compact .entry-main h3 {
+  font-size: 14.5px;
+  margin-bottom: 0;
+  margin-right: 10px;
+}
+.entry-list.compact .entry-meta {
+  font-size: 12px;
+  gap: 3px 8px;
+}
+.entry-list.compact .tally {
+  margin-top: 0;
+  margin-left: 6px;
+}
+.entry-list.compact .tally .cap {
+  display: none;
+}
+.entry-list.compact .tally .count-label {
+  font-size: 12px;
+}
+.entry-list.compact .entry-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.entry-list.compact .entry-actions .row {
+  display: contents;
+}
+.entry-list.compact .entry-actions .btn {
+  padding: 4px 8px;
+  font-size: 11.5px;
+}
+.entry-list.compact .entry-notes {
+  grid-column: 1 / -1;
+  margin-top: 0;
+  padding-top: 3px;
+  border-top: none;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ============ Modal ============ */
 
 .modal-backdrop {
