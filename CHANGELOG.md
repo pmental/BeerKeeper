@@ -1,5 +1,7 @@
 # Changelog
 
+- **0.0.22** — The admin panel's "send test email" field now prepopulates with your own account email, still editable if you want to send it elsewhere.
+
 - **0.0.21** — Added a Comfortable/Compact view toggle for the cellar list (~57% shorter cards on desktop, ~39% on mobile) — comfortable stays the default, your choice is remembered locally between sessions.
 
 - **0.0.20** — Imperial-account size suggestions are now genuine US customary sizes (8/12/16/19.2/22/32/64 oz — bottle, pint, stovepipe, bomber, crowler, growler) instead of the metric list converted to odd numbers like 11.2 or 25.4 oz.
