@@ -2008,7 +2008,7 @@ const Pages = (() => {
         <form data-smtp-test-form>
           <div class="field">
             <label>Send a test email to</label>
-            <input class="input" type="email" name="test_email" placeholder="you@example.com" required />
+            <input class="input" type="email" name="test_email" value="${escapeHtml(ctx.account.email || "")}" placeholder="you@example.com" required />
           </div>
           <div class="form-error" data-test-error style="display:none"></div>
           <div class="field-hint" data-test-success style="display:none; color:var(--secondary)"></div>
