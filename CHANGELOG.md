@@ -1,5 +1,7 @@
 # Changelog
 
+- **0.0.25** — Admin backups are now a zip containing both the database and `beer_styles.txt` (which lives outside the database, so 0.0.24's database-only backup silently dropped any custom styles). Old single-file `.db` backups from 0.0.24 are no longer accepted for restore — re-download a fresh backup.
+
 - **0.0.24** — New accounts now default to metric units instead of imperial (existing accounts unaffected). Added whole-instance backup/restore to the admin page: download the entire database as a single file, and restore it on any install (validated on upload, staged to apply on the next restart rather than live, to avoid corrupting an active database).
 
 - **0.0.23** — Condensed README.md substantially: trimmed the features list, cut the outdated "known limitations" section, removed repeated originality disclaimers, and shortened the pre-populated-breweries and email sections to the essentials. No functional changes.

@@ -2112,13 +2112,14 @@ const Pages = (() => {
       panel.innerHTML = `
         <h3>Backup and restore</h3>
         <p class="field-hint" style="margin-top:-4px">
-          A single-file snapshot of the whole database - every account, cellar, brewery, and beer,
-          not just your own - for moving to a new install or keeping an off-site copy.
+          A single zip file with everything - every account, cellar, brewery, and beer, plus your
+          custom beer styles list - not just your own data, for moving to a new install or keeping
+          an off-site copy.
         </p>
         ${
           status.pending
             ? `<div class="form-error" style="background:var(--danger-wash); border-color:var(--danger); color:var(--danger); display:flex; align-items:center; justify-content:space-between; gap:12px;">
-                 <span>A restore is staged and will replace this entire database on next restart.</span>
+                 <span>A restore is staged and will replace this entire instance on next restart.</span>
                  <button class="btn btn-icon" id="cancel-restore-btn">Cancel</button>
                </div>`
             : ""
@@ -2129,11 +2130,11 @@ const Pages = (() => {
         <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border)">
           <h4 style="margin:0 0 6px">Restore from backup</h4>
           <p class="field-hint" style="margin-top:0">
-            <strong>Replaces everything on this instance</strong> - every user, bottle, and setting -
-            with what's in the file. Takes effect on the next restart, not immediately, so there's a
-            chance to cancel first.
+            <strong>Replaces everything on this instance</strong> - every user, bottle, setting, and
+            style - with what's in the file. Takes effect on the next restart, not immediately, so
+            there's a chance to cancel first.
           </p>
-          <input type="file" accept=".db" id="restore-file" />
+          <input type="file" accept=".zip" id="restore-file" />
           <div class="form-error" data-restore-error style="display:none; margin-top:10px"></div>
           <div class="form-actions" style="margin-top:10px">
             <button class="btn btn-ghost" id="upload-restore-btn">Upload and stage restore</button>
@@ -2185,7 +2186,7 @@ const Pages = (() => {
           return;
         }
         confirmDelete(
-          "This will replace every account, bottle, and setting on this instance with what's in the uploaded file, the next time it restarts. This can't be undone. Continue?",
+          "This will replace every account, bottle, setting, and style on this instance with what's in the uploaded file, the next time it restarts. This can't be undone. Continue?",
           async () => {
             try {
               await Api.adminUploadRestore(file);
