@@ -1,5 +1,7 @@
 # Changelog
 
+- **0.0.28** — Added ~65 pre-populated breweries covering the UK, Ireland, Germany, Austria, Czechia, Poland, and (new) Latvia and Lithuania, plus more for Estonia — 190+ total. Existing installs pick these up automatically on next boot too, same as any brewery-list update, since seeding tracks individual breweries rather than all-or-nothing.
+
 - **0.0.27** — README fixes: "Backup and restore" now describes the actual zip format (database + beer styles), and `CELLAR_SECRET_KEY`'s documented default no longer references the old hardcoded insecure key, reflecting 0.0.26's auto-generated-and-persisted behavior. No functional changes.
 
 - **0.0.26** — Security hardening pass (see SECURITY.md): random+persisted secret key instead of a hardcoded fallback; rate limiting on login/register/forgot-password; a leaked token stops working immediately on password change/reset instead of waiting out its 30-day expiry; OIDC no longer auto-links an account on an unverified email; changing your account email now requires your password; upload size limits on CSV import and backup restore; CSP + security headers (required removing the app's one inline script and one inline event handler).

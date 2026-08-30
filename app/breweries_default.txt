@@ -112,6 +112,32 @@ Buxton Brewery | https://buxtonbrewery.co.uk
 Verdant Brewing Co. | https://verdantbrewing.co
 Wild Beer Co.
 Fuller's | https://www.fullers.co.uk
+Greene King | https://www.greeneking.co.uk
+Young's | https://www.youngs.co.uk
+Adnams | https://www.adnams.co.uk
+Shepherd Neame | https://www.shepherdneame.co.uk
+Theakston
+Hall & Woodhouse
+Camden Town Brewery | https://www.camdentownbrewery.com
+Beavertown Brewery | https://www.beavertownbrewery.co.uk
+The Kernel Brewery
+Five Points Brewing Co. | https://fivepointsbrewing.co.uk
+Sambrook's Brewery | https://sambrooksbrewery.co.uk
+Belhaven Brewery | https://www.belhaven.co.uk
+Tennent's
+Innis & Gunn | https://www.innisandgunn.com
+Brains Brewery
+
+# --- Ireland ---
+Guinness | https://www.guinness.com
+Murphy's
+Beamish & Crawford
+Smithwick's
+Franciscan Well Brewery
+Galway Bay Brewery | https://galwaybaybrewery.com
+Kinnegar Brewing | https://kinnegarbrewing.ie
+Carlow Brewing Company (O'Hara's) | https://carlowbrewing.com
+White Hag Brewing | https://thewhitehag.com
 
 # --- Belgium ---
 Cantillon | https://cantillon.be
@@ -150,6 +176,42 @@ Schneider Weisse | https://www.schneider-weisse.de
 Ayinger | https://www.ayinger.de
 Paulaner | https://www.paulaner.de
 Erdinger Weissbräu | https://www.erdinger.de
+Augustiner-Bräu | https://www.augustiner-braeu.de
+Hofbräu München | https://www.hofbraeu-muenchen.de
+Franziskaner
+Schlenkerla (Brauerei Heller-Trum) | https://www.schlenkerla.de
+Mahrs Bräu
+Brauerei Spezial
+Früh Kölsch | https://www.frueh.de
+Gaffel | https://www.gaffel.de
+Reissdorf | https://www.reissdorf.de
+Päffgen
+Uerige
+
+# --- Austria ---
+Stiegl | https://www.stiegl.at
+Ottakringer | https://www.ottakringer.at
+Gösser
+Puntigamer
+Hirter
+
+# --- Czech Republic ---
+Plzeňský Prazdroj (Pilsner Urquell) | https://www.pilsner-urquell.cz
+Budějovický Budvar (Budweiser Budvar) | https://www.budejovickybudvar.cz
+Staropramen
+Velkopopovický Kozel
+Krušovice
+Gambrinus
+Radegast
+Svijany | https://www.svijany.cz
+Bernard | https://www.bernard.cz
+U Fleků
+
+# --- Poland ---
+Żywiec Brewery
+Tyskie
+Okocim
+Lech
 
 # --- Netherlands ---
 Brouwerij De Molen | https://www.brouwerijdemolen.nl
@@ -166,3 +228,17 @@ Lervig Bryggeri | https://lervig.no
 
 # --- Estonia ---
 Põhjala Brewery | https://pohjalabrewery.com
+A. Le Coq | https://www.alecoq.ee
+Saku Brewery | https://www.saku.ee
+
+# --- Latvia ---
+Aldaris | https://www.aldaris.lv
+Valmiermuižas alus | https://www.valmiermuiza.lv
+Tērvetes alus
+Labietis
+
+# --- Lithuania ---
+Švyturys | https://www.svyturys.lt
+Utenos Alus
+Kalnapilis
+Vilniaus Alus

@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.27** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.28** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -18,7 +18,7 @@ CDN calls. No third-party accounts, analytics, or API keys required.
   date, best-before date, notes — sortable by beer, brewery, or drink-by
   date, in imperial or metric units (metric by default)
 - Autocomplete for beer, brewery, and style, backed by a shared database
-  that grows as bottles are added, plus 130+ pre-populated breweries —
+  that grows as bottles are added, plus 190+ pre-populated breweries —
   see "Pre-populated breweries" below
 - Quick actions per bottle: restock (+1), drink (logs a tasting note and
   rating), move between cellar and fridge
@@ -104,11 +104,12 @@ docker compose restart beerkeeper
 
 ## Pre-populated breweries
 
-The database starts with 130+ real breweries (Swedish craft breweries
-plus major American, Belgian, and other international names) so brewery
-autocomplete is useful from day one. Seeded once, then managed like any
-other brewery — rename, delete, or add more from the app itself. Source
-list: `app/breweries_default.txt`.
+The database starts with 190+ real breweries — Swedish craft breweries,
+major American and Belgian names, and a solid spread across the rest of
+Europe (UK, Ireland, Germany, Austria, Czechia, Poland, the Nordics, and
+the Baltics) — so brewery autocomplete is useful from day one. Seeded
+once, then managed like any other brewery — rename, delete, or add more
+from the app itself. Source list: `app/breweries_default.txt`.
 
 ## Upgrading an existing deployment
 
