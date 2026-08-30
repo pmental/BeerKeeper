@@ -218,6 +218,10 @@ class AccountPatch(BaseModel):
     notes_public: Optional[bool] = None
     drinkby_public: Optional[bool] = None
     email: Optional[EmailStr] = None
+    # Required (and checked) only when email is being changed - a stolen
+    # token shouldn't be enough on its own to redirect an account's
+    # password-reset emails somewhere an attacker controls.
+    current_password: Optional[str] = None
 
 
 # ---------- Public ----------

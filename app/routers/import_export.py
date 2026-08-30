@@ -10,6 +10,7 @@ from app import models
 from app.database import get_db
 from app.deps import get_current_user
 from app.routers.beers import _get_or_create_brewery
+from app.uploads import read_upload_limited
 
 router = APIRouter(prefix="/api/cellar", tags=["import-export"])
 
@@ -85,7 +86,8 @@ async def import_cellar(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    raw = (await file.read()).decode("utf-8-sig")
+    raw_bytes = await read_upload_limited(file, max_bytes=10 * 1024 * 1024)  # 10 MB - generous for any CSV
+    raw = raw_bytes.decode("utf-8-sig")
     reader = csv.DictReader(io.StringIO(raw))
     created, skipped = 0, 0
     errors = []

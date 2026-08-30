@@ -1381,7 +1381,8 @@ const Pages = (() => {
         pwError.style.display = "none";
         const fd = new FormData(pwForm);
         try {
-          await Api.changePassword(fd.get("current_password"), fd.get("new_password"));
+          const { access_token } = await Api.changePassword(fd.get("current_password"), fd.get("new_password"));
+          Api.setToken(access_token);
           toast("Password updated.");
           pwForm.reset();
         } catch (err) {
@@ -1577,7 +1578,7 @@ const Pages = (() => {
           isSelf
             ? `<div class="panel" style="margin-bottom:20px">
                  <div class="field-hint" style="margin-bottom:6px">Share this link so people can see it without logging in:</div>
-                 <input class="input" readonly value="${escapeHtml(shareUrl)}" onclick="this.select()" />
+                 <input class="input" readonly value="${escapeHtml(shareUrl)}" data-select-on-click />
                </div>`
             : ""
         }
@@ -1596,6 +1597,9 @@ const Pages = (() => {
       `;
 
       if (!isSelf) return;
+
+      const shareInput = root.querySelector("[data-select-on-click]");
+      if (shareInput) shareInput.addEventListener("click", () => shareInput.select());
 
       root.querySelector("#add-wanted-here").addEventListener("click", () => {
         openWantedModal(ctx.account, async () => {
