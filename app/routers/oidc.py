@@ -59,7 +59,12 @@ def _placeholder_email(username: str) -> str:
 
 
 def _find_or_create_user(
-    db: Session, sub: str, email: str | None, preferred_username: str | None, display_name: str | None
+    db: Session,
+    sub: str,
+    email: str | None,
+    email_verified: bool,
+    preferred_username: str | None,
+    display_name: str | None,
 ) -> tuple[models.User, bool]:
     user = db.query(models.User).filter(models.User.oidc_subject == sub).first()
     if user:
@@ -73,17 +78,25 @@ def _find_or_create_user(
         return user, False
 
     # First-time login for this OIDC identity. Link to a matching local
-    # account by email if one exists and isn't already linked elsewhere;
-    # otherwise provision a brand new account.
-    if email:
-        existing = db.query(models.User).filter(models.User.email == email).first()
-        if existing and not existing.oidc_subject:
+    # account by email - but ONLY if the provider says that email is
+    # verified. Without that check, anyone able to set an arbitrary
+    # (unverified) email in their own profile at a permissive OIDC
+    # provider could claim someone else's existing local account just by
+    # matching its email address.
+    existing = db.query(models.User).filter(models.User.email == email).first() if email else None
+    if existing:
+        if email_verified and not existing.oidc_subject:
             existing.oidc_subject = sub
             if display_name:
                 existing.display_name = display_name
             db.commit()
             db.refresh(existing)
             return existing, False
+        # Either that email is already linked to a different OIDC
+        # identity, or it isn't verified - either way, don't link, and
+        # don't reuse the email for a new account either (it's already
+        # taken; the column's unique constraint would just reject it).
+        email = None
 
     base_username = _sanitize_username(preferred_username or (email.split("@")[0] if email else None))
     username = _unique_username(db, base_username)
@@ -154,6 +167,7 @@ async def oidc_callback(request: Request, background_tasks: BackgroundTasks):
         return RedirectResponse(f"{config.BASE_URL}/#/login?oidc_error=missing_subject")
 
     email = userinfo.get("email")
+    email_verified = bool(userinfo.get("email_verified"))
     preferred_username = userinfo.get("preferred_username") or userinfo.get("nickname")
     # "name" is the standard OIDC claim for a full display name, but not
     # every provider sends it even when it sends the pieces - fall back to
@@ -166,7 +180,7 @@ async def oidc_callback(request: Request, background_tasks: BackgroundTasks):
 
     db = SessionLocal()
     try:
-        user, is_new = _find_or_create_user(db, sub, email, preferred_username, display_name)
+        user, is_new = _find_or_create_user(db, sub, email, email_verified, preferred_username, display_name)
         jwt_token = create_access_token(user.id, user.username)
     finally:
         db.close()

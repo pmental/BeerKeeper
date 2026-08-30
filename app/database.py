@@ -55,6 +55,9 @@ def run_migrations():
         if "display_name" not in existing_cols:
             conn.execute(text("ALTER TABLE users ADD COLUMN display_name VARCHAR(255)"))
 
+        if "token_valid_after" not in existing_cols:
+            conn.execute(text("ALTER TABLE users ADD COLUMN token_valid_after DATETIME"))
+
         # Fix accounts stuck with an old OIDC placeholder email domain
         # (@oidc.invalid) that Pydantic's EmailStr rejects outright - left
         # in place, every response describing that account (starting with

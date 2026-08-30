@@ -2,7 +2,7 @@ import datetime as dt
 import hashlib
 import secrets
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -13,6 +13,7 @@ from app.auth import create_access_token, hash_password, verify_password
 from app.database import get_db
 from app.deps import get_current_user
 from app.email import is_smtp_enabled, send_password_reset_email, send_welcome_email
+from app.rate_limit import rate_limit
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -68,7 +69,10 @@ def auth_config(db: Session = Depends(get_db)):
 
 
 @router.post("/register", response_model=schemas.TokenOut)
-def register(payload: schemas.RegisterIn, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+def register(
+    payload: schemas.RegisterIn, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
+):
+    rate_limit(request, "register", max_attempts=10, window_seconds=600)
     _require_password_auth()
     if not _get_instance_settings(db).registration_enabled:
         raise HTTPException(status_code=403, detail="New registrations are disabled on this instance.")
@@ -93,7 +97,8 @@ def register(payload: schemas.RegisterIn, background_tasks: BackgroundTasks, db:
 
 
 @router.post("/login", response_model=schemas.TokenOut)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    rate_limit(request, "login", max_attempts=10, window_seconds=300)
     _require_password_auth()
     user = db.query(models.User).filter(models.User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.password_hash):
@@ -107,7 +112,7 @@ def me(current_user: models.User = Depends(get_current_user)):
     return current_user
 
 
-@router.post("/change-password")
+@router.post("/change-password", response_model=schemas.TokenOut)
 def change_password(
     payload: schemas.ChangePasswordIn,
     current_user: models.User = Depends(get_current_user),
@@ -117,12 +122,23 @@ def change_password(
     if not verify_password(payload.current_password, current_user.password_hash):
         raise HTTPException(status_code=400, detail="Current password is incorrect.")
     current_user.password_hash = hash_password(payload.new_password)
+    # Invalidate any other token issued before this moment (e.g. one that
+    # leaked) without also logging out the session that just made this
+    # request - that one gets a freshly issued, still-valid token below.
+    # Both use the exact same timestamp (see create_access_token's note on
+    # why) so the new token can never be older than its own cutoff.
+    now = dt.datetime.utcnow().replace(microsecond=0)
+    current_user.token_valid_after = now
     db.commit()
-    return {"ok": True}
+    token = create_access_token(current_user.id, current_user.username, issued_at=now)
+    return schemas.TokenOut(access_token=token)
 
 
 @router.post("/forgot-password")
-def forgot_password(payload: schemas.ForgotPasswordIn, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+def forgot_password(
+    payload: schemas.ForgotPasswordIn, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
+):
+    rate_limit(request, "forgot-password", max_attempts=5, window_seconds=600)
     _require_password_auth()
     if not is_smtp_enabled(db):
         raise HTTPException(
@@ -150,7 +166,9 @@ def reset_password(payload: schemas.ResetPasswordIn, db: Session = Depends(get_d
         raise HTTPException(status_code=400, detail="This reset link is invalid or has expired. Request a new one.")
 
     user.password_hash = hash_password(payload.new_password)
+    now = dt.datetime.utcnow().replace(microsecond=0)
+    user.token_valid_after = now
     reset.used = True
     db.commit()
-    token = create_access_token(user.id, user.username)
+    token = create_access_token(user.id, user.username, issued_at=now)
     return schemas.TokenOut(access_token=token)

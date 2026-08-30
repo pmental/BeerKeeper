@@ -11,6 +11,7 @@ from app.auth import hash_password
 from app.database import get_db
 from app.deps import require_admin
 from app.email import resolve_smtp_settings, send_test_email, send_welcome_email
+from app.uploads import read_upload_limited
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -172,6 +173,10 @@ def reset_password(
     if not user:
         raise HTTPException(status_code=404, detail="User not found.")
     user.password_hash = hash_password(payload.new_password)
+    # Also invalidate any of their existing sessions - a plausible reason
+    # an admin is resetting someone else's password is a suspected
+    # compromise, and leaving old tokens valid would defeat the point.
+    user.token_valid_after = dt.datetime.utcnow()
     db.commit()
     return {"ok": True}
 
@@ -225,7 +230,7 @@ async def upload_restore(file: UploadFile = File(...), _admin: models.User = Dep
     See app/backup.py for why: swapping the live database file out from
     under active connections is exactly the kind of thing that corrupts
     data, so the actual swap happens at the next clean startup instead."""
-    data = await file.read()
+    data = await read_upload_limited(file, max_bytes=200 * 1024 * 1024)  # 200 MB - generous for db + styles
     try:
         backup.stage_restore(data)
     except ValueError as e:

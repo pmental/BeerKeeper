@@ -38,7 +38,43 @@ app = FastAPI(title=config.APP_NAME, version=config.APP_VERSION)
 # few seconds, during the redirect to and back from the identity provider).
 # It is unrelated to the app's own login sessions, which are JWT bearer
 # tokens sent in the Authorization header, not cookies.
-app.add_middleware(SessionMiddleware, secret_key=auth.SECRET_KEY, same_site="lax")
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=auth.SECRET_KEY,
+    same_site="lax",
+    https_only=config.BASE_URL.startswith("https://"),
+)
+
+
+_CSP = (
+    "default-src 'self'; "
+    "script-src 'self'; "
+    # Every render site in this app builds HTML via inline style="..."
+    # attributes rather than CSS classes - blocking that would break the
+    # UI outright, so style-src allows it. script-src does not: that's
+    # the directive that actually matters for XSS (it also covers inline
+    # event-handler attributes like onclick=, not just <script> tags),
+    # and the app has no inline scripts or handlers left to accommodate.
+    "style-src 'self' 'unsafe-inline'; "
+    "img-src 'self'; "
+    "font-src 'self'; "
+    "connect-src 'self'; "
+    "frame-ancestors 'none'; "
+    "base-uri 'self'; "
+    "form-action 'self'; "
+    "object-src 'none'"
+)
+
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Content-Security-Policy"] = _CSP
+    response.headers["Referrer-Policy"] = "same-origin"
+    return response
+
 
 app.include_router(auth_router.router)
 app.include_router(oidc.router)
