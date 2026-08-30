@@ -32,8 +32,6 @@
   --danger-wash: rgba(192, 86, 63, 0.16);
   --danger-text: #f0c3b7;
 
-  --glow-1: rgba(226, 151, 26, 0.09);
-  --glow-2: rgba(138, 156, 92, 0.06);
   --topbar-bg: rgba(22, 17, 12, 0.88);
   --badge-neutral: rgba(237, 230, 214, 0.08);
 
@@ -71,8 +69,6 @@
   --danger-wash: rgba(163, 64, 44, 0.12);
   --danger-text: #7a2e1f;
 
-  --glow-1: rgba(193, 126, 18, 0.07);
-  --glow-2: rgba(92, 107, 60, 0.05);
   --topbar-bg: rgba(245, 238, 224, 0.88);
   --badge-neutral: rgba(36, 26, 16, 0.06);
 
@@ -88,9 +84,6 @@
 body {
   margin: 0;
   background: var(--bg);
-  background-image:
-    radial-gradient(ellipse 900px 500px at 15% -10%, var(--glow-1), transparent 60%),
-    radial-gradient(ellipse 700px 400px at 100% 0%, var(--glow-2), transparent 55%);
   color: var(--text);
   font-family: var(--body);
   font-size: 15px;

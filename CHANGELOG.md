@@ -1,5 +1,7 @@
 # Changelog
 
+- **0.0.29** — Cellar sort buttons now toggle ascending/descending on click, with an arrow showing the current direction. History entries are now editable (rating, note, quantity, date), not just deletable. Removed the background glow on all pages. Removed two unnecessary 0-byte `__init__.py` files.
+
 - **0.0.28** — Added ~65 pre-populated breweries covering the UK, Ireland, Germany, Austria, Czechia, Poland, and (new) Latvia and Lithuania, plus more for Estonia — 190+ total. Existing installs pick these up automatically on next boot too, same as any brewery-list update, since seeding tracks individual breweries rather than all-or-nothing.
 
 - **0.0.27** — README fixes: "Backup and restore" now describes the actual zip format (database + beer styles), and `CELLAR_SECRET_KEY`'s documented default no longer references the old hardcoded insecure key, reflecting 0.0.26's auto-generated-and-persisted behavior. No functional changes.

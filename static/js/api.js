@@ -79,10 +79,11 @@ const Api = (() => {
     },
     beerStyles: () => request("GET", "/api/beer-styles", { auth: false }),
 
-    listCellar: (sort, location) => {
+    listCellar: (sort, location, direction) => {
       const params = new URLSearchParams();
       if (sort) params.set("sort", sort);
       if (location) params.set("location", location);
+      if (direction) params.set("direction", direction);
       const qs = params.toString();
       return request("GET", "/api/cellar" + (qs ? "?" + qs : ""));
     },
@@ -100,6 +101,7 @@ const Api = (() => {
       return request("GET", "/api/consumption" + (qs ? "?" + qs : ""));
     },
     deleteConsumption: (id) => request("DELETE", `/api/consumption/${id}`),
+    patchConsumption: (id, payload) => request("PATCH", `/api/consumption/${id}`, { body: payload }),
 
     getAccount: () => request("GET", "/api/account"),
     patchAccount: (payload) => request("PATCH", "/api/account", { body: payload }),

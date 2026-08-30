@@ -1146,11 +1146,19 @@ const Pages = (() => {
       return;
     }
     let sort = ctx.account.default_sort;
+    let sortDirection = "asc";
     let locationFilter = null;
     // Purely a display preference, not account data - same treatment as
     // the theme setting, which also lives in localStorage rather than
     // the account record.
     let viewMode = localStorage.getItem("cellar_view_mode") === "compact" ? "compact" : "comfortable";
+
+    const sortLabels = { beer: "By beer", brewery: "By brewery", drinkby: "By drink-by date" };
+    const sortArrow = () => (sortDirection === "asc" ? "↑" : "↓");
+    const sortButtonHtml = (val) =>
+      `<button data-val="${val}" class="${sort === val ? "active" : ""}">${escapeHtml(sortLabels[val])}${
+        sort === val ? ` ${sortArrow()}` : ""
+      }</button>`;
 
     root.innerHTML = `
       <div class="page-head">
@@ -1162,9 +1170,9 @@ const Pages = (() => {
       </div>
       <div class="toolbar">
         <div class="seg" data-sort>
-          <button data-val="beer" class="${sort === "beer" ? "active" : ""}">By beer</button>
-          <button data-val="brewery" class="${sort === "brewery" ? "active" : ""}">By brewery</button>
-          <button data-val="drinkby" class="${sort === "drinkby" ? "active" : ""}">By drink-by date</button>
+          ${sortButtonHtml("beer")}
+          ${sortButtonHtml("brewery")}
+          ${sortButtonHtml("drinkby")}
         </div>
         ${
           ctx.account.show_fridge_column
@@ -1197,10 +1205,28 @@ const Pages = (() => {
       });
     }
 
+    function refreshSortButtons() {
+      root.querySelectorAll("[data-sort] button").forEach((b) => {
+        const val = b.dataset.val;
+        const isActive = val === sort;
+        b.classList.toggle("active", isActive);
+        b.textContent = isActive ? `${sortLabels[val]} ${sortArrow()}` : sortLabels[val];
+      });
+    }
+
     root.querySelectorAll("[data-sort] button").forEach((btn) => {
       btn.addEventListener("click", () => {
-        sort = btn.dataset.val;
-        root.querySelectorAll("[data-sort] button").forEach((b) => b.classList.toggle("active", b === btn));
+        const val = btn.dataset.val;
+        // Clicking the already-active sort flips direction; picking a
+        // different one starts fresh at ascending, like most sortable
+        // tables/lists do.
+        if (val === sort) {
+          sortDirection = sortDirection === "asc" ? "desc" : "asc";
+        } else {
+          sort = val;
+          sortDirection = "asc";
+        }
+        refreshSortButtons();
         load();
       });
     });
@@ -1228,7 +1254,7 @@ const Pages = (() => {
       const container = root.querySelector("#entries");
       container.innerHTML = spinnerHtml();
       try {
-        const entries = await Api.listCellar(sort, locationFilter);
+        const entries = await Api.listCellar(sort, locationFilter, sortDirection);
         if (!entries.length) {
           container.innerHTML = `<div class="panel empty-note">Your cellar's empty. Add your first bottle to start tracking it.</div>`;
           return;
@@ -1626,6 +1652,78 @@ const Pages = (() => {
     render();
   }
 
+  function openEditLogModal(log, onDone) {
+    const html = `
+      <button class="modal-close" data-close>&times;</button>
+      <h2>Edit &mdash; ${escapeHtml(log.beer.name)}</h2>
+      <p class="subtle">${escapeHtml(log.beer.brewery.name)}</p>
+      <form data-edit-log-form>
+        <div class="field-row">
+          <div class="field">
+            <label>Quantity</label>
+            <input class="input" type="number" min="1" step="1" name="quantity" value="${log.quantity}" required />
+          </div>
+          <div class="field">
+            <label>Date</label>
+            ${isoDateInputHtml("consumed_on", log.consumed_on)}
+          </div>
+        </div>
+        <div class="field">
+          <label>Rating <span class="subtle">(optional)</span></label>
+          ${starPicker("rating", log.rating || 0)}
+        </div>
+        <div class="field">
+          <label>Tasting note <span class="subtle">(optional)</span></label>
+          <textarea class="input" name="note" placeholder="How was it?">${escapeHtml(log.note || "")}</textarea>
+        </div>
+        <div class="form-error" data-error style="display:none"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-block">Save changes</button>
+        </div>
+      </form>
+    `;
+    openModal(html, {
+      onMount(modalEl, close) {
+        modalEl.querySelector("[data-close]").addEventListener("click", close);
+        wireStarPicker(modalEl);
+        wireIsoDateInputs(modalEl);
+        const form = modalEl.querySelector("[data-edit-log-form]");
+        const errorBox = modalEl.querySelector("[data-error]");
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          errorBox.style.display = "none";
+          const fd = new FormData(form);
+          const submitBtn = form.querySelector('button[type="submit"]');
+          submitBtn.disabled = true;
+          try {
+            const consumedOn = fd.get("consumed_on")?.trim() || "";
+            // Unlike logging a fresh drink, empty here can't just fall back
+            // to "today" server-side - it's editing a date that already
+            // has to exist, so an empty field is a validation error, not a
+            // valid "no date" state.
+            if (!consumedOn) throw new Error("Date is required.");
+            if (!isValidIsoDateOrEmpty(consumedOn)) throw new Error(`"${consumedOn}" isn't a valid date - use YYYY-MM-DD.`);
+            const rating = Number(fd.get("rating") || 0);
+            await Api.patchConsumption(log.id, {
+              quantity: Number(fd.get("quantity")),
+              consumed_on: consumedOn,
+              note: fd.get("note")?.trim() || null,
+              rating: rating > 0 ? rating : null,
+            });
+            close();
+            toast("Updated.");
+            onDone();
+          } catch (err) {
+            errorBox.textContent = err.message;
+            errorBox.style.display = "block";
+          } finally {
+            submitBtn.disabled = false;
+          }
+        });
+      },
+    });
+  }
+
   async function consumed(root, ctx) {
     if (!ctx.user) {
       location.hash = "#/login";
@@ -1642,7 +1740,10 @@ const Pages = (() => {
       list.innerHTML = `<div class="feed-list">${logs
         .map(
           (log) => `<div class="feed-row" style="display:block; position:relative">
-            <button class="btn btn-icon" data-del="${log.id}" style="float:right">Del</button>
+            <div style="float:right; display:flex; gap:6px;">
+              <button class="btn btn-icon" data-edit="${log.id}">Edit</button>
+              <button class="btn btn-icon" data-del="${log.id}">Del</button>
+            </div>
             <div><strong>${escapeHtml(log.beer.name)}</strong> <span class="subtle">&mdash; ${escapeHtml(
             log.beer.brewery.name
           )}</span> <span class="meta">${fmtDate(log.consumed_on)} &middot; &times;${log.quantity}</span></div>
@@ -1651,6 +1752,12 @@ const Pages = (() => {
           </div>`
         )
         .join("")}</div>`;
+      list.querySelectorAll("[data-edit]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const log = logs.find((l) => l.id === Number(btn.dataset.edit));
+          if (log) openEditLogModal(log, () => consumed(root, ctx));
+        });
+      });
       list.querySelectorAll("[data-del]").forEach((btn) => {
         btn.addEventListener("click", () => {
           confirmDelete("Delete this log entry?", async () => {
