@@ -1462,7 +1462,7 @@ const Pages = (() => {
     const fakeAccount = {
       show_fridge_column: true,
       trading_enabled: data.trading_enabled,
-      unit_system: (ctx && ctx.account && ctx.account.unit_system) || "imperial",
+      unit_system: (ctx && ctx.account && ctx.account.unit_system) || "metric",
     };
     root.innerHTML = `
       <div class="page-head">
@@ -1916,7 +1916,8 @@ const Pages = (() => {
         <h2 style="font-size:19px; margin:0">Users</h2>
         <button class="btn btn-primary btn-sm" id="add-user-btn">+ Add user</button>
       </div>
-      <div id="users-list">${spinnerHtml()}</div>
+      <div id="users-list" style="margin-bottom:20px">${spinnerHtml()}</div>
+      <div class="panel" id="backup-panel">${spinnerHtml()}</div>
     `;
 
     let currentSettings = null;
@@ -2100,9 +2101,110 @@ const Pages = (() => {
       openAddUserModal(loadUsers, !!(currentSettings && currentSettings.smtp_enabled));
     });
 
+    async function loadBackupPanel() {
+      const panel = root.querySelector("#backup-panel");
+      let status;
+      try {
+        status = await Api.adminGetRestoreStatus();
+      } catch (e) {
+        status = { pending: false };
+      }
+      panel.innerHTML = `
+        <h3>Backup and restore</h3>
+        <p class="field-hint" style="margin-top:-4px">
+          A single-file snapshot of the whole database - every account, cellar, brewery, and beer,
+          not just your own - for moving to a new install or keeping an off-site copy.
+        </p>
+        ${
+          status.pending
+            ? `<div class="form-error" style="background:var(--danger-wash); border-color:var(--danger); color:var(--danger); display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                 <span>A restore is staged and will replace this entire database on next restart.</span>
+                 <button class="btn btn-icon" id="cancel-restore-btn">Cancel</button>
+               </div>`
+            : ""
+        }
+        <div class="form-actions" style="margin-top:14px">
+          <button class="btn btn-primary" id="download-backup-btn">Download full backup</button>
+        </div>
+        <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border)">
+          <h4 style="margin:0 0 6px">Restore from backup</h4>
+          <p class="field-hint" style="margin-top:0">
+            <strong>Replaces everything on this instance</strong> - every user, bottle, and setting -
+            with what's in the file. Takes effect on the next restart, not immediately, so there's a
+            chance to cancel first.
+          </p>
+          <input type="file" accept=".db" id="restore-file" />
+          <div class="form-error" data-restore-error style="display:none; margin-top:10px"></div>
+          <div class="form-actions" style="margin-top:10px">
+            <button class="btn btn-ghost" id="upload-restore-btn">Upload and stage restore</button>
+          </div>
+        </div>
+      `;
+
+      panel.querySelector("#download-backup-btn").addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          const { blob, filename } = await Api.adminDownloadBackup();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          toast(err.message, "error");
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      const cancelBtn = panel.querySelector("#cancel-restore-btn");
+      if (cancelBtn) {
+        cancelBtn.addEventListener("click", async () => {
+          try {
+            await Api.adminCancelRestore();
+            toast("Staged restore cancelled.");
+            loadBackupPanel();
+          } catch (err) {
+            toast(err.message, "error");
+          }
+        });
+      }
+
+      panel.querySelector("#upload-restore-btn").addEventListener("click", () => {
+        const fileInput = panel.querySelector("#restore-file");
+        const file = fileInput.files[0];
+        const errorBox = panel.querySelector("[data-restore-error]");
+        errorBox.style.display = "none";
+        if (!file) {
+          errorBox.textContent = "Choose a backup file first.";
+          errorBox.style.display = "block";
+          return;
+        }
+        confirmDelete(
+          "This will replace every account, bottle, and setting on this instance with what's in the uploaded file, the next time it restarts. This can't be undone. Continue?",
+          async () => {
+            try {
+              await Api.adminUploadRestore(file);
+              toast("Restore staged - restart the app to apply it.");
+              fileInput.value = "";
+              loadBackupPanel();
+            } catch (err) {
+              errorBox.textContent = err.message;
+              errorBox.style.display = "block";
+            }
+          }
+        );
+      });
+    }
+
     await loadSettings();
     loadSmtpPanel();
     loadUsers();
+    loadBackupPanel();
   }
 
   return {

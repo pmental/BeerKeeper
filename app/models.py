@@ -35,7 +35,7 @@ class User(Base):
 
     # Account preferences
     default_sort = Column(String(16), default="beer", nullable=False)  # 'beer' | 'brewery' | 'drinkby'
-    unit_system = Column(String(8), default="imperial", nullable=False)  # 'imperial' | 'metric'
+    unit_system = Column(String(8), default="metric", nullable=False)  # 'imperial' | 'metric'
     show_fridge_column = Column(Boolean, default=True, nullable=False)
     show_location_column = Column(Boolean, default=False, nullable=False)
     trading_enabled = Column(Boolean, default=False, nullable=False)

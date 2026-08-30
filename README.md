@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.23** — see [CHANGELOG.md](CHANGELOG.md) for release history.
+**Current version: 0.0.24** — see [CHANGELOG.md](CHANGELOG.md) for release history.
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -16,7 +16,7 @@ CDN calls. No third-party accounts, analytics, or API keys required.
 - Dark, light, or system-matched theme
 - Track bottles in your cellar and/or fridge — quantity, size, bottle
   date, best-before date, notes — sortable by beer, brewery, or drink-by
-  date, in imperial or metric units
+  date, in imperial or metric units (metric by default)
 - Autocomplete for beer, brewery, and style, backed by a shared database
   that grows as bottles are added, plus 130+ pre-populated breweries —
   see "Pre-populated breweries" below
@@ -62,6 +62,9 @@ link in the nav (`#/admin`) for:
 - Creating or deleting accounts, promoting/demoting other admins
 - Turning new registrations on or off at runtime, independently of
   `CELLAR_PASSWORD_AUTH_ENABLED`
+- Downloading a full backup of the whole instance (every account, not
+  just your own) as a single file, and restoring one — validated on
+  upload, applied at the next restart rather than live
 
 You can't remove the last admin or delete your own account from this
 page. If a deployment ever ends up with zero admins, set
@@ -185,17 +188,22 @@ the app logs a startup warning and the login page shows a plain
 
 ## Backup and restore
 
+Easiest: the admin page's "Backup and restore" panel — download the whole
+database as a single file, and restore one (validated on upload, applied
+on the next restart, not live).
+
 Everything is one file: `cellar.db` inside your data directory/volume
-(plus the `-wal`/`-shm` companion files SQLite uses while running).
+(plus the `-wal`/`-shm` companion files SQLite uses while running), so a
+manual copy works too:
 
 ```bash
 docker compose exec beerkeeper sh -c "sqlite3 /data/cellar.db '.backup /data/backup.db'"
 docker cp $(docker compose ps -q beerkeeper):/data/backup.db ./cellar-backup.db
 ```
 
-To restore, stop the container, replace the file in the volume with your
-backup, and start it again. Each user can also self-serve a partial
-backup any time via **Import / Export → Download CSV**.
+To restore manually, stop the container, replace the file in the volume
+with your backup, and start it again. Each user can also self-serve a
+partial backup any time via **Import / Export → Download CSV**.
 
 ## CSV format
 

@@ -42,7 +42,7 @@ def run_migrations():
     with engine.begin() as conn:
         if "unit_system" not in existing_cols:
             conn.execute(
-                text("ALTER TABLE users ADD COLUMN unit_system VARCHAR(8) NOT NULL DEFAULT 'imperial'")
+                text("ALTER TABLE users ADD COLUMN unit_system VARCHAR(8) NOT NULL DEFAULT 'metric'")
             )
         if "oidc_subject" not in existing_cols:
             conn.execute(text("ALTER TABLE users ADD COLUMN oidc_subject VARCHAR(255)"))

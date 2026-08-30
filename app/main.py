@@ -8,10 +8,18 @@ from starlette.middleware.sessions import SessionMiddleware
 from app import auth, config
 from app.database import Base, engine, run_migrations, SessionLocal
 from app import models  # noqa: F401  (ensures models are registered before create_all)
+from app.backup import apply_pending_restore_if_any
 from app.brewery_seed import seed_breweries_if_needed
 from app.admin_bootstrap import ensure_instance_settings, ensure_admin_exists
 from app.routers import auth as auth_router
 from app.routers import beers, cellar, consumption, account, public, import_export, oidc, beer_styles, wanted, admin
+
+# Must run before create_all/engine touches the database file at all - a
+# staged restore (see app/backup.py) replaces that file outright, and
+# swapping it out from under an already-open connection is exactly the
+# kind of thing that corrupts data. This is why the swap only ever
+# happens here, at a clean startup, never from a live request.
+apply_pending_restore_if_any()
 
 Base.metadata.create_all(bind=engine)
 run_migrations()

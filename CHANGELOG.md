@@ -1,5 +1,7 @@
 # Changelog
 
+- **0.0.24** — New accounts now default to metric units instead of imperial (existing accounts unaffected). Added whole-instance backup/restore to the admin page: download the entire database as a single file, and restore it on any install (validated on upload, staged to apply on the next restart rather than live, to avoid corrupting an active database).
+
 - **0.0.23** — Condensed README.md substantially: trimmed the features list, cut the outdated "known limitations" section, removed repeated originality disclaimers, and shortened the pre-populated-breweries and email sections to the essentials. No functional changes.
 
 - **0.0.22** — The admin panel's "send test email" field now prepopulates with your own account email, still editable if you want to send it elsewhere.
