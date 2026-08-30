@@ -199,15 +199,17 @@ def delete_user(
 
 @router.get("/backup")
 def download_backup(_admin: models.User = Depends(require_admin)):
-    """A single-file, byte-for-byte snapshot of the entire database -
-    every user, cellar entry, beer, brewery, style seed, everything - not
-    just one account's data (unlike Import/Export's CSV, which is
-    per-user). Meant for moving a whole instance to a new install."""
+    """A single-file snapshot of the entire instance - every user, cellar
+    entry, beer, brewery, and your custom beer_styles.txt (which lives
+    outside the database, so it's zipped alongside it rather than
+    silently left out) - not just one account's data (unlike
+    Import/Export's CSV, which is per-user). Meant for moving a whole
+    instance to a new install."""
     data = backup.create_backup_bytes()
-    filename = f"beerkeeper-backup-{dt.date.today().isoformat()}.db"
+    filename = f"beerkeeper-backup-{dt.date.today().isoformat()}.zip"
     return Response(
         content=data,
-        media_type="application/vnd.sqlite3",
+        media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 

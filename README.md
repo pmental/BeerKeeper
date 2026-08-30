@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.24** — see [CHANGELOG.md](CHANGELOG.md) for release history.
+**Current version: 0.0.25** — see [CHANGELOG.md](CHANGELOG.md) for release history.
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -63,8 +63,9 @@ link in the nav (`#/admin`) for:
 - Turning new registrations on or off at runtime, independently of
   `CELLAR_PASSWORD_AUTH_ENABLED`
 - Downloading a full backup of the whole instance (every account, not
-  just your own) as a single file, and restoring one — validated on
-  upload, applied at the next restart rather than live
+  just your own, plus your custom beer styles) as a single zip file, and
+  restoring one — validated on upload, applied at the next restart rather
+  than live
 
 You can't remove the last admin or delete your own account from this
 page. If a deployment ever ends up with zero admins, set
