@@ -1,9 +1,12 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+import datetime as dt
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File
+from fastapi.responses import Response
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app import config, models, schemas
+from app import backup, config, models, schemas
 from app.auth import hash_password
 from app.database import get_db
 from app.deps import require_admin
@@ -192,3 +195,43 @@ def delete_user(
     db.delete(user)
     db.commit()
     return {"ok": True}
+
+
+@router.get("/backup")
+def download_backup(_admin: models.User = Depends(require_admin)):
+    """A single-file, byte-for-byte snapshot of the entire database -
+    every user, cellar entry, beer, brewery, style seed, everything - not
+    just one account's data (unlike Import/Export's CSV, which is
+    per-user). Meant for moving a whole instance to a new install."""
+    data = backup.create_backup_bytes()
+    filename = f"beerkeeper-backup-{dt.date.today().isoformat()}.db"
+    return Response(
+        content=data,
+        media_type="application/vnd.sqlite3",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/restore")
+def get_restore_status(_admin: models.User = Depends(require_admin)):
+    return {"pending": backup.has_pending_restore()}
+
+
+@router.post("/restore")
+async def upload_restore(file: UploadFile = File(...), _admin: models.User = Depends(require_admin)):
+    """Validates and stages a restore - does NOT apply it immediately.
+    See app/backup.py for why: swapping the live database file out from
+    under active connections is exactly the kind of thing that corrupts
+    data, so the actual swap happens at the next clean startup instead."""
+    data = await file.read()
+    try:
+        backup.stage_restore(data)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"pending": True}
+
+
+@router.delete("/restore")
+def cancel_restore(_admin: models.User = Depends(require_admin)):
+    cancelled = backup.cancel_pending_restore()
+    return {"pending": False, "cancelled": cancelled}

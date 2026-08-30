@@ -114,6 +114,40 @@ const Api = (() => {
     adminPatchSettings: (payload) => request("PATCH", "/api/admin/settings", { body: payload }),
     adminSendTestEmail: (toEmail) => request("POST", "/api/admin/settings/smtp/test", { body: { to_email: toEmail } }),
 
+    async adminDownloadBackup() {
+      const token = getToken();
+      const res = await fetch("/api/admin/backup", {
+        headers: token ? { Authorization: "Bearer " + token } : {},
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error((data && data.detail) || "Couldn't download the backup.");
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get("content-disposition") || "";
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      return { blob, filename: match ? match[1] : "beerkeeper-backup.db" };
+    },
+    adminGetRestoreStatus: () => request("GET", "/api/admin/restore"),
+    adminCancelRestore: () => request("DELETE", "/api/admin/restore"),
+    async adminUploadRestore(file) {
+      const token = getToken();
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/restore", {
+        method: "POST",
+        headers: token ? { Authorization: "Bearer " + token } : {},
+        body: fd,
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        const err = new Error((data && data.detail) || "Restore upload failed.");
+        err.data = data;
+        throw err;
+      }
+      return data;
+    },
+
     browseCellars: () => request("GET", "/api/public/cellars", { auth: false }),
     recentActivity: () => request("GET", "/api/public/recent"),
     publicCellar: (username) => request("GET", "/api/public/u/" + encodeURIComponent(username), { auth: false }),
