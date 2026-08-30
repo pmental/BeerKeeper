@@ -20,23 +20,31 @@ def _entry_query(db: Session, user_id: int):
     )
 
 
-def sort_entries(entries: list, sort_key: str) -> list:
+def sort_entries(entries: list, sort_key: str, direction: str = "asc") -> list:
     """Shared by list_cellar and the public cellar view so 'beer' / 'brewery'
     / 'drinkby' mean the same thing everywhere. Entries with no best_before
     date sort after ones that have it, rather than being scattered in
-    among a default (e.g. today's) date."""
+    among a default (e.g. today's) date - true in both directions, since
+    flipping the date order shouldn't also flip whether undated entries
+    show up first or last."""
+    reverse = direction == "desc"
     if sort_key == "brewery":
-        entries.sort(key=lambda e: (e.beer.brewery.name.lower(), e.beer.name.lower()))
+        entries.sort(key=lambda e: (e.beer.brewery.name.lower(), e.beer.name.lower()), reverse=reverse)
     elif sort_key == "drinkby":
-        entries.sort(key=lambda e: (e.best_before is None, e.best_before, e.beer.name.lower()))
+        dated = [e for e in entries if e.best_before is not None]
+        undated = [e for e in entries if e.best_before is None]
+        dated.sort(key=lambda e: (e.best_before, e.beer.name.lower()), reverse=reverse)
+        undated.sort(key=lambda e: e.beer.name.lower())
+        entries = dated + undated
     else:
-        entries.sort(key=lambda e: (e.beer.name.lower(), e.beer.brewery.name.lower()))
+        entries.sort(key=lambda e: (e.beer.name.lower(), e.beer.brewery.name.lower()), reverse=reverse)
     return entries
 
 
 @router.get("", response_model=list[schemas.CellarEntryOut])
 def list_cellar(
     sort: str | None = None,
+    direction: str = "asc",
     location: str | None = None,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
@@ -47,7 +55,7 @@ def list_cellar(
     entries = query.all()
 
     sort_key = sort or current_user.default_sort
-    return sort_entries(entries, sort_key)
+    return sort_entries(entries, sort_key, direction if direction in ("asc", "desc") else "asc")
 
 
 @router.get("/sizes", response_model=list[float])

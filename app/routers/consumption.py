@@ -51,6 +51,28 @@ def add_consumption(
     return log
 
 
+@router.patch("/{log_id}", response_model=schemas.ConsumptionLogOut)
+def update_consumption(
+    log_id: int,
+    payload: schemas.ConsumptionLogPatch,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    log = (
+        db.query(models.ConsumptionLog)
+        .filter(models.ConsumptionLog.id == log_id, models.ConsumptionLog.user_id == current_user.id)
+        .first()
+    )
+    if not log:
+        raise HTTPException(status_code=404, detail="Log entry not found.")
+    data = payload.model_dump(exclude_unset=True)
+    for field, value in data.items():
+        setattr(log, field, value)
+    db.commit()
+    db.refresh(log)
+    return log
+
+
 @router.delete("/{log_id}")
 def delete_consumption(
     log_id: int,

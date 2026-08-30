@@ -167,6 +167,13 @@ class ConsumptionLogIn(BaseModel):
     rating: Optional[float] = Field(default=None, ge=0, le=5)
 
 
+class ConsumptionLogPatch(BaseModel):
+    quantity: Optional[int] = Field(default=None, ge=1)
+    consumed_on: Optional[dt.date] = None
+    note: Optional[str] = None
+    rating: Optional[float] = Field(default=None, ge=0, le=5)
+
+
 # ---------- Wanted (not owned) ----------
 
 class WantedEntryOut(BaseModel):
