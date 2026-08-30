@@ -1,5 +1,7 @@
 # Changelog
 
+- **0.0.27** — README fixes: "Backup and restore" now describes the actual zip format (database + beer styles), and `CELLAR_SECRET_KEY`'s documented default no longer references the old hardcoded insecure key, reflecting 0.0.26's auto-generated-and-persisted behavior. No functional changes.
+
 - **0.0.26** — Security hardening pass (see SECURITY.md): random+persisted secret key instead of a hardcoded fallback; rate limiting on login/register/forgot-password; a leaked token stops working immediately on password change/reset instead of waiting out its 30-day expiry; OIDC no longer auto-links an account on an unverified email; changing your account email now requires your password; upload size limits on CSV import and backup restore; CSP + security headers (required removing the app's one inline script and one inline event handler).
 
 - **0.0.25** — Admin backups are now a zip containing both the database and `beer_styles.txt` (which lives outside the database, so 0.0.24's database-only backup silently dropped any custom styles). Old single-file `.db` backups from 0.0.24 are no longer accepted for restore — re-download a fresh backup.

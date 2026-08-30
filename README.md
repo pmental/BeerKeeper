@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.26** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.27** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -158,6 +158,12 @@ export CELLAR_DATA_DIR=./data
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
+Setting `CELLAR_SECRET_KEY` explicitly (as above) is recommended but not
+required — if it's unset, a random key is generated and saved to
+`CELLAR_DATA_DIR` on first boot instead. The Docker Compose path enforces
+setting it explicitly; running this way does not, so it's worth doing
+deliberately.
+
 The SQLite database and static assets need no separate setup — tables are
 created automatically on first boot.
 
@@ -165,7 +171,7 @@ created automatically on first boot.
 
 | Variable            | Default          | Notes                                                                 |
 |----------------------|------------------|------------------------------------------------------------------------|
-| `CELLAR_SECRET_KEY`  | *(insecure dev key)* | **Set this in production.** Signs login sessions; keep it private and stable. |
+| `CELLAR_SECRET_KEY`  | *(auto-generated)* | Signs login sessions. If unset, a random key is generated and saved to your data directory on first boot — works, but losing that directory invalidates every login. **Set this explicitly in production.** |
 | `CELLAR_DATA_DIR`    | `/data`          | Where the SQLite database file lives.                                 |
 | `CELLAR_PORT`        | `8000`           | Host port, used by `docker-compose.yml` only.                         |
 | `CELLAR_PASSWORD_AUTH_ENABLED` | `true` | Set `false` to disable username/password login and registration (hides the forms too). |
@@ -189,22 +195,25 @@ the app logs a startup warning and the login page shows a plain
 
 ## Backup and restore
 
-Easiest: the admin page's "Backup and restore" panel — download the whole
-database as a single file, and restore one (validated on upload, applied
-on the next restart, not live).
+Easiest: the admin page's "Backup and restore" panel — downloads a single
+zip file with everything (the database *and* `beer_styles.txt`, which
+lives outside the database as its own file), and restores one (validated
+on upload, applied on the next restart, not live).
 
-Everything is one file: `cellar.db` inside your data directory/volume
-(plus the `-wal`/`-shm` companion files SQLite uses while running), so a
-manual copy works too:
+For a manual copy, there are two files, both in your data directory/volume:
+`cellar.db` (plus the `-wal`/`-shm` companion files SQLite uses while
+running) and `beer_styles.txt`.
 
 ```bash
 docker compose exec beerkeeper sh -c "sqlite3 /data/cellar.db '.backup /data/backup.db'"
 docker cp $(docker compose ps -q beerkeeper):/data/backup.db ./cellar-backup.db
+docker cp $(docker compose ps -q beerkeeper):/data/beer_styles.txt ./beer_styles-backup.txt
 ```
 
-To restore manually, stop the container, replace the file in the volume
-with your backup, and start it again. Each user can also self-serve a
-partial backup any time via **Import / Export → Download CSV**.
+To restore manually, stop the container, replace both files in the
+volume with your backups, and start it again. Each user can also
+self-serve a partial backup any time via **Import / Export → Download
+CSV**.
 
 ## CSV format
 
