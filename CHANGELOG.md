@@ -1,5 +1,7 @@
 # Changelog
 
+- **0.0.23** — Condensed README.md substantially: trimmed the features list, cut the outdated "known limitations" section, removed repeated originality disclaimers, and shortened the pre-populated-breweries and email sections to the essentials. No functional changes.
+
 - **0.0.22** — The admin panel's "send test email" field now prepopulates with your own account email, still editable if you want to send it elsewhere.
 
 - **0.0.21** — Added a Comfortable/Compact view toggle for the cellar list (~57% shorter cards on desktop, ~39% on mobile) — comfortable stays the default, your choice is remembered locally between sessions.
