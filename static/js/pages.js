@@ -1387,7 +1387,8 @@ const Pages = (() => {
         <div class="field" style="margin-top:14px">
           <label>Import from CSV</label>
           <p class="field-hint" style="margin-top:-4px">
-            Columns: <code>brewery, beer, style, abv, location, custom_location, quantity, size_oz, bottle_date, best_before, batch_notes, trade_status</code>
+            Columns: <code>brewery, beer, style, abv, location, custom_location, quantity, size_oz, size_ml, bottle_date, best_before, batch_notes, trade_status</code>.
+            Export includes both size columns; import prefers whichever matches your unit setting above, falling back to the other if it's blank.
           </p>
           <div class="csv-drop">
             <input type="file" accept=".csv" id="import-file" />

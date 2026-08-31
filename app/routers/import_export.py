@@ -14,6 +14,11 @@ from app.uploads import read_upload_limited
 
 router = APIRouter(prefix="/api/cellar", tags=["import-export"])
 
+# Same constant and precision as the frontend's OZ_TO_ML (static/js/ui.js) -
+# keeping these in sync matters so a size that round-trips through the UI
+# and through a CSV export ends up meaning the same thing either way.
+OZ_TO_ML = 29.5735295625
+
 CSV_COLUMNS = [
     "brewery",
     "beer",
@@ -23,6 +28,7 @@ CSV_COLUMNS = [
     "custom_location",
     "quantity",
     "size_oz",
+    "size_ml",
     "bottle_date",
     "best_before",
     "batch_notes",
@@ -38,6 +44,29 @@ def _parse_date(value: str):
         return dt.date.fromisoformat(value)
     except ValueError:
         return None
+
+
+def _resolve_size_oz(row: dict, unit_system: str) -> float | None:
+    """Both size_oz and size_ml are always present on export, so an
+    imported file that round-tripped through this app has both to choose
+    from. Prefer whichever matches the importing user's own unit setting
+    (matching what they'd see if they'd entered it by hand), but fall
+    back to the other column if that one's missing or blank - handles a
+    hand-edited CSV that only filled in one, or one exported by an
+    install with the opposite unit setting."""
+    oz_raw = (row.get("size_oz") or "").strip()
+    ml_raw = (row.get("size_ml") or "").strip()
+    if unit_system == "metric":
+        raw, is_ml = (ml_raw, True) if ml_raw else (oz_raw, False)
+    else:
+        raw, is_ml = (oz_raw, False) if oz_raw else (ml_raw, True)
+    if not raw:
+        return None
+    try:
+        value = float(raw)
+    except ValueError:
+        return None
+    return value / OZ_TO_ML if is_ml else value
 
 
 @router.get("/export")
@@ -65,6 +94,7 @@ def export_cellar(
                 "custom_location": e.custom_location or "",
                 "quantity": e.quantity,
                 "size_oz": e.size_oz if e.size_oz is not None else "",
+                "size_ml": round(e.size_oz * OZ_TO_ML) if e.size_oz is not None else "",
                 "bottle_date": e.bottle_date.isoformat() if e.bottle_date else "",
                 "best_before": e.best_before.isoformat() if e.best_before else "",
                 "batch_notes": (e.batch_notes or "").replace("\n", " "),
@@ -120,7 +150,6 @@ async def import_cellar(
         location = (row.get("location") or "cellar").strip().lower()
         if location not in ("cellar", "fridge"):
             location = "cellar"
-        size_raw = (row.get("size_oz") or "").strip()
         qty_raw = (row.get("quantity") or "1").strip()
         trade = (row.get("trade_status") or "none").strip().lower()
         if trade not in ("none", "ft", "iso"):
@@ -132,7 +161,7 @@ async def import_cellar(
             location=location,
             custom_location=(row.get("custom_location") or "").strip() or None,
             quantity=int(qty_raw) if qty_raw.isdigit() else 1,
-            size_oz=float(size_raw) if size_raw else None,
+            size_oz=_resolve_size_oz(row, current_user.unit_system),
             bottle_date=_parse_date(row.get("bottle_date")),
             best_before=_parse_date(row.get("best_before")),
             batch_notes=(row.get("batch_notes") or "").strip() or None,
