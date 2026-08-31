@@ -49,9 +49,15 @@ const App = (() => {
       .join("");
 
     if (state.user) {
+      const initial = (state.displayName || state.user || "?").trim().charAt(0).toUpperCase();
+      const avatarHtml = state.account && state.account.avatar_url
+        ? `<img class="user-avatar" src="${UI.escapeHtml(state.account.avatar_url)}" alt="" width="24" height="24" />`
+        : `<span class="user-avatar user-avatar-fallback">${UI.escapeHtml(initial)}</span>`;
       navRight.innerHTML = `
-        <div class="user-chip">Hi, <strong>${UI.escapeHtml(state.displayName || state.user)}</strong></div>
-        <a class="btn btn-ghost btn-sm" href="#/account">Account</a>
+        <a class="user-chip" href="#/account" title="Account">
+          ${avatarHtml}
+          <span>Hi, <strong>${UI.escapeHtml(state.displayName || state.user)}</strong></span>
+        </a>
         <button class="btn btn-ghost btn-sm" id="logout-btn">Log out</button>
       `;
       const logoutBtn = document.getElementById("logout-btn");

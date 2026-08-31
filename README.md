@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.32** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.37** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -38,11 +38,15 @@ page. Works alongside password login, or set
 `CELLAR_PASSWORD_AUTH_ENABLED=false` to make SSO the only way in.
 
 **Account linking:** the first OIDC sign-in looks for a local account with
-a matching email and links to it if found; otherwise it creates a new
-account from the provider's `preferred_username` claim (with a numeric
-suffix on collision). Accounts created this way get a random,
-unrecoverable password until one is set from **Account → Change
-password**.
+a matching, *verified* email (the provider's `email_verified` claim must
+be true — an unverified match is never linked) and links to it if found;
+otherwise it creates a new account from the provider's
+`preferred_username` claim (with a numeric suffix on collision). Accounts
+created this way get a random, unrecoverable password until one is set
+from **Account → Change password**. If the provider sends a `name` (or
+`given_name`/`family_name`) and a `picture` claim, they're used as the
+display name and avatar shown in the nav — both stay in sync with the
+provider on every login.
 
 Register `<CELLAR_BASE_URL>/api/auth/oidc/callback` as an allowed
 redirect URI with your provider. Any standard discovery-supporting OIDC
