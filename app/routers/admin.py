@@ -1,7 +1,9 @@
+import csv
 import datetime as dt
+import io
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -242,3 +244,143 @@ async def upload_restore(file: UploadFile = File(...), _admin: models.User = Dep
 def cancel_restore(_admin: models.User = Depends(require_admin)):
     cancelled = backup.cancel_pending_restore()
     return {"pending": False, "cancelled": cancelled}
+
+
+def _serialize_brewery(brewery: models.Brewery, beer_count: int) -> schemas.AdminBreweryOut:
+    return schemas.AdminBreweryOut(id=brewery.id, name=brewery.name, website=brewery.website, beer_count=beer_count)
+
+
+@router.get("/breweries", response_model=list[schemas.AdminBreweryOut])
+def list_breweries_admin(
+    q: str = "",
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(require_admin),
+):
+    query = (
+        db.query(models.Brewery, func.count(models.Beer.id))
+        .outerjoin(models.Beer, models.Beer.brewery_id == models.Brewery.id)
+        .group_by(models.Brewery.id)
+    )
+    if q:
+        query = query.filter(models.Brewery.name.ilike(f"%{q}%"))
+    rows = query.order_by(models.Brewery.name).limit(200).all()
+    return [_serialize_brewery(b, count) for b, count in rows]
+
+
+@router.post("/breweries", response_model=schemas.AdminBreweryOut)
+def create_brewery_admin(
+    payload: schemas.BreweryIn,
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(require_admin),
+):
+    existing = db.query(models.Brewery).filter(models.Brewery.name.ilike(payload.name)).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="A brewery with that name already exists.")
+    brewery = models.Brewery(name=payload.name.strip(), website=(payload.website or "").strip() or None)
+    db.add(brewery)
+    db.commit()
+    db.refresh(brewery)
+    return _serialize_brewery(brewery, 0)
+
+
+@router.patch("/breweries/{brewery_id}", response_model=schemas.AdminBreweryOut)
+def update_brewery_admin(
+    brewery_id: int,
+    payload: schemas.AdminBreweryPatch,
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(require_admin),
+):
+    brewery = db.query(models.Brewery).filter(models.Brewery.id == brewery_id).first()
+    if not brewery:
+        raise HTTPException(status_code=404, detail="Brewery not found.")
+
+    data = payload.model_dump(exclude_unset=True)
+    if "name" in data:
+        new_name = (data["name"] or "").strip()
+        if not new_name:
+            raise HTTPException(status_code=400, detail="Name can't be empty.")
+        dupe = (
+            db.query(models.Brewery)
+            .filter(models.Brewery.name.ilike(new_name), models.Brewery.id != brewery_id)
+            .first()
+        )
+        if dupe:
+            raise HTTPException(status_code=400, detail="Another brewery already has that name.")
+        brewery.name = new_name
+    if "website" in data:
+        brewery.website = (data["website"] or "").strip() or None
+
+    db.commit()
+    db.refresh(brewery)
+    beer_count = db.query(func.count(models.Beer.id)).filter(models.Beer.brewery_id == brewery.id).scalar()
+    return _serialize_brewery(brewery, beer_count)
+
+
+@router.delete("/breweries/{brewery_id}")
+def delete_brewery_admin(
+    brewery_id: int,
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(require_admin),
+):
+    brewery = db.query(models.Brewery).filter(models.Brewery.id == brewery_id).first()
+    if not brewery:
+        raise HTTPException(status_code=404, detail="Brewery not found.")
+    beer_count = db.query(func.count(models.Beer.id)).filter(models.Beer.brewery_id == brewery.id).scalar()
+    if beer_count:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Can't delete - {beer_count} beer{'s' if beer_count != 1 else ''} still reference this "
+                "brewery. Delete or reassign them first."
+            ),
+        )
+    db.delete(brewery)
+    db.commit()
+    return {"ok": True}
+
+
+@router.get("/breweries/export")
+def export_breweries_admin(db: Session = Depends(get_db), _admin: models.User = Depends(require_admin)):
+    breweries = db.query(models.Brewery).order_by(models.Brewery.name).all()
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=["name", "website"])
+    writer.writeheader()
+    for b in breweries:
+        writer.writerow({"name": b.name, "website": b.website or ""})
+    buf.seek(0)
+    filename = f"breweries-{dt.date.today().isoformat()}.csv"
+    return StreamingResponse(
+        iter([buf.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post("/breweries/import", response_model=schemas.AdminBreweryImportResult)
+async def import_breweries_admin(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(require_admin),
+):
+    raw_bytes = await read_upload_limited(file, max_bytes=5 * 1024 * 1024)  # 5 MB - generous for a brewery list
+    raw = raw_bytes.decode("utf-8-sig")
+    reader = csv.DictReader(io.StringIO(raw))
+    created, skipped = 0, 0
+    errors = []
+
+    for i, row in enumerate(reader, start=2):  # row 1 is the header
+        name = (row.get("name") or "").strip()
+        if not name:
+            skipped += 1
+            errors.append(f"Row {i}: missing name.")
+            continue
+        existing = db.query(models.Brewery).filter(models.Brewery.name.ilike(name)).first()
+        if existing:
+            skipped += 1
+            continue
+        website = (row.get("website") or "").strip() or None
+        db.add(models.Brewery(name=name, website=website))
+        created += 1
+
+    db.commit()
+    return schemas.AdminBreweryImportResult(created=created, skipped=skipped, errors=errors[:20])

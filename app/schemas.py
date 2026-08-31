@@ -60,6 +60,24 @@ class BreweryIn(BaseModel):
     website: Optional[str] = None
 
 
+class AdminBreweryOut(BaseModel):
+    id: int
+    name: str
+    website: Optional[str] = None
+    beer_count: int
+
+
+class AdminBreweryPatch(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    website: Optional[str] = None
+
+
+class AdminBreweryImportResult(BaseModel):
+    created: int
+    skipped: int
+    errors: list[str]
+
+
 class BeerIn(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     brewery_id: Optional[int] = None
