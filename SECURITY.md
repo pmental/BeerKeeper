@@ -35,6 +35,9 @@ audit trail.
   (beer/brewery names, notes, display names, etc.) before inserting it
   into the page, and has no inline scripts or inline event handlers -
   enforced by a Content-Security-Policy with `script-src 'self'`.
+- User-supplied URLs that get rendered as clickable links (a beer's
+  external reference link, a brewery's website) only accept `http(s)`
+  schemes - a link is a real, if narrow, stored-XSS vector otherwise.
 - Additional response headers: `X-Content-Type-Options: nosniff`,
   `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`.
 - File uploads (CSV import, backup restore) are capped and read in

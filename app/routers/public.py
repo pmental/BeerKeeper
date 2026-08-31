@@ -91,6 +91,7 @@ def public_trades(username: str, db: Session = Depends(get_db)):
             "name": beer.name,
             "style": beer.style,
             "abv": beer.abv,
+            "reference_url": beer.reference_url,
             "brewery": {"id": beer.brewery.id, "name": beer.brewery.name},
         }
 

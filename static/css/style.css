@@ -625,6 +625,11 @@ textarea.input {
   color: var(--accent);
   margin-left: 4px;
 }
+.beer-link:hover {
+  /* Without this, the general a:hover rule (higher specificity than a
+     plain element selector) wins and underlines it anyway. */
+  text-decoration: none;
+}
 .entry-meta {
   font-size: 13px;
   color: var(--text-dim);
