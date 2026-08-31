@@ -3,6 +3,7 @@ services:
     build: .
     # Or, once you've published an image somewhere, swap the line above for:
     # image: yourname/beerkeeper:latest
+    container_name: BeerKeeper
     restart: unless-stopped
     ports:
       - "${CELLAR_PORT:-8000}:8000"

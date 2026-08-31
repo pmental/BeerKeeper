@@ -1,5 +1,7 @@
 # Changelog
 
+- **0.0.40** — docker-compose.yml now sets `container_name: BeerKeeper`, so `docker ps`/`docker logs` show a friendly name instead of an auto-generated one. Note: this means only one instance can run under this container name at a time on a given Docker host — remove or rename it if you need to run multiple.
+
 - **0.0.39** — "Best before" is now "Drink by" everywhere it's shown, not just the add/edit form — cellar cards, both private and public views.
 
 - **0.0.38** — Renamed the "Best before / drink by" field label to just "Drink by" on the add/edit bottle form.
