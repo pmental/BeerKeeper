@@ -1,5 +1,7 @@
 # Changelog
 
+- **0.0.32** — The Brewery and Beer fields on "Add a bottle", and the admin Breweries panel's search, now show suggestions immediately on focus instead of waiting for you to type, matching how the Style field already worked. Fixed a bug this surfaced: a brewery or beer you'd just used could fail to appear in your own empty-search results at all, if 50+ others came before it alphabetically.
+
 - **0.0.31** — Added a "Breweries" panel to the admin page: add, rename, and delete breweries in the shared list (deletion blocked while any beer still references one), plus CSV import/export for the whole list. This is what the README's "managed like any other brewery" line was supposed to mean — there was previously no way to actually do it.
 
 - **0.0.30** — The cellar page now shows a running total ("N beers · N on hand") next to the title, reflecting whatever filter is active. Added ~19 major cider makers and meaderies to the pre-populated brewery list (Strongbow, Thatchers, Angry Orchard, B. Nektar, Schramm's, and more) — existing installs pick these up automatically on next boot, same as any brewery-list update.
