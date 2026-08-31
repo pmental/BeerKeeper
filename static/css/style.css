@@ -162,6 +162,10 @@ button, input, select, textarea {
   font-weight: 900;
   font-size: 22px;
   color: var(--text);
+  text-decoration: none;
+}
+.brand:hover {
+  text-decoration: none;
 }
 .brand .glow {
   color: var(--accent);
@@ -246,9 +250,35 @@ button, input, select, textarea {
   gap: 8px;
   font-size: 13px;
   color: var(--text-dim);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+  margin: -4px -6px;
+  transition: background-color 0.15s ease;
+}
+.user-chip:hover {
+  background: var(--badge-neutral);
+  text-decoration: none;
 }
 .user-chip strong {
   color: var(--text);
+}
+.user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.user-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-wash);
+  color: var(--accent-bright);
+  font-weight: 600;
+  font-size: 12px;
+  font-family: var(--body);
 }
 
 main.container {
@@ -587,6 +617,13 @@ textarea.input {
 .entry-main h3 {
   font-size: 18px;
   margin-bottom: 2px;
+}
+.drinkby-alert {
+  /* Same font and color as the "Keeper" half of the BeerKeeper logo
+     (.brand .glow) - a deliberate visual echo, not a coincidence. */
+  font-family: var(--display);
+  color: var(--accent);
+  margin-left: 4px;
 }
 .entry-meta {
   font-size: 13px;

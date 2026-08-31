@@ -58,6 +58,18 @@ def _placeholder_email(username: str) -> str:
     return f"{username}@no-reply.beerkeeper.internal"
 
 
+def _sanitize_avatar_url(raw: str | None) -> str | None:
+    """Only accept something that's plausibly a real, loadable image URL -
+    an OIDC claim is provider-controlled but not something to trust
+    blindly, and a garbage value here would just be a broken <img> forever."""
+    if not raw:
+        return None
+    raw = raw.strip()
+    if not raw.startswith(("http://", "https://")) or len(raw) > 1024:
+        return None
+    return raw
+
+
 def _find_or_create_user(
     db: Session,
     sub: str,
@@ -65,14 +77,22 @@ def _find_or_create_user(
     email_verified: bool,
     preferred_username: str | None,
     display_name: str | None,
+    avatar_url: str | None,
 ) -> tuple[models.User, bool]:
     user = db.query(models.User).filter(models.User.oidc_subject == sub).first()
     if user:
-        # Keep the display name in sync with the provider on every login
-        # (e.g. after a legal name change), but don't clear it just
-        # because a particular login response happened to omit the claim.
+        # Keep the display name and picture in sync with the provider on
+        # every login (e.g. after a legal name or photo change), but don't
+        # clear either just because a particular login response happened
+        # to omit that claim.
+        changed = False
         if display_name and user.display_name != display_name:
             user.display_name = display_name
+            changed = True
+        if avatar_url and user.avatar_url != avatar_url:
+            user.avatar_url = avatar_url
+            changed = True
+        if changed:
             db.commit()
             db.refresh(user)
         return user, False
@@ -89,6 +109,8 @@ def _find_or_create_user(
             existing.oidc_subject = sub
             if display_name:
                 existing.display_name = display_name
+            if avatar_url:
+                existing.avatar_url = avatar_url
             db.commit()
             db.refresh(existing)
             return existing, False
@@ -109,6 +131,7 @@ def _find_or_create_user(
         password_hash=hash_password(secrets.token_urlsafe(32)),
         oidc_subject=sub,
         display_name=display_name,
+        avatar_url=avatar_url,
     )
     db.add(user)
     db.commit()
@@ -177,10 +200,11 @@ async def oidc_callback(request: Request, background_tasks: BackgroundTasks):
         parts = [userinfo.get("given_name"), userinfo.get("family_name")]
         joined = " ".join(p for p in parts if p)
         display_name = joined or None
+    avatar_url = _sanitize_avatar_url(userinfo.get("picture"))
 
     db = SessionLocal()
     try:
-        user, is_new = _find_or_create_user(db, sub, email, email_verified, preferred_username, display_name)
+        user, is_new = _find_or_create_user(db, sub, email, email_verified, preferred_username, display_name, avatar_url)
         jwt_token = create_access_token(user.id, user.username)
     finally:
         db.close()

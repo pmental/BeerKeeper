@@ -216,6 +216,7 @@ class AccountOut(BaseModel):
     id: int
     username: str
     display_name: Optional[str] = None
+    avatar_url: Optional[str] = None
     email: EmailStr
     is_admin: bool
     default_sort: str

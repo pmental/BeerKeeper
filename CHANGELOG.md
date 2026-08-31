@@ -1,5 +1,15 @@
 # Changelog
 
+- **0.0.37** — Bottles due to drink within 30 days (or already overdue) now show a "!" next to the beer name, styled to match the "Keeper" half of the logo. Shows in both comfortable and compact cellar views.
+
+- **0.0.36** — The account page now shows your full display name ("Signed in as Jane Middlename Doe") instead of just the first name. The nav's greeting elsewhere is unchanged, still first-name-only.
+
+- **0.0.35** — The "Users" section on the admin page is now a panel card like the rest of the page (Settings, Email, Breweries, Backup), instead of having its heading sit outside the block that holds the actual user list.
+
+- **0.0.34** — The profile chip no longer underlines on hover. The BeerKeeper logo is now a link back to Home.
+
+- **0.0.33** — OIDC accounts now show their provider's profile picture in the nav (kept in sync on every login, same as display name), with a fallback initials badge for password-only accounts. Removed the separate "Account" nav button — the avatar and name are now the link to the account page. Required loosening the CSP's `img-src` to allow external images, since avatars are hosted by the identity provider, not this app.
+
 - **0.0.32** — The Brewery and Beer fields on "Add a bottle", and the admin Breweries panel's search, now show suggestions immediately on focus instead of waiting for you to type, matching how the Style field already worked. Fixed a bug this surfaced: a brewery or beer you'd just used could fail to appear in your own empty-search results at all, if 50+ others came before it alphabetically.
 
 - **0.0.31** — Added a "Breweries" panel to the admin page: add, rename, and delete breweries in the shared list (deletion blocked while any beer still references one), plus CSV import/export for the whole list. This is what the README's "managed like any other brewery" line was supposed to mean — there was previously no way to actually do it.

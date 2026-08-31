@@ -30,6 +30,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     oidc_subject = Column(String(255), unique=True, nullable=True, index=True)
     display_name = Column(String(255), nullable=True)  # from OIDC's "name" claim; falls back to username
+    avatar_url = Column(String(1024), nullable=True)  # from OIDC's "picture" claim; never set for password accounts
     # Tokens issued before this timestamp are rejected even if not yet
     # expired - bumped on password change/reset so a stolen token doesn't
     # keep working after you've secured the account. NULL means no

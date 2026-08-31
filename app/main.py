@@ -56,7 +56,13 @@ _CSP = (
     # event-handler attributes like onclick=, not just <script> tags),
     # and the app has no inline scripts or handlers left to accommodate.
     "style-src 'self' 'unsafe-inline'; "
-    "img-src 'self'; "
+    # OIDC profile pictures are hosted by whatever the identity provider
+    # is (Google, a self-hosted IdP, ...), not this app - 'self' alone
+    # would block every one of them. Loosening only this directive is
+    # deliberate and safe: an <img> tag can't execute script the way an
+    # allowed script-src origin could, so this doesn't reopen the XSS
+    # surface script-src is there to close.
+    "img-src 'self' https:; "
     "font-src 'self'; "
     "connect-src 'self'; "
     "frame-ancestors 'none'; "

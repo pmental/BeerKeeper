@@ -298,6 +298,22 @@ const Pages = (() => {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
+  function isDrinkBySoon(bestBeforeIso) {
+    // True once a bottle's drink-by date is within the next 30 days, or
+    // has already passed. Built the same local-date-safe way as
+    // todayIsoLocal() above (setDate() operates on local calendar
+    // components, not UTC) so this can never be off by a day depending on
+    // timezone. Comparing zero-padded YYYY-MM-DD strings directly is a
+    // valid stand-in for date comparison and sidesteps re-parsing
+    // entirely.
+    if (!bestBeforeIso) return false;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() + 30);
+    const pad = (n) => String(n).padStart(2, "0");
+    const cutoffIso = `${cutoff.getFullYear()}-${pad(cutoff.getMonth() + 1)}-${pad(cutoff.getDate())}`;
+    return bestBeforeIso <= cutoffIso;
+  }
+
   function isValidIsoDateOrEmpty(value) {
     if (!value) return true;
     const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -816,7 +832,11 @@ const Pages = (() => {
     return `
       <div class="entry-card" data-entry-id="${entry.id}">
         <div class="entry-main">
-          <h3>${escapeHtml(entry.beer.name)}</h3>
+          <h3>${escapeHtml(entry.beer.name)}${
+      isDrinkBySoon(entry.best_before)
+        ? `<span class="drinkby-alert" title="Drink by ${escapeHtml(fmtDate(entry.best_before))}">!</span>`
+        : ""
+    }</h3>
           <div class="entry-meta">
             <span>${escapeHtml(entry.beer.brewery.name)}</span>
             ${metaBits.map((m) => `<span class="dot">&middot;</span><span>${m}</span>`).join("")}
@@ -1296,7 +1316,7 @@ const Pages = (() => {
       <div class="page-head"><h1>Account</h1></div>
 
       <div class="panel" style="margin-bottom:20px">
-        <h3>Signed in as ${escapeHtml(firstName(a.display_name) || a.username)}</h3>
+        <h3>Signed in as ${escapeHtml(a.display_name || a.username)}</h3>
         <p class="subtle">${escapeHtml(a.username)} &middot; ${escapeHtml(a.email)}</p>
       </div>
 
@@ -2094,11 +2114,13 @@ const Pages = (() => {
       <div class="page-head"><h1>Admin</h1></div>
       <div class="panel" style="margin-bottom:20px" id="settings-panel">${spinnerHtml()}</div>
       <div class="panel" style="margin-bottom:20px" id="smtp-panel">${spinnerHtml()}</div>
-      <div class="page-head" style="margin-bottom:12px">
-        <h2 style="font-size:19px; margin:0">Users</h2>
-        <button class="btn btn-primary btn-sm" id="add-user-btn">+ Add user</button>
+      <div class="panel" style="margin-bottom:20px" id="users-panel">
+        <h3>Users</h3>
+        <div class="form-actions" style="margin-top:10px; justify-content:flex-start;">
+          <button class="btn btn-primary btn-sm" id="add-user-btn">+ Add user</button>
+        </div>
+        <div id="users-list" style="margin-top:14px">${spinnerHtml()}</div>
       </div>
-      <div id="users-list" style="margin-bottom:20px">${spinnerHtml()}</div>
       <div class="panel" style="margin-bottom:20px" id="breweries-panel">${spinnerHtml()}</div>
       <div class="panel" id="backup-panel">${spinnerHtml()}</div>
     `;
