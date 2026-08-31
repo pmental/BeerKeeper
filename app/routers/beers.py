@@ -60,7 +60,13 @@ def search_breweries(
     query = db.query(models.Brewery)
     if q:
         query = query.filter(models.Brewery.name.ilike(f"%{q}%"))
-    results = query.order_by(models.Brewery.name).limit(50).all()
+    # No SQL-level limit here: it has to run before the recency re-sort
+    # below can even see every candidate, so a brewery the user just used
+    # could fall outside an alphabetical LIMIT and never surface at all,
+    # even though it should rank first. Truncating only after sorting
+    # (below) is what actually guarantees that. Fine at this app's scale -
+    # a self-hosted catalog, not a multi-tenant one with millions of rows.
+    results = query.order_by(models.Brewery.name).all()
 
     if current_user:
         recency = _user_brewery_recency(db, current_user.id)
@@ -156,7 +162,11 @@ def search_beers(
         query = query.join(models.Brewery).filter(
             or_(models.Beer.name.ilike(f"%{q}%"), models.Brewery.name.ilike(f"%{q}%"))
         )
-    results = query.order_by(models.Beer.name).limit(50).all()
+    # No SQL-level limit here - see search_breweries above for why: it
+    # would run before the recency re-sort can see every candidate, so a
+    # beer the user just logged could fall outside an alphabetical LIMIT
+    # and never surface at all, even though it should rank first.
+    results = query.order_by(models.Beer.name).all()
 
     if current_user:
         recency = _user_beer_recency(db, current_user.id)

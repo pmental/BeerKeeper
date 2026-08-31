@@ -65,7 +65,7 @@ const Pages = (() => {
     const pickedNote = root.querySelector(".picked-note");
 
     const search = debounce(async (q) => {
-      if (!q || q.length < 2) {
+      if (q.length === 1) {
         list.innerHTML = "";
         list.style.display = "none";
         return;
@@ -98,7 +98,11 @@ const Pages = (() => {
       search(input.value.trim());
     });
     input.addEventListener("focus", () => {
-      if (list.innerHTML) list.style.display = "block";
+      if (list.innerHTML) {
+        list.style.display = "block";
+      } else {
+        search(input.value.trim());
+      }
     });
     document.addEventListener("click", (e) => {
       if (!list.contains(e.target) && e.target !== input) list.style.display = "none";
@@ -320,7 +324,7 @@ const Pages = (() => {
     if (!input || !list || !hiddenId) return;
 
     const search = debounce(async (q) => {
-      if (input.disabled || !q || q.length < 2) {
+      if (input.disabled || q.length === 1) {
         list.innerHTML = "";
         list.style.display = "none";
         return;
@@ -345,7 +349,12 @@ const Pages = (() => {
       search(input.value.trim());
     });
     input.addEventListener("focus", () => {
-      if (!input.disabled && list.innerHTML) list.style.display = "block";
+      if (input.disabled) return;
+      if (list.innerHTML) {
+        list.style.display = "block";
+      } else {
+        search(input.value.trim());
+      }
     });
     document.addEventListener("click", (e) => {
       if (!list.contains(e.target) && e.target !== input) list.style.display = "none";
@@ -2294,19 +2303,13 @@ const Pages = (() => {
         <div class="field" style="margin-top:14px">
           <input class="input" id="brewery-search" placeholder="Search breweries by name&hellip;" autocomplete="off" />
         </div>
-        <div id="brewery-results" class="field-hint">Type to search the brewery list.</div>
+        <div id="brewery-results" class="field-hint">Click the search box to browse breweries, or start typing to filter.</div>
       `;
 
       const resultsEl = panel.querySelector("#brewery-results");
 
       async function runSearch(q) {
         const myToken = ++breweriesSearchToken;
-        if (!q.trim()) {
-          resultsEl.innerHTML = "";
-          resultsEl.textContent = "Type to search the brewery list.";
-          resultsEl.className = "field-hint";
-          return;
-        }
         resultsEl.className = "";
         resultsEl.innerHTML = spinnerHtml();
         let results;
@@ -2314,12 +2317,14 @@ const Pages = (() => {
           results = await Api.adminListBreweries(q.trim());
         } catch (err) {
           if (myToken !== breweriesSearchToken) return;
-          resultsEl.innerHTML = `<div class="empty-note">Couldn't search: ${escapeHtml(err.message)}</div>`;
+          resultsEl.innerHTML = `<div class="empty-note">Couldn't load: ${escapeHtml(err.message)}</div>`;
           return;
         }
         if (myToken !== breweriesSearchToken) return; // a newer search finished first
         if (!results.length) {
-          resultsEl.innerHTML = `<div class="empty-note">No breweries match "${escapeHtml(q)}".</div>`;
+          resultsEl.innerHTML = q.trim()
+            ? `<div class="empty-note">No breweries match "${escapeHtml(q)}".</div>`
+            : `<div class="empty-note">No breweries yet - add the first one below.</div>`;
           return;
         }
         resultsEl.innerHTML = `<div class="entry-list">${results
@@ -2368,6 +2373,13 @@ const Pages = (() => {
       const searchInput = panel.querySelector("#brewery-search");
       const debouncedSearch = debounce((q) => runSearch(q), 300);
       searchInput.addEventListener("input", () => debouncedSearch(searchInput.value));
+      let hasLoadedOnce = false;
+      searchInput.addEventListener("focus", () => {
+        if (!hasLoadedOnce) {
+          hasLoadedOnce = true;
+          runSearch(searchInput.value);
+        }
+      });
 
       panel.querySelector("#add-brewery-btn").addEventListener("click", () => {
         openBreweryModal(null, () => runSearch(searchInput.value));
