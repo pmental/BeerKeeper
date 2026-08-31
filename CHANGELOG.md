@@ -1,5 +1,7 @@
 # Changelog
 
+- **0.0.45** — Cellar CSV export now always includes both `size_oz` and `size_ml`; import reads whichever matches your unit setting, falling back to the other if it's blank. On narrow screens (phones), the top nav collapses into a hamburger menu instead of causing the whole page to scroll sideways.
+
 - **0.0.44** — Moved cellar CSV import/export from its own page into Account → Cellar data (the old link still works, redirecting there). Moved History from a cellar-page toolbar link into the top nav, right after "My cellar" and before Admin. Fixed a leftover "best-before" label on the account page's privacy settings that should have said "drink-by."
 
 - **0.0.43** — Beer names with an external link no longer underline on hover on the cellar page.

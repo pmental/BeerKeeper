@@ -33,6 +33,12 @@ const App = (() => {
   function renderNav(activeHash) {
     const navLinks = document.getElementById("nav-links");
     const navRight = document.getElementById("nav-right");
+    const navToggle = document.getElementById("nav-toggle");
+
+    // A route change is also the natural point to close the mobile menu -
+    // whatever the user tapped just navigated them away from it.
+    navLinks.classList.remove("open");
+    if (navToggle) navToggle.setAttribute("aria-expanded", "false");
 
     const links = [{ href: "#/", label: "Home" }, { href: "#/browse", label: "Browse" }];
     if (state.user) {
@@ -57,7 +63,7 @@ const App = (() => {
       navRight.innerHTML = `
         <a class="user-chip" href="#/account" title="Account">
           ${avatarHtml}
-          <span>Hi, <strong>${UI.escapeHtml(state.displayName || state.user)}</strong></span>
+          <span class="user-chip-name">Hi, <strong>${UI.escapeHtml(state.displayName || state.user)}</strong></span>
         </a>
         <button class="btn btn-ghost btn-sm" id="logout-btn">Log out</button>
       `;
@@ -167,6 +173,21 @@ const App = (() => {
     await Promise.all([refreshUser(), refreshAuthConfig()]);
     router();
     window.addEventListener("hashchange", router);
+
+    const navToggle = document.getElementById("nav-toggle");
+    const navLinks = document.getElementById("nav-links");
+    if (navToggle && navLinks) {
+      navToggle.addEventListener("click", () => {
+        const open = navLinks.classList.toggle("open");
+        navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+      document.addEventListener("click", (e) => {
+        if (!navLinks.classList.contains("open")) return;
+        if (navLinks.contains(e.target) || navToggle.contains(e.target)) return;
+        navLinks.classList.remove("open");
+        navToggle.setAttribute("aria-expanded", "false");
+      });
+    }
 
     Api.version()
       .then(({ name, version }) => {

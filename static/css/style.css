@@ -203,10 +203,72 @@ button, input, select, textarea {
   background: var(--accent);
 }
 
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
 .nav-right {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+/* Below this width the topbar can't fit brand + full nav + theme picker +
+   account controls on one line without the whole page scrolling
+   sideways - collapse the link row into a hamburger-triggered dropdown
+   instead of letting it overflow. Uses the topbar's own flex-wrap plus
+   order/flex-basis to drop onto its own full-width row, rather than
+   position:absolute/fixed - avoids relying on .topbar's position:sticky
+   correctly acting as a containing block, which is inconsistent across
+   older or embedded rendering engines even though modern browsers
+   handle it fine per spec. */
+@media (max-width: 760px) {
+  .brand .tag {
+    display: none;
+  }
+  .nav-toggle {
+    display: flex;
+  }
+  .topbar {
+    padding: 10px 14px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .nav-right {
+    gap: 6px;
+  }
+  .user-chip-name {
+    display: none;
+  }
+  .nav-links {
+    display: none;
+    order: 10;
+    flex-basis: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    margin: 8px 0 0;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+  .nav-links.open {
+    display: flex;
+  }
+  .nav-links a {
+    padding: 12px 14px;
+  }
 }
 
 .sr-only {

@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.44** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.45** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -236,13 +236,18 @@ Export produces (and import expects) these columns:
 
 ```
 brewery, beer, style, abv, location, custom_location, quantity, size_oz,
-bottle_date, best_before, batch_notes, trade_status
+size_ml, bottle_date, best_before, batch_notes, trade_status
 ```
 
 `location` is `cellar` or `fridge`; `trade_status` is `none`, `ft`, or
-`iso`; dates are `YYYY-MM-DD`. `size_oz` is always in fluid ounces
-regardless of your account's unit display setting. Importing reuses an
-existing beer/brewery by name if one matches, otherwise creates it.
+`iso`; dates are `YYYY-MM-DD`. Export always fills in both `size_oz` and
+`size_ml` (converted from the one value actually stored), so the file is
+usable regardless of which unit system opens it next. Import reads
+whichever of the two matches the importing account's own unit setting,
+falling back to the other column if that one's blank - handles a
+hand-edited file that only has one, or one produced by an install with
+the opposite default. Importing reuses an existing beer/brewery by name
+if one matches, otherwise creates it.
 
 ## Architecture
 
