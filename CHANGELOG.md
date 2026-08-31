@@ -1,5 +1,9 @@
 # Changelog
 
+- **0.0.39** — "Best before" is now "Drink by" everywhere it's shown, not just the add/edit form — cellar cards, both private and public views.
+
+- **0.0.38** — Renamed the "Best before / drink by" field label to just "Drink by" on the add/edit bottle form.
+
 - **0.0.37** — Bottles due to drink within 30 days (or already overdue) now show a "!" next to the beer name, styled to match the "Keeper" half of the logo. Shows in both comfortable and compact cellar views.
 
 - **0.0.36** — The account page now shows your full display name ("Signed in as Jane Middlename Doe") instead of just the first name. The nav's greeting elsewhere is unchanged, still first-name-only.

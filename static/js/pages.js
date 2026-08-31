@@ -498,7 +498,7 @@ const Pages = (() => {
             ${isoDateInputHtml("bottle_date", entry?.bottle_date)}
           </div>
           <div class="field">
-            <label>Best before / drink by <span class="subtle">(optional)</span></label>
+            <label>Drink by <span class="subtle">(optional)</span></label>
             ${isoDateInputHtml("best_before", entry?.best_before)}
           </div>
         </div>
@@ -805,7 +805,7 @@ const Pages = (() => {
     if (entry.beer.abv !== null && entry.beer.abv !== undefined) metaBits.push(`${entry.beer.abv}% ABV`);
     if (entry.size_oz) metaBits.push(`${ozToDisplay(entry.size_oz, account.unit_system)} ${volumeUnitLabel(account.unit_system)}`);
     if (entry.custom_location) metaBits.push(escapeHtml(entry.custom_location));
-    if (entry.best_before) metaBits.push(`Best before ${fmtDate(entry.best_before)}`);
+    if (entry.best_before) metaBits.push(`Drink by ${fmtDate(entry.best_before)}`);
 
     const isWantedOnly = entry.quantity === 0 && entry.trade_status === "iso";
 
