@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.29** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.31** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -18,7 +18,7 @@ CDN calls. No third-party accounts, analytics, or API keys required.
   date, best-before date, notes — sortable by beer, brewery, or drink-by
   date, in imperial or metric units (metric by default)
 - Autocomplete for beer, brewery, and style, backed by a shared database
-  that grows as bottles are added, plus 190+ pre-populated breweries —
+  that grows as bottles are added, plus 210+ pre-populated breweries —
   see "Pre-populated breweries" below
 - Quick actions per bottle: restock (+1), drink (logs a tasting note and
   rating), move between cellar and fridge
@@ -62,6 +62,9 @@ link in the nav (`#/admin`) for:
 - Creating or deleting accounts, promoting/demoting other admins
 - Turning new registrations on or off at runtime, independently of
   `CELLAR_PASSWORD_AUTH_ENABLED`
+- Adding, renaming, or deleting breweries in the shared list (deleting is
+  blocked while any beer still references one), plus CSV import/export
+  for the whole list
 - Downloading a full backup of the whole instance (every account, not
   just your own, plus your custom beer styles) as a single zip file, and
   restoring one — validated on upload, applied at the next restart rather
@@ -104,12 +107,14 @@ docker compose restart beerkeeper
 
 ## Pre-populated breweries
 
-The database starts with 190+ real breweries — Swedish craft breweries,
+The database starts with 210+ real breweries — Swedish craft breweries,
 major American and Belgian names, and a solid spread across the rest of
 Europe (UK, Ireland, Germany, Austria, Czechia, Poland, the Nordics, and
-the Baltics) — so brewery autocomplete is useful from day one. Seeded
-once, then managed like any other brewery — rename, delete, or add more
-from the app itself. Source list: `app/breweries_default.txt`.
+the Baltics) — plus major cider makers and meaderies, so autocomplete is
+useful from day one whether you're tracking beer, cider, or mead. Seeded
+once, then managed from the admin page's "Breweries" panel — rename,
+delete (once nothing references it), add, or bulk import/export as CSV.
+Source list for the initial seed: `app/breweries_default.txt`.
 
 ## Upgrading an existing deployment
 

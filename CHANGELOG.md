@@ -1,5 +1,9 @@
 # Changelog
 
+- **0.0.31** — Added a "Breweries" panel to the admin page: add, rename, and delete breweries in the shared list (deletion blocked while any beer still references one), plus CSV import/export for the whole list. This is what the README's "managed like any other brewery" line was supposed to mean — there was previously no way to actually do it.
+
+- **0.0.30** — The cellar page now shows a running total ("N beers · N on hand") next to the title, reflecting whatever filter is active. Added ~19 major cider makers and meaderies to the pre-populated brewery list (Strongbow, Thatchers, Angry Orchard, B. Nektar, Schramm's, and more) — existing installs pick these up automatically on next boot, same as any brewery-list update.
+
 - **0.0.29** — Cellar sort buttons now toggle ascending/descending on click, with an arrow showing the current direction. History entries are now editable (rating, note, quantity, date), not just deletable. Removed the background glow on all pages. Removed two unnecessary 0-byte `__init__.py` files.
 
 - **0.0.28** — Added ~65 pre-populated breweries covering the UK, Ireland, Germany, Austria, Czechia, Poland, and (new) Latvia and Lithuania, plus more for Estonia — 190+ total. Existing installs pick these up automatically on next boot too, same as any brewery-list update, since seeding tracks individual breweries rather than all-or-nothing.

@@ -47,6 +47,8 @@ Falcon Bryggeri
 Spendrups Bryggeri | https://www.spendrups.se
 Åbro Bryggeri | https://www.abro.se
 St. Eriks Bryggeri
+Kopparberg | https://www.kopparbergsbryggeri.se
+Rekorderlig
 
 # --- United States ---
 Sierra Nevada Brewing Co. | https://sierranevada.com
@@ -102,6 +104,17 @@ Sixpoint Brewery | https://sixpoint.com
 Two Roads Brewing Company | https://tworoadsbrewing.com
 Revolution Brewing | https://revbrew.com
 Half Acre Beer Company | https://halfacrebeer.com
+Angry Orchard
+Woodchuck Cider
+2 Towns Ciderhouse
+Eden Ciders
+Ace Cider
+Bold Rock Hard Cider
+B. Nektar Meadery | https://www.bnektar.com
+Schramm's Mead | https://www.schrammsmead.com
+Redstone Meadery | https://www.redstonemeadery.com
+Superstition Meadery
+Golden Coast Mead
 
 # --- United Kingdom ---
 BrewDog | https://www.brewdog.com
@@ -127,6 +140,11 @@ Belhaven Brewery | https://www.belhaven.co.uk
 Tennent's
 Innis & Gunn | https://www.innisandgunn.com
 Brains Brewery
+Strongbow | https://www.strongbow.com
+Bulmers
+Thatchers Cider
+Westons Cider
+Aspall
 
 # --- Ireland ---
 Guinness | https://www.guinness.com
@@ -138,6 +156,7 @@ Galway Bay Brewery | https://galwaybaybrewery.com
 Kinnegar Brewing | https://kinnegarbrewing.ie
 Carlow Brewing Company (O'Hara's) | https://carlowbrewing.com
 White Hag Brewing | https://thewhitehag.com
+Magners Irish Cider
 
 # --- Belgium ---
 Cantillon | https://cantillon.be

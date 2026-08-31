@@ -1162,7 +1162,7 @@ const Pages = (() => {
 
     root.innerHTML = `
       <div class="page-head">
-        <h1>My cellar</h1>
+        <h1>My cellar <span class="subtle" style="font-size:14px; font-weight:400;" id="cellar-total"></span></h1>
         <div style="display:flex; gap:8px;">
           ${ctx.account.trading_enabled ? `<button class="btn btn-ghost" id="add-wanted">+ Add to wanted list</button>` : ""}
           <button class="btn btn-primary" id="add-bottle">+ Add a bottle</button>
@@ -1252,19 +1252,26 @@ const Pages = (() => {
 
     async function load() {
       const container = root.querySelector("#entries");
+      const totalEl = root.querySelector("#cellar-total");
       container.innerHTML = spinnerHtml();
       try {
         const entries = await Api.listCellar(sort, locationFilter, sortDirection);
         if (!entries.length) {
           container.innerHTML = `<div class="panel empty-note">Your cellar's empty. Add your first bottle to start tracking it.</div>`;
+          if (totalEl) totalEl.textContent = "";
           return;
         }
         container.innerHTML = `<div class="entry-list${viewMode === "compact" ? " compact" : ""}">${entries
           .map((e) => entryCardHtml(e, ctx.account, { editable: true }))
           .join("")}</div>`;
         wireEntryCards(container, entries, ctx.account, load);
+        if (totalEl) {
+          const totalBottles = entries.reduce((sum, e) => sum + e.quantity, 0);
+          totalEl.textContent = `${entries.length} beer${entries.length === 1 ? "" : "s"} \u00b7 ${totalBottles} on hand`;
+        }
       } catch (e) {
         container.innerHTML = `<div class="panel empty-note">Couldn't load your cellar: ${escapeHtml(e.message)}</div>`;
+        if (totalEl) totalEl.textContent = "";
       }
     }
     load();
@@ -1652,6 +1659,61 @@ const Pages = (() => {
     render();
   }
 
+  function openBreweryModal(brewery, onSaved) {
+    const isEdit = !!brewery;
+    const html = `
+      <button class="modal-close" data-close>&times;</button>
+      <h2>${isEdit ? "Edit brewery" : "Add a brewery"}</h2>
+      <form data-brewery-form>
+        <div class="field">
+          <label>Name</label>
+          <input class="input" name="name" value="${escapeHtml(brewery?.name || "")}" required />
+        </div>
+        <div class="field">
+          <label>Website <span class="subtle">(optional)</span></label>
+          <input class="input" type="url" name="website" value="${escapeHtml(brewery?.website || "")}" placeholder="https://..." />
+        </div>
+        <div class="form-error" data-error style="display:none"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-block">${isEdit ? "Save changes" : "Add brewery"}</button>
+        </div>
+      </form>
+    `;
+    openModal(html, {
+      onMount(modalEl, close) {
+        modalEl.querySelector("[data-close]").addEventListener("click", close);
+        const form = modalEl.querySelector("[data-brewery-form]");
+        const errorBox = modalEl.querySelector("[data-error]");
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          errorBox.style.display = "none";
+          const fd = new FormData(form);
+          const submitBtn = form.querySelector('button[type="submit"]');
+          submitBtn.disabled = true;
+          try {
+            const payload = {
+              name: fd.get("name").trim(),
+              website: fd.get("website")?.trim() || null,
+            };
+            if (isEdit) {
+              await Api.adminPatchBrewery(brewery.id, payload);
+            } else {
+              await Api.adminCreateBrewery(payload);
+            }
+            close();
+            toast(isEdit ? "Brewery updated." : "Brewery added.");
+            onSaved();
+          } catch (err) {
+            errorBox.textContent = err.message;
+            errorBox.style.display = "block";
+          } finally {
+            submitBtn.disabled = false;
+          }
+        });
+      },
+    });
+  }
+
   function openEditLogModal(log, onDone) {
     const html = `
       <button class="modal-close" data-close>&times;</button>
@@ -2028,6 +2090,7 @@ const Pages = (() => {
         <button class="btn btn-primary btn-sm" id="add-user-btn">+ Add user</button>
       </div>
       <div id="users-list" style="margin-bottom:20px">${spinnerHtml()}</div>
+      <div class="panel" style="margin-bottom:20px" id="breweries-panel">${spinnerHtml()}</div>
       <div class="panel" id="backup-panel">${spinnerHtml()}</div>
     `;
 
@@ -2212,6 +2275,144 @@ const Pages = (() => {
       openAddUserModal(loadUsers, !!(currentSettings && currentSettings.smtp_enabled));
     });
 
+    let breweriesSearchToken = 0;
+    async function loadBreweriesPanel() {
+      const panel = root.querySelector("#breweries-panel");
+      panel.innerHTML = `
+        <h3>Breweries</h3>
+        <p class="field-hint" style="margin-top:-4px">
+          The shared brewery list used for autocomplete across the whole instance - rename or clean up
+          duplicates, or add ones you know you'll need. A brewery can only be deleted once nothing
+          references it.
+        </p>
+        <div class="form-actions" style="margin-top:10px; justify-content:flex-start; gap:8px;">
+          <button class="btn btn-primary btn-sm" id="add-brewery-btn">+ Add brewery</button>
+          <button class="btn btn-ghost btn-sm" id="export-breweries-btn">Download CSV</button>
+          <button class="btn btn-ghost btn-sm" id="import-breweries-btn">Upload CSV</button>
+          <input type="file" accept=".csv" id="brewery-import-file" style="display:none" />
+        </div>
+        <div class="field" style="margin-top:14px">
+          <input class="input" id="brewery-search" placeholder="Search breweries by name&hellip;" autocomplete="off" />
+        </div>
+        <div id="brewery-results" class="field-hint">Type to search the brewery list.</div>
+      `;
+
+      const resultsEl = panel.querySelector("#brewery-results");
+
+      async function runSearch(q) {
+        const myToken = ++breweriesSearchToken;
+        if (!q.trim()) {
+          resultsEl.innerHTML = "";
+          resultsEl.textContent = "Type to search the brewery list.";
+          resultsEl.className = "field-hint";
+          return;
+        }
+        resultsEl.className = "";
+        resultsEl.innerHTML = spinnerHtml();
+        let results;
+        try {
+          results = await Api.adminListBreweries(q.trim());
+        } catch (err) {
+          if (myToken !== breweriesSearchToken) return;
+          resultsEl.innerHTML = `<div class="empty-note">Couldn't search: ${escapeHtml(err.message)}</div>`;
+          return;
+        }
+        if (myToken !== breweriesSearchToken) return; // a newer search finished first
+        if (!results.length) {
+          resultsEl.innerHTML = `<div class="empty-note">No breweries match "${escapeHtml(q)}".</div>`;
+          return;
+        }
+        resultsEl.innerHTML = `<div class="entry-list">${results
+          .map(
+            (b) => `<div class="entry-card" style="padding:10px 14px;">
+              <div class="entry-main">
+                <h3 style="font-size:15px; margin-bottom:2px;">${escapeHtml(b.name)}</h3>
+                <div class="entry-meta">
+                  ${b.website ? `<a href="${escapeHtml(b.website)}" target="_blank" rel="noopener noreferrer">${escapeHtml(b.website)}</a>` : `<span class="subtle">No website</span>`}
+                  <span>&middot;</span>
+                  <span>${b.beer_count} beer${b.beer_count === 1 ? "" : "s"}</span>
+                </div>
+              </div>
+              <div class="entry-actions">
+                <div class="row">
+                  <button class="btn btn-icon" data-edit-brewery="${b.id}">Edit</button>
+                  <button class="btn btn-icon" data-del-brewery="${b.id}" ${b.beer_count ? "disabled title=\"In use - can't delete\"" : ""}>Del</button>
+                </div>
+              </div>
+            </div>`
+          )
+          .join("")}</div>`;
+
+        resultsEl.querySelectorAll("[data-edit-brewery]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const b = results.find((r) => r.id === Number(btn.dataset.editBrewery));
+            if (b) openBreweryModal(b, () => runSearch(searchInput.value));
+          });
+        });
+        resultsEl.querySelectorAll("[data-del-brewery]:not([disabled])").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const b = results.find((r) => r.id === Number(btn.dataset.delBrewery));
+            confirmDelete(`Delete "${b.name}" from the brewery list? This can't be undone.`, async () => {
+              try {
+                await Api.adminDeleteBrewery(b.id);
+                toast("Brewery deleted.");
+                runSearch(searchInput.value);
+              } catch (err) {
+                toast(err.message, "error");
+              }
+            });
+          });
+        });
+      }
+
+      const searchInput = panel.querySelector("#brewery-search");
+      const debouncedSearch = debounce((q) => runSearch(q), 300);
+      searchInput.addEventListener("input", () => debouncedSearch(searchInput.value));
+
+      panel.querySelector("#add-brewery-btn").addEventListener("click", () => {
+        openBreweryModal(null, () => runSearch(searchInput.value));
+      });
+
+      panel.querySelector("#export-breweries-btn").addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          const { blob, filename } = await Api.adminExportBreweries();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          toast(err.message, "error");
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      const importFileInput = panel.querySelector("#brewery-import-file");
+      panel.querySelector("#import-breweries-btn").addEventListener("click", () => importFileInput.click());
+      importFileInput.addEventListener("change", async () => {
+        const file = importFileInput.files[0];
+        if (!file) return;
+        try {
+          const result = await Api.adminImportBreweries(file);
+          toast(`Imported: ${result.created} added, ${result.skipped} skipped.`);
+          if (result.errors.length) {
+            toast(result.errors[0], "error");
+          }
+          if (searchInput.value.trim()) runSearch(searchInput.value);
+        } catch (err) {
+          toast(err.message, "error");
+        } finally {
+          importFileInput.value = "";
+        }
+      });
+    }
+
     async function loadBackupPanel() {
       const panel = root.querySelector("#backup-panel");
       let status;
@@ -2316,6 +2517,7 @@ const Pages = (() => {
     await loadSettings();
     loadSmtpPanel();
     loadUsers();
+    loadBreweriesPanel();
     loadBackupPanel();
   }
 
