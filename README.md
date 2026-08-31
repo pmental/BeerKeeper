@@ -13,21 +13,17 @@ CDN calls. No third-party accounts, analytics, or API keys required.
   and instance settings — see "OIDC / SSO" and "Admin" below
 - Optional SMTP email for password resets and welcome emails — see
   "Email (SMTP)" below
-- Dark, light, or system-matched theme
 - Track bottles in your cellar and/or fridge — quantity, size, bottle
   date, best-before date, notes — sortable by beer, brewery, or drink-by
   date, in imperial or metric units (metric by default)
 - Autocomplete for beer, brewery, and style, backed by a shared database
   that grows as bottles are added, plus 210+ pre-populated breweries —
   see "Pre-populated breweries" below
-- Quick actions per bottle: restock (+1), drink (logs a tasting note and
-  rating), move between cellar and fridge
 - Optional trading labels and a shareable wanted list — see "Trading and
   wanted lists" below
 - Public cellar profiles with configurable privacy, a browse directory,
   and a recent-activity feed
 - CSV import and export
-- Comfortable or compact list view, remembered per browser
 
 ## OIDC / SSO
 
