@@ -37,6 +37,7 @@ const App = (() => {
     const links = [{ href: "#/", label: "Home" }, { href: "#/browse", label: "Browse" }];
     if (state.user) {
       links.push({ href: "#/cellar", label: "My cellar" });
+      links.push({ href: "#/consumed", label: "History" });
     }
     if (state.account && state.account.is_admin) {
       links.push({ href: "#/admin", label: "Admin" });
@@ -94,7 +95,9 @@ const App = (() => {
     { pattern: /^#\/admin$/, page: Pages.admin },
     { pattern: /^#\/browse$/, page: Pages.browse },
     { pattern: /^#\/consumed$/, page: Pages.consumed },
-    { pattern: /^#\/import-export$/, page: Pages.importExport },
+    // Import/export moved into the account page - keep the old link
+    // working for anyone with it bookmarked, rather than a dead route.
+    { pattern: /^#\/import-export$/, page: () => { location.hash = "#/account"; } },
     { pattern: /^#\/u\/([^/]+)\/trades$/, page: Pages.publicTrades, param: true },
     { pattern: /^#\/u\/([^/]+)$/, page: Pages.publicCellar, param: true },
   ];

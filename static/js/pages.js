@@ -1257,8 +1257,6 @@ const Pages = (() => {
         </div>
         <div class="spacer"></div>
         ${ctx.account.trading_enabled ? `<a class="btn btn-ghost btn-sm" href="#/u/${encodeURIComponent(ctx.user)}/trades">Trade list</a>` : ""}
-        <a class="btn btn-ghost btn-sm" href="#/consumed">History</a>
-        <a class="btn btn-ghost btn-sm" href="#/import-export">Import/Export</a>
       </div>
       <div id="entries">${spinnerHtml()}</div>
     `;
@@ -1380,6 +1378,24 @@ const Pages = (() => {
         </div>
       </div>
 
+      <div class="panel" style="margin-bottom:20px">
+        <h3>Cellar data</h3>
+        <p class="field-hint" style="margin-top:-4px">Export your whole cellar as a CSV file, or import one to add bottles in bulk.</p>
+        <div class="form-actions" style="margin-top:10px; justify-content:flex-start;">
+          <button class="btn btn-primary btn-sm" id="export-btn">Download CSV</button>
+        </div>
+        <div class="field" style="margin-top:14px">
+          <label>Import from CSV</label>
+          <p class="field-hint" style="margin-top:-4px">
+            Columns: <code>brewery, beer, style, abv, location, custom_location, quantity, size_oz, bottle_date, best_before, batch_notes, trade_status</code>
+          </p>
+          <div class="csv-drop">
+            <input type="file" accept=".csv" id="import-file" />
+          </div>
+          <div id="import-result" style="margin-top:14px"></div>
+        </div>
+      </div>
+
       ${
         a.trading_enabled
           ? `<div class="panel" style="margin-bottom:20px">
@@ -1399,7 +1415,7 @@ const Pages = (() => {
         <div class="settings-grid">
           ${toggleRow("cellar_public", "Make my cellar public", "Others can find you via Browse cellars and view your bottles.", a.cellar_public)}
           ${toggleRow("notes_public", "Show my tasting notes publicly", "Only applies if your cellar is public.", a.notes_public)}
-          ${toggleRow("drinkby_public", "Show best-before dates publicly", "Only applies if your cellar is public.", a.drinkby_public)}
+          ${toggleRow("drinkby_public", "Show drink-by dates publicly", "Only applies if your cellar is public.", a.drinkby_public)}
         </div>
       </div>
 
@@ -1492,6 +1508,45 @@ const Pages = (() => {
         }
       });
     }
+
+    root.querySelector("#export-btn").addEventListener("click", async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      try {
+        const { blob, filename } = await Api.exportCellar();
+        const url = URL.createObjectURL(blob);
+        const a2 = document.createElement("a");
+        a2.href = url;
+        a2.download = filename;
+        document.body.appendChild(a2);
+        a2.click();
+        a2.remove();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        toast(err.message, "error");
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    root.querySelector("#import-file").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const resultBox = root.querySelector("#import-result");
+      resultBox.innerHTML = spinnerHtml();
+      try {
+        const result = await Api.importCellar(file);
+        resultBox.innerHTML = `<div class="form-error" style="background:var(--secondary-wash);border-color:var(--secondary);color:var(--text)">
+          Imported ${result.created} bottle${result.created === 1 ? "" : "s"}${
+          result.skipped ? `, skipped ${result.skipped}` : ""
+        }.
+          ${result.errors && result.errors.length ? "<br>" + result.errors.map(escapeHtml).join("<br>") : ""}
+        </div>`;
+      } catch (err) {
+        resultBox.innerHTML = `<div class="form-error">${escapeHtml(err.message)}</div>`;
+      }
+      e.target.value = "";
+    });
   }
 
   function toggleRow(key, label, desc, checked) {
@@ -2034,67 +2089,6 @@ const Pages = (() => {
     } catch (e) {
       root.querySelector("#list").innerHTML = `<div class="panel empty-note">Couldn't load your history.</div>`;
     }
-  }
-
-  async function importExport(root, ctx) {
-    if (!ctx.user) {
-      location.hash = "#/login";
-      return;
-    }
-    root.innerHTML = `
-      <div class="page-head"><h1>Import / Export</h1></div>
-      <div class="panel" style="margin-bottom:20px">
-        <h3>Export</h3>
-        <p>Download your entire cellar as a CSV file.</p>
-        <button class="btn btn-primary" id="export-btn">Download CSV</button>
-      </div>
-      <div class="panel">
-        <h3>Import</h3>
-        <p>Upload a CSV with columns: <code>brewery, beer, style, abv, location, custom_location, quantity, size_oz, bottle_date, best_before, batch_notes, trade_status</code></p>
-        <div class="csv-drop">
-          <input type="file" accept=".csv" id="import-file" />
-        </div>
-        <div id="import-result" style="margin-top:14px"></div>
-      </div>
-    `;
-    root.querySelector("#export-btn").addEventListener("click", async (e) => {
-      const btn = e.currentTarget;
-      btn.disabled = true;
-      try {
-        const { blob, filename } = await Api.exportCellar();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-      } catch (err) {
-        toast(err.message, "error");
-      } finally {
-        btn.disabled = false;
-      }
-    });
-
-    root.querySelector("#import-file").addEventListener("change", async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const resultBox = root.querySelector("#import-result");
-      resultBox.innerHTML = spinnerHtml();
-      try {
-        const result = await Api.importCellar(file);
-        resultBox.innerHTML = `<div class="form-error" style="background:var(--secondary-wash);border-color:var(--secondary);color:var(--text)">
-          Imported ${result.created} bottle${result.created === 1 ? "" : "s"}${
-          result.skipped ? `, skipped ${result.skipped}` : ""
-        }.
-          ${result.errors && result.errors.length ? "<br>" + result.errors.map(escapeHtml).join("<br>") : ""}
-        </div>`;
-      } catch (err) {
-        resultBox.innerHTML = `<div class="form-error">${escapeHtml(err.message)}</div>`;
-      }
-      e.target.value = "";
-    });
   }
 
   function adminUserRowHtml(u, ctx) {
@@ -2882,7 +2876,6 @@ const Pages = (() => {
     publicCellar,
     publicTrades,
     consumed,
-    importExport,
   };
 })();
 

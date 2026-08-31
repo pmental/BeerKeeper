@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.43** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.44** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -227,8 +227,8 @@ docker cp $(docker compose ps -q beerkeeper):/data/beer_styles.txt ./beer_styles
 
 To restore manually, stop the container, replace both files in the
 volume with your backups, and start it again. Each user can also
-self-serve a partial backup any time via **Import / Export → Download
-CSV**.
+self-serve a partial backup of just their own cellar any time from
+**Account → Cellar data → Download CSV**.
 
 ## CSV format
 

@@ -1,5 +1,7 @@
 # Changelog
 
+- **0.0.44** — Moved cellar CSV import/export from its own page into Account → Cellar data (the old link still works, redirecting there). Moved History from a cellar-page toolbar link into the top nav, right after "My cellar" and before Admin. Fixed a leftover "best-before" label on the account page's privacy settings that should have said "drink-by."
+
 - **0.0.43** — Beer names with an external link no longer underline on hover on the cellar page.
 
 - **0.0.42** — Added a "Beers" panel to the admin page, mirroring the Breweries one: add, rename, reassign to a different brewery, edit style/ABV/external link, delete (blocked while in use by any cellar entry, history log, or wanted item), plus CSV import/export. The "Edit bottle" form's beer/brewery/style/ABV/link fields were already locked (they're shared data, not per-entry) but gave no explanation why - there's now a note, and admins get a one-click shortcut straight into editing that beer.
