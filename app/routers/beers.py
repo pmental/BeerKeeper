@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.database import get_db
 from app.deps import get_current_user, get_optional_user
+from app.url_utils import sanitize_url
 
 router = APIRouter(prefix="/api/beers", tags=["beers"])
 brewery_router = APIRouter(prefix="/api/breweries", tags=["breweries"])
@@ -91,7 +92,7 @@ def create_brewery(
     existing = db.query(models.Brewery).filter(models.Brewery.name.ilike(payload.name)).first()
     if existing:
         return existing
-    brewery = models.Brewery(name=payload.name.strip(), website=payload.website)
+    brewery = models.Brewery(name=payload.name.strip(), website=sanitize_url(payload.website))
     db.add(brewery)
     db.commit()
     db.refresh(brewery)
@@ -141,7 +142,7 @@ def resolve_or_create_beer_id(db: Session, beer_id: int | None, beer_in: "schema
             style=beer_in.style,
             abv=beer_in.abv,
             description=beer_in.description,
-            reference_url=beer_in.reference_url,
+            reference_url=sanitize_url(beer_in.reference_url),
         )
         db.add(beer)
         db.flush()
@@ -208,7 +209,7 @@ def create_beer(
         style=payload.style,
         abv=payload.abv,
         description=payload.description,
-        reference_url=payload.reference_url,
+        reference_url=sanitize_url(payload.reference_url),
     )
     db.add(beer)
     db.commit()

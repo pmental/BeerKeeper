@@ -108,6 +108,32 @@ class BeerOut(BaseModel):
         from_attributes = True
 
 
+class AdminBeerOut(BaseModel):
+    id: int
+    name: str
+    style: Optional[str] = None
+    abv: Optional[float] = None
+    reference_url: Optional[str] = None
+    brewery: BreweryOut
+    usage_count: int
+
+
+class AdminBeerIn(BaseModel):
+    name: str = Field(min_length=1, max_length=255)
+    brewery_id: int
+    style: Optional[str] = None
+    abv: Optional[float] = Field(default=None, ge=0, le=100)
+    reference_url: Optional[str] = None
+
+
+class AdminBeerPatch(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=255)
+    brewery_id: Optional[int] = None
+    style: Optional[str] = None
+    abv: Optional[float] = Field(default=None, ge=0, le=100)
+    reference_url: Optional[str] = None
+
+
 # ---------- Cellar entries ----------
 
 class CellarEntryIn(BaseModel):

@@ -1,5 +1,11 @@
 # Changelog
 
+- **0.0.43** — Beer names with an external link no longer underline on hover on the cellar page.
+
+- **0.0.42** — Added a "Beers" panel to the admin page, mirroring the Breweries one: add, rename, reassign to a different brewery, edit style/ABV/external link, delete (blocked while in use by any cellar entry, history log, or wanted item), plus CSV import/export. The "Edit bottle" form's beer/brewery/style/ABV/link fields were already locked (they're shared data, not per-entry) but gave no explanation why - there's now a note, and admins get a one-click shortcut straight into editing that beer.
+
+- **0.0.41** — Added an optional "External link" field for beers (Untappd, RateBeer, a brewery's own page, etc.) — the beer name becomes clickable wherever it's shown (cellar cards, both view modes, history, trade/wanted lists) when a link is set, and stays plain text when it isn't. URLs are validated to only accept http(s) links, a check now also applied retroactively to brewery websites, which had the same gap.
+
 - **0.0.40** — docker-compose.yml now sets `container_name: BeerKeeper`, so `docker ps`/`docker logs` show a friendly name instead of an auto-generated one. Note: this means only one instance can run under this container name at a time on a given Docker host — remove or rename it if you need to run multiple.
 
 - **0.0.39** — "Best before" is now "Drink by" everywhere it's shown, not just the add/edit form — cellar cards, both private and public views.

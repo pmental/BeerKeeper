@@ -168,6 +168,42 @@ const Api = (() => {
       }
       return data;
     },
+
+    adminListBeers: (q) => request("GET", "/api/admin/beers" + (q ? `?q=${encodeURIComponent(q)}` : "")),
+    adminCreateBeer: (payload) => request("POST", "/api/admin/beers", { body: payload }),
+    adminPatchBeer: (id, payload) => request("PATCH", `/api/admin/beers/${id}`, { body: payload }),
+    adminDeleteBeer: (id) => request("DELETE", `/api/admin/beers/${id}`),
+    async adminExportBeers() {
+      const token = getToken();
+      const res = await fetch("/api/admin/beers/export", {
+        headers: token ? { Authorization: "Bearer " + token } : {},
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error((data && data.detail) || "Couldn't export beers.");
+      }
+      const blob = await res.blob();
+      const disposition = res.headers.get("content-disposition") || "";
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      return { blob, filename: match ? match[1] : "beers.csv" };
+    },
+    async adminImportBeers(file) {
+      const token = getToken();
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/admin/beers/import", {
+        method: "POST",
+        headers: token ? { Authorization: "Bearer " + token } : {},
+        body: fd,
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        const err = new Error((data && data.detail) || "Import failed.");
+        err.data = data;
+        throw err;
+      }
+      return data;
+    },
     async adminUploadRestore(file) {
       const token = getToken();
       const fd = new FormData();

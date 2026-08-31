@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.40** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.43** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -69,6 +69,11 @@ link in the nav (`#/admin`) for:
 - Adding, renaming, or deleting breweries in the shared list (deleting is
   blocked while any beer still references one), plus CSV import/export
   for the whole list
+- The same for beers - name, brewery, style, ABV, and external link are
+  all editable, and a beer can only be deleted once nothing (cellar,
+  history, or wanted list) references it. From "Edit bottle" on a cellar
+  entry, admins get a direct shortcut into editing that beer, since those
+  fields are locked there otherwise (they're shared, not per-entry)
 - Downloading a full backup of the whole instance (every account, not
   just your own, plus your custom beer styles) as a single zip file, and
   restoring one — validated on upload, applied at the next restart rather

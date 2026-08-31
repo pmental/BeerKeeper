@@ -62,6 +62,7 @@ const Pages = (() => {
     const breweryHiddenId = root.querySelector('input[name="brewery_id"]');
     const styleInput = root.querySelector('[name="style"]');
     const abvInput = root.querySelector('[name="abv"]');
+    const refUrlInput = root.querySelector('[name="reference_url"]');
     const pickedNote = root.querySelector(".picked-note");
 
     const search = debounce(async (q) => {
@@ -80,7 +81,9 @@ const Pages = (() => {
               (b) =>
                 `<div class="suggest-item" data-id="${b.id}" data-name="${escapeHtml(b.name)}" data-brewery="${escapeHtml(
                   b.brewery.name
-                )}" data-style="${escapeHtml(b.style || "")}" data-abv="${b.abv ?? ""}">
+                )}" data-style="${escapeHtml(b.style || "")}" data-abv="${b.abv ?? ""}" data-reference-url="${escapeHtml(
+                  b.reference_url || ""
+                )}">
                   ${escapeHtml(b.name)}<div class="b">${escapeHtml(b.brewery.name)}${b.style ? " &middot; " + escapeHtml(b.style) : ""}</div>
                 </div>`
             )
@@ -118,6 +121,7 @@ const Pages = (() => {
       if (breweryHiddenId) breweryHiddenId.value = "";
       styleInput.value = item.dataset.style || "";
       abvInput.value = item.dataset.abv || "";
+      if (refUrlInput) refUrlInput.value = item.dataset.referenceUrl || "";
       pickedNote.textContent = `Using the existing entry for ${item.dataset.name} (${item.dataset.brewery}).`;
       list.style.display = "none";
       if (onPick) onPick(item.dataset.id);
@@ -447,6 +451,19 @@ const Pages = (() => {
       <button class="modal-close" data-close>&times;</button>
       <h2>${entry ? "Edit bottle" : "Add a bottle"}</h2>
       <form data-entry-form>
+        ${
+          entry
+            ? `<div class="field-hint" style="margin-bottom:12px; padding:10px 12px; border:1px solid var(--border); border-radius:var(--radius-sm);">
+                 Beer, brewery, style, ABV, and the external link are shared with everyone tracking this
+                 beer, so they're locked here.
+                 ${
+                   account.is_admin
+                     ? `<button type="button" class="btn btn-icon" id="edit-beer-shortcut" style="margin-left:4px;">Edit beer</button>`
+                     : "Ask an admin to change them."
+                 }
+               </div>`
+            : ""
+        }
         <div class="field suggest-wrap">
           <label>Beer</label>
           <input class="input" name="beer_search" autocomplete="off" placeholder="Start typing a beer name&hellip;"
@@ -483,6 +500,11 @@ const Pages = (() => {
               ${(sizeSuggestions || []).map((v) => `<option value="${v}"></option>`).join("")}
             </datalist>
           </div>
+        </div>
+        <div class="field">
+          <label>External link <span class="subtle">(optional)</span></label>
+          <input class="input" type="url" name="reference_url" placeholder="Untappd, RateBeer, brewery page&hellip;"
+                 value="${entry ? escapeHtml(entry.beer.reference_url || "") : ""}" ${entry ? "disabled" : ""} />
         </div>
         <div class="field-row">
           <div class="field">
@@ -524,6 +546,13 @@ const Pages = (() => {
       onMount(modalEl, close) {
         modalEl.querySelector("[data-close]").addEventListener("click", close);
         wireIsoDateInputs(modalEl);
+        const editBeerShortcut = modalEl.querySelector("#edit-beer-shortcut");
+        if (editBeerShortcut) {
+          editBeerShortcut.addEventListener("click", () => {
+            close();
+            openBeerAdminModal(entry.beer, onSaved);
+          });
+        }
         if (!entry) {
           wireBeerAutocomplete(modalEl, {});
           wireBreweryAutocomplete(modalEl);
@@ -578,6 +607,7 @@ const Pages = (() => {
                   new_brewery_name: pickedBreweryId ? null : fd.get("new_brewery_name")?.trim() || null,
                   style: fd.get("style")?.trim() || null,
                   abv: fd.get("abv") ? Number(fd.get("abv")) : null,
+                  reference_url: fd.get("reference_url")?.trim() || null,
                 };
                 if (!payload.beer.brewery_id && !payload.beer.new_brewery_name) throw new Error("Enter a brewery name.");
               }
@@ -723,6 +753,10 @@ const Pages = (() => {
           <input class="input" type="number" step="0.1" min="0" max="100" name="abv" />
         </div>
         <div class="field">
+          <label>External link <span class="subtle">(optional)</span></label>
+          <input class="input" type="url" name="reference_url" placeholder="Untappd, RateBeer, brewery page&hellip;" />
+        </div>
+        <div class="field">
           <label>Note <span class="subtle">(optional)</span></label>
           <textarea class="input" name="notes" placeholder="Which vintage, what you'd trade for it, etc."></textarea>
         </div>
@@ -762,6 +796,7 @@ const Pages = (() => {
                 new_brewery_name: pickedBreweryId ? null : fd.get("new_brewery_name")?.trim() || null,
                 style: fd.get("style")?.trim() || null,
                 abv: fd.get("abv") ? Number(fd.get("abv")) : null,
+                reference_url: fd.get("reference_url")?.trim() || null,
               };
               if (!payload.beer.brewery_id && !payload.beer.new_brewery_name) throw new Error("Enter a brewery name.");
             }
@@ -832,7 +867,11 @@ const Pages = (() => {
     return `
       <div class="entry-card" data-entry-id="${entry.id}">
         <div class="entry-main">
-          <h3>${escapeHtml(entry.beer.name)}${
+          <h3>${
+      entry.beer.reference_url
+        ? `<a class="beer-link" href="${escapeHtml(entry.beer.reference_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(entry.beer.name)}</a>`
+        : escapeHtml(entry.beer.name)
+    }${
       isDrinkBySoon(entry.best_before)
         ? `<span class="drinkby-alert" title="Drink by ${escapeHtml(fmtDate(entry.best_before))}">!</span>`
         : ""
@@ -1595,7 +1634,11 @@ const Pages = (() => {
     return `
       <div class="entry-card">
         <div class="entry-main">
-          <h3>${escapeHtml(item.beer.name)}</h3>
+          <h3>${
+            item.beer.reference_url
+              ? `<a href="${escapeHtml(item.beer.reference_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.beer.name)}</a>`
+              : escapeHtml(item.beer.name)
+          }</h3>
           <div class="entry-meta">
             <span>${escapeHtml(item.beer.brewery.name)}</span>
             ${metaBits.map((m) => `<span class="dot">&middot;</span><span>${m}</span>`).join("")}
@@ -1743,6 +1786,128 @@ const Pages = (() => {
     });
   }
 
+  function openBeerAdminModal(beer, onSaved) {
+    const isEdit = !!beer;
+    const html = `
+      <button class="modal-close" data-close>&times;</button>
+      <h2>${isEdit ? "Edit beer" : "Add a beer"}</h2>
+      <form data-beer-admin-form>
+        <div class="field">
+          <label>Name</label>
+          <input class="input" name="name" value="${escapeHtml(beer?.name || "")}" required />
+        </div>
+        <div class="field suggest-wrap">
+          <label>Brewery</label>
+          <input class="input" name="brewery_search" autocomplete="off" placeholder="Start typing a brewery name&hellip;"
+                 value="${escapeHtml(beer?.brewery.name || "")}" />
+          <input type="hidden" name="brewery_id" value="${beer ? beer.brewery.id : ""}" />
+          <div class="suggest-list" data-for="admin-beer-brewery" style="display:none"></div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Style <span class="subtle">(optional)</span></label>
+            <input class="input" name="style" value="${escapeHtml(beer?.style || "")}" />
+          </div>
+          <div class="field">
+            <label>ABV % <span class="subtle">(optional)</span></label>
+            <input class="input" type="number" step="0.1" min="0" max="100" name="abv" value="${beer?.abv ?? ""}" />
+          </div>
+        </div>
+        <div class="field">
+          <label>External link <span class="subtle">(optional)</span></label>
+          <input class="input" type="url" name="reference_url" value="${escapeHtml(beer?.reference_url || "")}" placeholder="Untappd, RateBeer, brewery page&hellip;" />
+        </div>
+        <div class="form-error" data-error style="display:none"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-block">${isEdit ? "Save changes" : "Add beer"}</button>
+        </div>
+      </form>
+    `;
+    openModal(html, {
+      onMount(modalEl, close) {
+        modalEl.querySelector("[data-close]").addEventListener("click", close);
+
+        const breweryInput = modalEl.querySelector('[name="brewery_search"]');
+        const breweryHiddenId = modalEl.querySelector('[name="brewery_id"]');
+        const breweryList = modalEl.querySelector('.suggest-list[data-for="admin-beer-brewery"]');
+        const searchBreweries = debounce(async (q) => {
+          if (q.length === 1) {
+            breweryList.innerHTML = "";
+            breweryList.style.display = "none";
+            return;
+          }
+          try {
+            const results = await Api.adminListBreweries(q);
+            breweryList.innerHTML = results.length
+              ? results
+                  .map((b) => `<div class="suggest-item" data-id="${b.id}" data-name="${escapeHtml(b.name)}">${escapeHtml(b.name)}</div>`)
+                  .join("")
+              : `<div class="suggest-item">No matches</div>`;
+            breweryList.style.display = "block";
+          } catch (err) {
+            breweryList.style.display = "none";
+          }
+        }, 220);
+        breweryInput.addEventListener("input", () => {
+          breweryHiddenId.value = "";
+          searchBreweries(breweryInput.value.trim());
+        });
+        breweryInput.addEventListener("focus", () => {
+          if (breweryList.innerHTML) {
+            breweryList.style.display = "block";
+          } else {
+            searchBreweries(breweryInput.value.trim());
+          }
+        });
+        modalEl.addEventListener("click", (e) => {
+          if (!breweryList.contains(e.target) && e.target !== breweryInput) breweryList.style.display = "none";
+        });
+        breweryList.addEventListener("click", (e) => {
+          const item = e.target.closest(".suggest-item[data-id]");
+          if (!item) return;
+          breweryHiddenId.value = item.dataset.id;
+          breweryInput.value = item.dataset.name;
+          breweryList.style.display = "none";
+        });
+
+        const form = modalEl.querySelector("[data-beer-admin-form]");
+        const errorBox = modalEl.querySelector("[data-error]");
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          errorBox.style.display = "none";
+          const fd = new FormData(form);
+          const submitBtn = form.querySelector('button[type="submit"]');
+          submitBtn.disabled = true;
+          try {
+            const breweryId = fd.get("brewery_id");
+            if (!breweryId) throw new Error("Pick a brewery from the list.");
+            const payload = {
+              name: fd.get("name").trim(),
+              brewery_id: Number(breweryId),
+              style: fd.get("style")?.trim() || null,
+              abv: fd.get("abv") ? Number(fd.get("abv")) : null,
+              reference_url: fd.get("reference_url")?.trim() || null,
+            };
+            if (isEdit) {
+              await Api.adminPatchBeer(beer.id, payload);
+            } else {
+              await Api.adminCreateBeer(payload);
+            }
+            close();
+            toast(isEdit ? "Beer updated." : "Beer added.");
+            onSaved();
+          } catch (err) {
+            errorBox.textContent = err.message;
+            errorBox.style.display = "block";
+          } finally {
+            submitBtn.disabled = false;
+          }
+        });
+      },
+    });
+  }
+
+
   function openEditLogModal(log, onDone) {
     const html = `
       <button class="modal-close" data-close>&times;</button>
@@ -1835,7 +2000,11 @@ const Pages = (() => {
               <button class="btn btn-icon" data-edit="${log.id}">Edit</button>
               <button class="btn btn-icon" data-del="${log.id}">Del</button>
             </div>
-            <div><strong>${escapeHtml(log.beer.name)}</strong> <span class="subtle">&mdash; ${escapeHtml(
+            <div><strong>${
+              log.beer.reference_url
+                ? `<a href="${escapeHtml(log.beer.reference_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(log.beer.name)}</a>`
+                : escapeHtml(log.beer.name)
+            }</strong> <span class="subtle">&mdash; ${escapeHtml(
             log.beer.brewery.name
           )}</span> <span class="meta">${fmtDate(log.consumed_on)} &middot; &times;${log.quantity}</span></div>
             ${log.rating ? `<div>${starsReadonly(log.rating)}</div>` : ""}
@@ -2122,6 +2291,7 @@ const Pages = (() => {
         <div id="users-list" style="margin-top:14px">${spinnerHtml()}</div>
       </div>
       <div class="panel" style="margin-bottom:20px" id="breweries-panel">${spinnerHtml()}</div>
+      <div class="panel" style="margin-bottom:20px" id="beers-panel">${spinnerHtml()}</div>
       <div class="panel" id="backup-panel">${spinnerHtml()}</div>
     `;
 
@@ -2447,6 +2617,149 @@ const Pages = (() => {
       });
     }
 
+    let beersSearchToken = 0;
+    async function loadBeersPanel() {
+      const panel = root.querySelector("#beers-panel");
+      panel.innerHTML = `
+        <h3>Beers</h3>
+        <p class="field-hint" style="margin-top:-4px">
+          The shared beer list used for autocomplete across the whole instance - fix a typo, reassign a
+          beer to the right brewery, or add one you know you'll need. A beer can only be deleted once
+          nothing (cellar, history, or wanted list) references it.
+        </p>
+        <div class="form-actions" style="margin-top:10px; justify-content:flex-start; gap:8px;">
+          <button class="btn btn-primary btn-sm" id="add-beer-btn">+ Add beer</button>
+          <button class="btn btn-ghost btn-sm" id="export-beers-btn">Download CSV</button>
+          <button class="btn btn-ghost btn-sm" id="import-beers-btn">Upload CSV</button>
+          <input type="file" accept=".csv" id="beer-import-file" style="display:none" />
+        </div>
+        <div class="field" style="margin-top:14px">
+          <input class="input" id="beer-search" placeholder="Search beers by name or brewery&hellip;" autocomplete="off" />
+        </div>
+        <div id="beer-results" class="field-hint">Click the search box to browse beers, or start typing to filter.</div>
+      `;
+
+      const resultsEl = panel.querySelector("#beer-results");
+
+      async function runSearch(q) {
+        const myToken = ++beersSearchToken;
+        resultsEl.className = "";
+        resultsEl.innerHTML = spinnerHtml();
+        let results;
+        try {
+          results = await Api.adminListBeers(q.trim());
+        } catch (err) {
+          if (myToken !== beersSearchToken) return;
+          resultsEl.innerHTML = `<div class="empty-note">Couldn't load: ${escapeHtml(err.message)}</div>`;
+          return;
+        }
+        if (myToken !== beersSearchToken) return; // a newer search finished first
+        if (!results.length) {
+          resultsEl.innerHTML = q.trim()
+            ? `<div class="empty-note">No beers match "${escapeHtml(q)}".</div>`
+            : `<div class="empty-note">No beers yet - add the first one below.</div>`;
+          return;
+        }
+        resultsEl.innerHTML = `<div class="entry-list">${results
+          .map(
+            (b) => `<div class="entry-card" style="padding:10px 14px;">
+              <div class="entry-main">
+                <h3 style="font-size:15px; margin-bottom:2px;">${escapeHtml(b.name)}</h3>
+                <div class="entry-meta">
+                  <span>${escapeHtml(b.brewery.name)}</span>
+                  ${b.style ? `<span class="dot">&middot;</span><span>${escapeHtml(b.style)}</span>` : ""}
+                  ${b.abv !== null && b.abv !== undefined ? `<span class="dot">&middot;</span><span>${b.abv}% ABV</span>` : ""}
+                  <span class="dot">&middot;</span>
+                  <span>${b.usage_count} use${b.usage_count === 1 ? "" : "s"}</span>
+                </div>
+              </div>
+              <div class="entry-actions">
+                <div class="row">
+                  <button class="btn btn-icon" data-edit-beer="${b.id}">Edit</button>
+                  <button class="btn btn-icon" data-del-beer="${b.id}" ${b.usage_count ? "disabled title=\"In use - can't delete\"" : ""}>Del</button>
+                </div>
+              </div>
+            </div>`
+          )
+          .join("")}</div>`;
+
+        resultsEl.querySelectorAll("[data-edit-beer]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const b = results.find((r) => r.id === Number(btn.dataset.editBeer));
+            if (b) openBeerAdminModal(b, () => runSearch(searchInput.value));
+          });
+        });
+        resultsEl.querySelectorAll("[data-del-beer]:not([disabled])").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const b = results.find((r) => r.id === Number(btn.dataset.delBeer));
+            confirmDelete(`Delete "${b.name}" from the beer list? This can't be undone.`, async () => {
+              try {
+                await Api.adminDeleteBeer(b.id);
+                toast("Beer deleted.");
+                runSearch(searchInput.value);
+              } catch (err) {
+                toast(err.message, "error");
+              }
+            });
+          });
+        });
+      }
+
+      const searchInput = panel.querySelector("#beer-search");
+      const debouncedSearch = debounce((q) => runSearch(q), 300);
+      searchInput.addEventListener("input", () => debouncedSearch(searchInput.value));
+      let hasLoadedOnce = false;
+      searchInput.addEventListener("focus", () => {
+        if (!hasLoadedOnce) {
+          hasLoadedOnce = true;
+          runSearch(searchInput.value);
+        }
+      });
+
+      panel.querySelector("#add-beer-btn").addEventListener("click", () => {
+        openBeerAdminModal(null, () => runSearch(searchInput.value));
+      });
+
+      panel.querySelector("#export-beers-btn").addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          const { blob, filename } = await Api.adminExportBeers();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          toast(err.message, "error");
+        } finally {
+          btn.disabled = false;
+        }
+      });
+
+      const beerImportFileInput = panel.querySelector("#beer-import-file");
+      panel.querySelector("#import-beers-btn").addEventListener("click", () => beerImportFileInput.click());
+      beerImportFileInput.addEventListener("change", async () => {
+        const file = beerImportFileInput.files[0];
+        if (!file) return;
+        try {
+          const result = await Api.adminImportBeers(file);
+          toast(`Imported: ${result.created} added, ${result.skipped} skipped.`);
+          if (result.errors.length) {
+            toast(result.errors[0], "error");
+          }
+          if (searchInput.value.trim()) runSearch(searchInput.value);
+        } catch (err) {
+          toast(err.message, "error");
+        } finally {
+          beerImportFileInput.value = "";
+        }
+      });
+    }
+
     async function loadBackupPanel() {
       const panel = root.querySelector("#backup-panel");
       let status;
@@ -2552,6 +2865,7 @@ const Pages = (() => {
     loadSmtpPanel();
     loadUsers();
     loadBreweriesPanel();
+    loadBeersPanel();
     loadBackupPanel();
   }
 
