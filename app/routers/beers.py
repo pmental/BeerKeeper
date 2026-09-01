@@ -61,17 +61,29 @@ def search_breweries(
     query = db.query(models.Brewery)
     if q:
         query = query.filter(models.Brewery.name.ilike(f"%{q}%"))
-    # No SQL-level limit here: it has to run before the recency re-sort
-    # below can even see every candidate, so a brewery the user just used
-    # could fall outside an alphabetical LIMIT and never surface at all,
-    # even though it should rank first. Truncating only after sorting
-    # (below) is what actually guarantees that. Fine at this app's scale -
-    # a self-hosted catalog, not a multi-tenant one with millions of rows.
-    results = query.order_by(models.Brewery.name).all()
+
+    recency = _user_brewery_recency(db, current_user.id) if current_user else {}
+
+    # A generous but bounded limit on the general/alphabetical candidate
+    # set - fetching literally everything doesn't scale once the catalog
+    # is in the thousands (each search allocates and sorts the whole
+    # matching set in Python). But a flat limit here alone would silently
+    # reintroduce the exact bug this app already fixed once: at 10,000+
+    # breweries, a plain alphabetical LIMIT 500 only ever covers names
+    # starting with roughly A-D, so anything the user used that happens
+    # to sort later than that would never even reach the recency re-sort
+    # below, however recently they used it. So anything in the user's own
+    # recency set is fetched separately and guaranteed a spot, regardless
+    # of where it falls alphabetically or how large the catalog gets; the
+    # cap only ever trims the generic "everything else" candidates.
+    results = query.order_by(models.Brewery.name).limit(500).all()
+    if recency:
+        seen_ids = {b.id for b in results}
+        missing_ids = [bid for bid in recency if bid not in seen_ids]
+        if missing_ids:
+            results.extend(query.filter(models.Brewery.id.in_(missing_ids)).all())
 
     if current_user:
-        recency = _user_brewery_recency(db, current_user.id)
-
         def sort_key(b):
             used = b.id in recency
             # Used-before items first (0 before 1), most-recently-used first
@@ -163,15 +175,23 @@ def search_beers(
         query = query.join(models.Brewery).filter(
             or_(models.Beer.name.ilike(f"%{q}%"), models.Brewery.name.ilike(f"%{q}%"))
         )
-    # No SQL-level limit here - see search_breweries above for why: it
-    # would run before the recency re-sort can see every candidate, so a
-    # beer the user just logged could fall outside an alphabetical LIMIT
-    # and never surface at all, even though it should rank first.
-    results = query.order_by(models.Beer.name).all()
+
+    recency = _user_beer_recency(db, current_user.id) if current_user else {}
+
+    # Same bounded-limit trade-off as search_breweries above, and the same
+    # fix for the same reason: a flat LIMIT here can't guarantee a beer
+    # the user just logged actually reaches the recency re-sort once the
+    # catalog is bigger than the limit, so anything in their own recency
+    # set is fetched separately and always included regardless of where
+    # it'd otherwise fall.
+    results = query.order_by(models.Beer.name).limit(500).all()
+    if recency:
+        seen_ids = {b.id for b in results}
+        missing_ids = [bid for bid in recency if bid not in seen_ids]
+        if missing_ids:
+            results.extend(query.filter(models.Beer.id.in_(missing_ids)).all())
 
     if current_user:
-        recency = _user_beer_recency(db, current_user.id)
-
         def sort_key(beer):
             used = beer.id in recency
             return (0 if used else 1, -recency[beer.id].timestamp() if used else 0, beer.name.lower())

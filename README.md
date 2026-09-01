@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.45** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.48** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -17,7 +17,7 @@ CDN calls. No third-party accounts, analytics, or API keys required.
   date, best-before date, notes — sortable by beer, brewery, or drink-by
   date, in imperial or metric units (metric by default)
 - Autocomplete for beer, brewery, and style, backed by a shared database
-  that grows as bottles are added, plus 210+ pre-populated breweries —
+  that grows as bottles are added, plus 10,400+ pre-populated breweries —
   see "Pre-populated breweries" below
 - Optional trading labels and a shareable wanted list — see "Trading and
   wanted lists" below
@@ -112,13 +112,34 @@ docker compose restart beerkeeper
 
 ## Pre-populated breweries
 
-The database starts with 210+ real breweries — Swedish craft breweries,
-major American and Belgian names, and a solid spread across the rest of
-Europe (UK, Ireland, Germany, Austria, Czechia, Poland, the Nordics, and
-the Baltics) — plus major cider makers and meaderies, so autocomplete is
-useful from day one whether you're tracking beer, cider, or mead. Seeded
-once, then managed from the admin page's "Breweries" panel — rename,
-delete (once nothing references it), add, or bulk import/export as CSV.
+The database starts with 10,400+ real, currently-operating breweries —
+a hand-picked starting set (Swedish craft breweries, major American and
+Belgian names, cider makers and meaderies, and a spread across the rest
+of Europe), plus a bulk import from
+[Open Brewery DB](https://www.openbrewerydb.org/) covering the US and
+20+ other countries. The bulk import excludes anything marked closed or
+still in planning, along with bars, taprooms, and beer gardens that
+don't brew their own — just breweries. Open Brewery DB is a
+community-maintained, MIT-licensed dataset.
+
+Where the hand-picked list and Open Brewery DB clearly named the same
+brewery (e.g. "Founders Brewing Co." next to Open Brewery DB's own
+"Founders Brewing Co"), the hand-picked one was removed in favor of
+Open Brewery DB's. Near-duplicates *within* Open Brewery DB itself
+(e.g. "Big Storm Brewing" next to "Big Storm Brewing Co.") were reviewed
+individually and merged into whichever name was more complete; a
+handful judged too ambiguous to merge automatically — mostly cases
+where the second name might genuinely be a different physical location,
+like a brewery's separate "...Brewpub" listing — were deliberately left
+as-is rather than guessed at. Two entirely different, unrelated
+breweries that happen to share an exact name across countries (e.g. a
+"New England Brewing Co" in both the US and Australia) can still exist
+side by side in this list; since brewery names must be unique once
+seeded, only the first one encountered actually gets created.
+
+Seeded once, then managed from the admin page's "Breweries" panel —
+rename, delete (once nothing references it), add, or bulk import/export
+as CSV.
 Source list for the initial seed: `app/breweries_default.txt`.
 
 ## Upgrading an existing deployment
