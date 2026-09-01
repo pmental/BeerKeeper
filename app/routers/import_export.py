@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 
 from app import models
-from app.database import get_db
+from app.database import get_db, ilike_unicode
 from app.deps import get_current_user
 from app.routers.beers import _get_or_create_brewery
 from app.uploads import read_upload_limited
@@ -133,7 +133,7 @@ async def import_cellar(
         brewery = _get_or_create_brewery(db, None, brewery_name)
         beer = (
             db.query(models.Beer)
-            .filter(models.Beer.brewery_id == brewery.id, models.Beer.name.ilike(beer_name))
+            .filter(models.Beer.brewery_id == brewery.id, ilike_unicode(models.Beer.name, beer_name))
             .first()
         )
         if not beer:

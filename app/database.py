@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, func
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 DATA_DIR = os.environ.get("CELLAR_DATA_DIR", "/data")
@@ -23,9 +23,30 @@ def _set_sqlite_pragma(dbapi_connection, connection_record):
     cursor.execute("PRAGMA journal_mode=WAL")
     cursor.close()
 
+    # SQLite's own LIKE/LOWER only case-fold ASCII a-z - "Örebro" stays
+    # "Örebro" through LOWER(), never becomes "örebro". That silently
+    # breaks case-insensitive search and duplicate-name checks for any
+    # accented name (not just Swedish - German, French, Polish, etc. are
+    # all affected), since ilike() relies on that same mechanism.
+    # Registering a real Python-backed lower() - which *is*
+    # Unicode-aware - and using it explicitly (see ilike_unicode() below)
+    # fixes this without needing a SQLite build with the ICU extension,
+    # which most platforms don't ship.
+    dbapi_connection.create_function("unicode_lower", 1, lambda s: s.lower() if s is not None else None)
+
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
+
+def ilike_unicode(column, value):
+    """A drop-in replacement for column.ilike(value) that also works
+    correctly for non-ASCII names - see the unicode_lower() registration
+    above for why plain ilike() can't be trusted here. Works the same way
+    whether value has %-wildcards (a substring search) or is a plain
+    string (an exact case-insensitive match, e.g. a duplicate-name
+    check) - LIKE handles both once the case-folding itself is correct."""
+    return func.unicode_lower(column).like(func.unicode_lower(value))
 
 
 def run_migrations():

@@ -3,7 +3,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app import models, schemas
-from app.database import get_db
+from app.database import get_db, ilike_unicode
 from app.deps import get_current_user, get_optional_user
 from app.url_utils import sanitize_url
 
@@ -60,7 +60,7 @@ def search_breweries(
 ):
     query = db.query(models.Brewery)
     if q:
-        query = query.filter(models.Brewery.name.ilike(f"%{q}%"))
+        query = query.filter(ilike_unicode(models.Brewery.name, f"%{q}%"))
 
     recency = _user_brewery_recency(db, current_user.id) if current_user else {}
 
@@ -101,7 +101,7 @@ def create_brewery(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    existing = db.query(models.Brewery).filter(models.Brewery.name.ilike(payload.name)).first()
+    existing = db.query(models.Brewery).filter(ilike_unicode(models.Brewery.name, payload.name)).first()
     if existing:
         return existing
     brewery = models.Brewery(name=payload.name.strip(), website=sanitize_url(payload.website))
@@ -118,7 +118,7 @@ def _get_or_create_brewery(db: Session, brewery_id: int | None, new_name: str | 
             raise HTTPException(status_code=404, detail="Brewery not found.")
         return brewery
     if new_name:
-        existing = db.query(models.Brewery).filter(models.Brewery.name.ilike(new_name)).first()
+        existing = db.query(models.Brewery).filter(ilike_unicode(models.Brewery.name, new_name)).first()
         if existing:
             return existing
         brewery = models.Brewery(name=new_name.strip())
@@ -144,7 +144,7 @@ def resolve_or_create_beer_id(db: Session, beer_id: int | None, beer_in: "schema
     brewery = _get_or_create_brewery(db, beer_in.brewery_id, beer_in.new_brewery_name)
     beer = (
         db.query(models.Beer)
-        .filter(models.Beer.brewery_id == brewery.id, models.Beer.name.ilike(beer_in.name))
+        .filter(models.Beer.brewery_id == brewery.id, ilike_unicode(models.Beer.name, beer_in.name))
         .first()
     )
     if not beer:
@@ -173,7 +173,7 @@ def search_beers(
         query = query.filter(models.Beer.brewery_id == brewery_id)
     if q:
         query = query.join(models.Brewery).filter(
-            or_(models.Beer.name.ilike(f"%{q}%"), models.Brewery.name.ilike(f"%{q}%"))
+            or_(ilike_unicode(models.Beer.name, f"%{q}%"), ilike_unicode(models.Brewery.name, f"%{q}%"))
         )
 
     recency = _user_beer_recency(db, current_user.id) if current_user else {}
@@ -218,7 +218,7 @@ def create_beer(
     brewery = _get_or_create_brewery(db, payload.brewery_id, payload.new_brewery_name)
     existing = (
         db.query(models.Beer)
-        .filter(models.Beer.brewery_id == brewery.id, models.Beer.name.ilike(payload.name))
+        .filter(models.Beer.brewery_id == brewery.id, ilike_unicode(models.Beer.name, payload.name))
         .first()
     )
     if existing:

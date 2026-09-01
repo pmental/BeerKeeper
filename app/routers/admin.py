@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app import backup, config, models, schemas
 from app.auth import hash_password
-from app.database import get_db
+from app.database import get_db, ilike_unicode
 from app.deps import require_admin
 from app.email import resolve_smtp_settings, send_test_email, send_welcome_email
 from app.routers.beers import _get_or_create_brewery
@@ -264,7 +264,7 @@ def list_breweries_admin(
         .group_by(models.Brewery.id)
     )
     if q:
-        query = query.filter(models.Brewery.name.ilike(f"%{q}%"))
+        query = query.filter(ilike_unicode(models.Brewery.name, f"%{q}%"))
     rows = query.order_by(models.Brewery.name).limit(200).all()
     return [_serialize_brewery(b, count) for b, count in rows]
 
@@ -275,7 +275,7 @@ def create_brewery_admin(
     db: Session = Depends(get_db),
     _admin: models.User = Depends(require_admin),
 ):
-    existing = db.query(models.Brewery).filter(models.Brewery.name.ilike(payload.name)).first()
+    existing = db.query(models.Brewery).filter(ilike_unicode(models.Brewery.name, payload.name)).first()
     if existing:
         raise HTTPException(status_code=400, detail="A brewery with that name already exists.")
     brewery = models.Brewery(name=payload.name.strip(), website=sanitize_url(payload.website))
@@ -303,7 +303,7 @@ def update_brewery_admin(
             raise HTTPException(status_code=400, detail="Name can't be empty.")
         dupe = (
             db.query(models.Brewery)
-            .filter(models.Brewery.name.ilike(new_name), models.Brewery.id != brewery_id)
+            .filter(ilike_unicode(models.Brewery.name, new_name), models.Brewery.id != brewery_id)
             .first()
         )
         if dupe:
@@ -376,7 +376,7 @@ async def import_breweries_admin(
             skipped += 1
             errors.append(f"Row {i}: missing name.")
             continue
-        existing = db.query(models.Brewery).filter(models.Brewery.name.ilike(name)).first()
+        existing = db.query(models.Brewery).filter(ilike_unicode(models.Brewery.name, name)).first()
         if existing:
             skipped += 1
             continue
@@ -419,7 +419,7 @@ def list_beers_admin(
     query = db.query(models.Beer).options(joinedload(models.Beer.brewery))
     if q:
         query = query.join(models.Brewery).filter(
-            or_(models.Beer.name.ilike(f"%{q}%"), models.Brewery.name.ilike(f"%{q}%"))
+            or_(ilike_unicode(models.Beer.name, f"%{q}%"), ilike_unicode(models.Brewery.name, f"%{q}%"))
         )
     beers = query.order_by(models.Beer.name).limit(200).all()
     return [_serialize_beer(b, _beer_usage_count(db, b.id)) for b in beers]
@@ -436,7 +436,7 @@ def create_beer_admin(
         raise HTTPException(status_code=404, detail="Brewery not found.")
     existing = (
         db.query(models.Beer)
-        .filter(models.Beer.brewery_id == payload.brewery_id, models.Beer.name.ilike(payload.name))
+        .filter(models.Beer.brewery_id == payload.brewery_id, ilike_unicode(models.Beer.name, payload.name))
         .first()
     )
     if existing:
@@ -476,7 +476,7 @@ def update_beer_admin(
             db.query(models.Beer)
             .filter(
                 models.Beer.brewery_id == new_brewery_id,
-                models.Beer.name.ilike(new_name),
+                ilike_unicode(models.Beer.name, new_name),
                 models.Beer.id != beer_id,
             )
             .first()
@@ -570,7 +570,7 @@ async def import_beers_admin(
         brewery = _get_or_create_brewery(db, None, brewery_name)
         existing = (
             db.query(models.Beer)
-            .filter(models.Beer.brewery_id == brewery.id, models.Beer.name.ilike(name))
+            .filter(models.Beer.brewery_id == brewery.id, ilike_unicode(models.Beer.name, name))
             .first()
         )
         if existing:
