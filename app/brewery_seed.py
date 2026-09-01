@@ -3,7 +3,7 @@ import os
 from sqlalchemy.orm import Session
 
 from app import models
-from app.database import DATA_DIR
+from app.database import DATA_DIR, ilike_unicode
 
 _DEFAULT_SOURCE = os.path.join(os.path.dirname(__file__), "breweries_default.txt")
 _SEEDED_NAMES_FILE = os.path.join(DATA_DIR, ".breweries_seeded_names")
@@ -60,7 +60,7 @@ def seed_breweries_if_needed(db: Session) -> None:
                 continue
             seen_this_run.add(key)
             newly_attempted.append(key)
-            if not db.query(models.Brewery).filter(models.Brewery.name.ilike(name)).first():
+            if not db.query(models.Brewery).filter(ilike_unicode(models.Brewery.name, name)).first():
                 db.add(models.Brewery(name=name, website=website))
 
     if not newly_attempted:

@@ -1,5 +1,7 @@
 # Changelog
 
+- **0.0.51** — Fixed case-insensitive search and duplicate-name detection for accented characters (ö, ü, é, etc.) - SQLite's built-in case-folding only handles plain ASCII, so a lowercase search like "öre" previously failed to match "Örebro Brygghus" even though uppercase "Öre" worked. Affects any language, not just Swedish, and fixes duplicate detection the same way it fixes search - creating "örebro brygghus" now correctly gets flagged as a duplicate of the existing "Örebro Brygghus" instead of silently allowed through.
+
 - **0.0.50** — Added Örebro Brygghus to the pre-populated Swedish brewery list.
 
 - **0.0.49** — Two real breweries sharing an exact name across different countries (e.g. "Akasha Brewing Company" in both the US and Australia) now get a country appended to keep them distinct, instead of the second one silently failing to seed. Affects 8 name collisions found in the pre-populated brewery list. README cleanup: reordered and trimmed the features list, shortened the "Pre-populated breweries" and OIDC sections, removed a stale admin bullet. docker-compose.yml: trimmed a comment block (the two `volumes:` sections aren't redundant - one mounts the volume into the container, the other declares it exists - so both stay).
