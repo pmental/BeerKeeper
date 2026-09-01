@@ -66,7 +66,7 @@ const Pages = (() => {
     const pickedNote = root.querySelector(".picked-note");
 
     const search = debounce(async (q) => {
-      if (q.length === 1) {
+      if (!q || q.length < 2) {
         list.innerHTML = "";
         list.style.display = "none";
         return;
@@ -99,13 +99,6 @@ const Pages = (() => {
       hiddenId.value = "";
       pickedNote.textContent = "";
       search(input.value.trim());
-    });
-    input.addEventListener("focus", () => {
-      if (list.innerHTML) {
-        list.style.display = "block";
-      } else {
-        search(input.value.trim());
-      }
     });
     document.addEventListener("click", (e) => {
       if (!list.contains(e.target) && e.target !== input) list.style.display = "none";
@@ -344,7 +337,7 @@ const Pages = (() => {
     if (!input || !list || !hiddenId) return;
 
     const search = debounce(async (q) => {
-      if (input.disabled || q.length === 1) {
+      if (input.disabled || !q || q.length < 2) {
         list.innerHTML = "";
         list.style.display = "none";
         return;
@@ -367,14 +360,6 @@ const Pages = (() => {
     input.addEventListener("input", () => {
       hiddenId.value = "";
       search(input.value.trim());
-    });
-    input.addEventListener("focus", () => {
-      if (input.disabled) return;
-      if (list.innerHTML) {
-        list.style.display = "block";
-      } else {
-        search(input.value.trim());
-      }
     });
     document.addEventListener("click", (e) => {
       if (!list.contains(e.target) && e.target !== input) list.style.display = "none";
@@ -1887,7 +1872,7 @@ const Pages = (() => {
         const breweryHiddenId = modalEl.querySelector('[name="brewery_id"]');
         const breweryList = modalEl.querySelector('.suggest-list[data-for="admin-beer-brewery"]');
         const searchBreweries = debounce(async (q) => {
-          if (q.length === 1) {
+          if (!q || q.length < 2) {
             breweryList.innerHTML = "";
             breweryList.style.display = "none";
             return;
@@ -1907,13 +1892,6 @@ const Pages = (() => {
         breweryInput.addEventListener("input", () => {
           breweryHiddenId.value = "";
           searchBreweries(breweryInput.value.trim());
-        });
-        breweryInput.addEventListener("focus", () => {
-          if (breweryList.innerHTML) {
-            breweryList.style.display = "block";
-          } else {
-            searchBreweries(breweryInput.value.trim());
-          }
         });
         modalEl.addEventListener("click", (e) => {
           if (!breweryList.contains(e.target) && e.target !== breweryInput) breweryList.style.display = "none";
@@ -2490,13 +2468,19 @@ const Pages = (() => {
         <div class="field" style="margin-top:14px">
           <input class="input" id="brewery-search" placeholder="Search breweries by name&hellip;" autocomplete="off" />
         </div>
-        <div id="brewery-results" class="field-hint">Click the search box to browse breweries, or start typing to filter.</div>
+        <div id="brewery-results" class="field-hint">Type to search the brewery list.</div>
       `;
 
       const resultsEl = panel.querySelector("#brewery-results");
 
       async function runSearch(q) {
         const myToken = ++breweriesSearchToken;
+        if (!q.trim()) {
+          resultsEl.innerHTML = "";
+          resultsEl.textContent = "Type to search the brewery list.";
+          resultsEl.className = "field-hint";
+          return;
+        }
         resultsEl.className = "";
         resultsEl.innerHTML = spinnerHtml();
         let results;
@@ -2509,9 +2493,7 @@ const Pages = (() => {
         }
         if (myToken !== breweriesSearchToken) return; // a newer search finished first
         if (!results.length) {
-          resultsEl.innerHTML = q.trim()
-            ? `<div class="empty-note">No breweries match "${escapeHtml(q)}".</div>`
-            : `<div class="empty-note">No breweries yet - add the first one below.</div>`;
+          resultsEl.innerHTML = `<div class="empty-note">No breweries match "${escapeHtml(q)}".</div>`;
           return;
         }
         resultsEl.innerHTML = `<div class="entry-list">${results
@@ -2560,13 +2542,6 @@ const Pages = (() => {
       const searchInput = panel.querySelector("#brewery-search");
       const debouncedSearch = debounce((q) => runSearch(q), 300);
       searchInput.addEventListener("input", () => debouncedSearch(searchInput.value));
-      let hasLoadedOnce = false;
-      searchInput.addEventListener("focus", () => {
-        if (!hasLoadedOnce) {
-          hasLoadedOnce = true;
-          runSearch(searchInput.value);
-        }
-      });
 
       panel.querySelector("#add-brewery-btn").addEventListener("click", () => {
         openBreweryModal(null, () => runSearch(searchInput.value));
@@ -2631,13 +2606,19 @@ const Pages = (() => {
         <div class="field" style="margin-top:14px">
           <input class="input" id="beer-search" placeholder="Search beers by name or brewery&hellip;" autocomplete="off" />
         </div>
-        <div id="beer-results" class="field-hint">Click the search box to browse beers, or start typing to filter.</div>
+        <div id="beer-results" class="field-hint">Type to search the beer list.</div>
       `;
 
       const resultsEl = panel.querySelector("#beer-results");
 
       async function runSearch(q) {
         const myToken = ++beersSearchToken;
+        if (!q.trim()) {
+          resultsEl.innerHTML = "";
+          resultsEl.textContent = "Type to search the beer list.";
+          resultsEl.className = "field-hint";
+          return;
+        }
         resultsEl.className = "";
         resultsEl.innerHTML = spinnerHtml();
         let results;
@@ -2650,9 +2631,7 @@ const Pages = (() => {
         }
         if (myToken !== beersSearchToken) return; // a newer search finished first
         if (!results.length) {
-          resultsEl.innerHTML = q.trim()
-            ? `<div class="empty-note">No beers match "${escapeHtml(q)}".</div>`
-            : `<div class="empty-note">No beers yet - add the first one below.</div>`;
+          resultsEl.innerHTML = `<div class="empty-note">No beers match "${escapeHtml(q)}".</div>`;
           return;
         }
         resultsEl.innerHTML = `<div class="entry-list">${results
@@ -2703,13 +2682,6 @@ const Pages = (() => {
       const searchInput = panel.querySelector("#beer-search");
       const debouncedSearch = debounce((q) => runSearch(q), 300);
       searchInput.addEventListener("input", () => debouncedSearch(searchInput.value));
-      let hasLoadedOnce = false;
-      searchInput.addEventListener("focus", () => {
-        if (!hasLoadedOnce) {
-          hasLoadedOnce = true;
-          runSearch(searchInput.value);
-        }
-      });
 
       panel.querySelector("#add-beer-btn").addEventListener("click", () => {
         openBeerAdminModal(null, () => runSearch(searchInput.value));
