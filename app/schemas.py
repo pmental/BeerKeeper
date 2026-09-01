@@ -1,7 +1,23 @@
 import datetime as dt
-from typing import Optional
+from typing import Annotated, Optional
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import AfterValidator, BaseModel, EmailStr, Field, field_validator
+
+
+def _check_password_byte_length(value: str) -> str:
+    # bcrypt's actual limit is 72 *bytes*, not characters - a password
+    # using accented letters, emoji, or non-Latin scripts can hit that
+    # well under the 200-character limit below. Enforcing it here, with
+    # a clear message, beats letting the hashing call fail on its own:
+    # older bcrypt silently truncated instead of erroring, so this also
+    # closes a real (if minor) gap where a too-long password used to
+    # hash to something other than what the user actually typed.
+    if len(value.encode("utf-8")) > 72:
+        raise ValueError("Password can't be longer than 72 bytes - about 72 plain characters, fewer if it includes accents, emoji, or non-Latin scripts.")
+    return value
+
+
+PasswordStr = Annotated[str, Field(min_length=8, max_length=200), AfterValidator(_check_password_byte_length)]
 
 
 # ---------- Auth ----------
@@ -9,7 +25,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 class RegisterIn(BaseModel):
     username: str = Field(min_length=3, max_length=32, pattern=r"^[a-zA-Z0-9_\-]+$")
     email: EmailStr
-    password: str = Field(min_length=8, max_length=200)
+    password: PasswordStr
 
 
 class LoginIn(BaseModel):
@@ -24,7 +40,7 @@ class TokenOut(BaseModel):
 
 class ChangePasswordIn(BaseModel):
     current_password: str
-    new_password: str = Field(min_length=8, max_length=200)
+    new_password: PasswordStr
 
 
 class ForgotPasswordIn(BaseModel):
@@ -33,7 +49,7 @@ class ForgotPasswordIn(BaseModel):
 
 class ResetPasswordIn(BaseModel):
     token: str
-    new_password: str = Field(min_length=8, max_length=200)
+    new_password: PasswordStr
 
 
 class AuthConfigOut(BaseModel):
@@ -309,7 +325,7 @@ class AdminUserOut(BaseModel):
 class AdminUserCreateIn(BaseModel):
     username: str = Field(min_length=3, max_length=32, pattern=r"^[a-zA-Z0-9_\-]+$")
     email: EmailStr
-    password: str = Field(min_length=8, max_length=200)
+    password: PasswordStr
     is_admin: bool = False
     send_welcome_email: bool = True
 
@@ -319,7 +335,7 @@ class AdminUserPatch(BaseModel):
 
 
 class AdminPasswordResetIn(BaseModel):
-    new_password: str = Field(min_length=8, max_length=200)
+    new_password: PasswordStr
 
 
 class InstanceSettingsOut(BaseModel):
