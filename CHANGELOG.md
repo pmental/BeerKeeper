@@ -1,5 +1,7 @@
 # Changelog
 
+- **0.0.50** — Added Örebro Brygghus to the pre-populated Swedish brewery list.
+
 - **0.0.49** — Two real breweries sharing an exact name across different countries (e.g. "Akasha Brewing Company" in both the US and Australia) now get a country appended to keep them distinct, instead of the second one silently failing to seed. Affects 8 name collisions found in the pre-populated brewery list. README cleanup: reordered and trimmed the features list, shortened the "Pre-populated breweries" and OIDC sections, removed a stale admin bullet. docker-compose.yml: trimmed a comment block (the two `volumes:` sections aren't redundant - one mounts the volume into the container, the other declares it exists - so both stay).
 
 - **0.0.48** — Merged 79 more of the near-duplicate groups found within Open Brewery DB itself (e.g. "Big Storm Brewing" → "Big Storm Brewing Co."), reviewed individually and choosing the more complete name; 5 groups that looked like they could be genuinely different physical locations (e.g. a separate "...Brewpub" listing) were deliberately left alone. While applying this, caught and fixed a mistake in the same pass - two entries ("Batch Brewing Co" and "New England Brewing Co") were wrongly removed because the same exact name legitimately belongs to two unrelated breweries in different countries; both are restored.
