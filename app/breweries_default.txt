@@ -342,7 +342,7 @@ Ahnapee Brewery | http://www.ahnapeebrewery.com
 Aiken Brewing Co | http://www.aikenbrewingcompany.com
 Airline Brewing Company | http://www.abcmaine.beer
 Akademia Brewing Company | http://www.AkademiaBC.com
-Akasha Brewing Company | http://www.akashabrewing.com
+Akasha Brewing Company US | http://www.akashabrewing.com
 Akronym Brewing LLC | http://www.akronymbrewing.com
 Al. Ringling Brewing Co | http://www.alringlingbrewingco.com
 Alameda Brewing Co
@@ -1011,7 +1011,7 @@ Black Hat Brew Works | http://www.blackhatbrewworks.com
 Black Hog Brewing Co | http://www.blackhogbrewing.com
 Black Hoof Brewing
 Black Horizon Brewing Company | http://www.blackhorizonbrewing.com
-Black Horse Brewery | http://www.blackhorsebrewery.us
+Black Horse Brewery US | http://www.blackhorsebrewery.us
 Black Husky Brewing LLC | http://www.blackhuskybrewing.com
 Black Label Brewing Company | http://www.blacklabelbrewing.com
 Black Laboratory Breing | http://www.blacklaboratorybrewing.com/
@@ -6046,7 +6046,7 @@ Stilt House Brewery | http://www.stilthousebrewery.com
 Stitch House Brewery | http://www.stitchhousebrewery.com
 Stockholms Vardshus | http://www.stockholmsbrewpub.com
 Stockyards Brewing Company | http://www.stockyardsbrewing.com
-Stoic Brewing | http://stoicbrewing.com
+Stoic Brewing US | http://stoicbrewing.com
 Stone Brewing Co | http://www.stonebrewing.com
 Stone Brewing Co- Richmond | http://www.stonebrewing.com/visit/outposts/richmond
 Stone Brewing World Bistro & Gardens- Liberty Station | http://www.stonelibertystation.com
@@ -7759,7 +7759,7 @@ Toye | http://www.goedendagbier.be/
 Trappisten van Westmalle | http://www.trappistwestmalle.be/
 Trappistenabdij De Achelse Kluis | http://www.achelsekluis.be/
 Troch | http://www.detroch.be/
-Union
+Union Belgium
 Val de Sambre | https://www.brasserievds.be/
 Val-Dieu | http://www.val-dieu.com/
 Van Baasrode | https://www.bosteelsbrewery.com/nl
@@ -7791,7 +7791,7 @@ Wiels | http://www.wiels.org/
 Wieze Beer Belgium N.V. | http://www.wiezebier.be/
 Wilderen | https://www.brouwerijwilderen.be/
 Wilderen Brewery & Distillery | https://www.brouwerijwilderen.be/
-Wolf | http://www.wolfbelgium.com/
+Wolf Belgium | http://www.wolfbelgium.com/
 ’t Drankorgel | http://tdrankorgel.be/
 
 # --- Germany ---
@@ -8992,7 +8992,7 @@ Uckermärker | http://www.choriner.de
 Ulrich Martin | http://brauerei-martin.de/
 Umstädter Brauhaus | http://www.umstaedter-brauhaus.de
 Unertl | http://www.brauerei-unertl.de
-Union | http://www.brauerei-bremen.de
+Union Germany | http://www.brauerei-bremen.de
 Unseburger Brauhaus | http://www.unseburger-brauhaus.de
 Unterhammer Bräu | http://www.unterhammer.com
 Urban Chestnut | http://www.urbanchestnut.de
@@ -9074,7 +9074,7 @@ Wittorfer | http://www.wittorfer-brauerei.de
 Witzgall
 Wochinger-Bräu | http://www.wochingerbraeu.de
 Woinemer | http://www.woinemer-hausbrauerei.de
-Wolf | https://wolfruedenhausen.wixsite.com/gasthofbrauereiwolf
+Wolf Germany | https://wolfruedenhausen.wixsite.com/gasthofbrauereiwolf
 Wolferstetter | http://www.wolferstetter-brauerei.de
 Wolframstub'n | http://www.zoiglbrauerei.de
 Wolfsbier
@@ -9305,7 +9305,7 @@ Vilniaus Alus
 4 Pines
 7th Day Brewery | http://www.7thdaybrewery.com.au/
 Aether Brewing | http://www.aetherbrewing.com.au/
-Akasha Brewing Company | http://www.akashabrewing.com.au/
+Akasha Brewing Company Australia | http://www.akashabrewing.com.au/
 Ale Mary Brewing Co. | https://www.alemary.beer/
 Alefarm Brewing | http://www.ramblers.beer/
 Alice Springs Brewing Co. | https://www.alicespringsbrewingco.com.au/?utm_source=google_business_profile&utm_medium=gbp_view_website&utm_campaign=gbp
@@ -9430,7 +9430,7 @@ Eclectic Brewing | https://www.thebeerfactory.net.au/?utm_source=Google&utm_medi
 Eden Brewery | https://edenbrewery.beer/
 Ekim Brewing Co. | http://www.ekimbrewing.com.au/
 Endeavour Brewing Co. | http://www.endeavourtaprooms.com/
-Epic Brewing Company | https://www.thebeerfactory.net.au/?utm_source=Google&utm_medium=Organic&utm_campaign=GMB
+Epic Brewing Company Australia | https://www.thebeerfactory.net.au/?utm_source=Google&utm_medium=Organic&utm_campaign=GMB
 Felons Brewing Co. | http://felonsbrewingco.com.au/
 Feral Brewing Company
 Fields Brewing Co. | https://carltonbrewhouse.com.au/
@@ -9455,7 +9455,7 @@ Future Magic Brewing Co. | https://www.futuremagic.com.au/
 Gage Roads Brew Co
 Gage Roads Brewing Company | http://gageroads.com.au/
 Gales Brewery | https://galesbrewery.com.au/
-Garage Project | https://projectbrewing.com.au/
+Garage Project Australia | https://projectbrewing.com.au/
 Gawler River Brewing Co.
 Glass House Brewery | http://www.glasshousebrewery.com.au/
 Good Drinks Australia | https://gooddrinks.com.au/
@@ -9667,7 +9667,7 @@ Spotty Dog Brewery | http://www.spottydogbrewers.com.au/
 St Andrews Beach Brewery | http://standrewsbeachbrewery.com.au/
 Staves Brewery | https://www.facebook.com/liveatstaves/
 Stockade Brew Co | http://www.cbco.beer/
-Stoic Brewing | http://www.stoicbrewing.com.au/
+Stoic Brewing Australia | http://www.stoicbrewing.com.au/
 Stomping Ground Brewing Co. | http://www.stompingground.beer/
 Stone & Wood Brewing Co. | https://stoneandwood.com.au/
 Stone Pine Distillery | http://www.northofeden.com.au/
@@ -9759,7 +9759,7 @@ Woolshed Brewery | http://www.wilkadene.com.au/
 Woolstore Brewery | https://woolstorebrewery.com.au/
 Yard Kings Brewing Co. | http://yardkingsbrewingco.com.au/
 Yeah Drinks | http://hopheads.com.au/
-Yeastie Boys | https://www.thebeerfactory.net.au/?utm_source=Google&utm_medium=Organic&utm_campaign=GMB
+Yeastie Boys Australia | https://www.thebeerfactory.net.au/?utm_source=Google&utm_medium=Organic&utm_campaign=GMB
 Yellow Matter | https://yellowmatter.beer/
 Yenda Brewing Company | http://yendabeer.com.au/
 YEPP Brewing Co. | http://www.yeppbrewing.com.au/
@@ -10195,14 +10195,14 @@ Eddyline | https://eddylinebrewery.nz/pages/taproom-taqueria
 Electron | https://www.hopnoticbrewery.com/
 Emerson's Brewery | https://emersons.co.nz/
 Emporium | http://www.emporiumbrewing.co.nz/
-Epic Brewing Company | http://www.epicbeer.com/
+Epic Brewing Company New Zealand | http://www.epicbeer.com/
 Eruption | https://www.eruptionbrewing.com/
 Fiasco | https://canterburybrewerscollective.nz/
 Fitzpatrick's | http://www.fitzpatricksbrewing.co.nz/
 Fork | http://www.forkandbrewer.co.nz/
 Fortune Favours
 Galbraith's | http://www.alehouse.co.nz/
-Garage Project | https://garageproject.co.nz/pages/wild-workshop-cellar-door
+Garage Project New Zealand | https://garageproject.co.nz/pages/wild-workshop-cellar-door
 Ghost | https://canterburybrewerscollective.nz/
 Giant | http://www.giantbrewing.co.nz/
 Godsown | http://godsownbrewery.co.nz/
@@ -10320,7 +10320,7 @@ Wassail | http://www.brauhaus.co.nz/
 Wigram | http://www.wigrambrewing.co.nz/
 Wilderness | https://canterburybrewerscollective.nz/
 Workshop | https://workshopbrewing.co.nz/
-Yeastie Boys | http://www.themalthouse.co.nz/
+Yeastie Boys New Zealand | http://www.themalthouse.co.nz/
 Yellow Box | https://canterburybrewerscollective.nz/
 
 # --- Portugal ---
@@ -10426,7 +10426,7 @@ Barrington’s Craft Brewery | https://barringtonsplett.co.za/
 Basset Breweries | https://www.bassetbreweries.co.za/
 Berg River Brewery | https://www.bergriverbrewery.co.za/
 Birkenhead Brewery | https://www.birkenhead.co.za/
-Black Horse Brewery | https://www.blackhorse.co.za/
+Black Horse Brewery South Africa | https://www.blackhorse.co.za/
 Boston Breweries | https://bostonbreweries.co.za/
 Brewhaha JBay | https://brewhahajbay.co.za/
 Brewhogs Micro Brewery | https://www.brewhogs.co.za/
