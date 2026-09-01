@@ -10,6 +10,16 @@ DATABASE_URL = f"sqlite:///{DB_PATH}"
 engine = create_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False},
+    # SQLAlchemy's plain defaults (pool_size=5, max_overflow=10) are sized
+    # for a real client-server database with many genuinely concurrent
+    # connections. SQLite doesn't benefit the same way - writes serialize
+    # to the single file regardless of how many connections exist - and
+    # this app's realistic concurrency (a self-hosted personal/small-group
+    # tool) is low. Keeping the same steady-state pool_size but dropping
+    # max_overflow to 0 caps the worst case at 5 open connections instead
+    # of 15, with no change to normal request handling.
+    pool_size=5,
+    max_overflow=0,
 )
 
 

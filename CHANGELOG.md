@@ -1,5 +1,12 @@
 # Changelog
 
+- **0.0.52** — Performance/memory pass, no functional or security changes:
+  - Brewery seeding on a fresh install now does one existence-check query up front instead of one per brewery (~10,500 of them) - the seeding step itself dropped from roughly 3s to under 0.6s in isolated measurement. Fresh-install boot time overall is now a stable ~1.7s; a chunk of what looked like "seeding time" in earlier testing turned out to be ordinary Python/dependency import overhead unrelated to seeding, which this doesn't (and can't) change.
+  - The admin Beers panel's "how many things reference this beer" check used to run 3 queries per beer shown (up to ~600 for a full page); now runs 3 total regardless of list size.
+  - Added gzip compression for responses - `pages.js` shrinks about 80% over the wire when a client requests it compressed.
+  - Static assets (JS/CSS/fonts/icons) now get a long-lived, aggressive `Cache-Control` header - safe because every asset URL already carries a `?v=<version>` query string, so a new release is naturally a new URL, never a stale cached one.
+  - Trimmed the database connection pool's worst-case ceiling from 15 to 5 - SQLite doesn't benefit from a large pool the way a client-server database would, and this app's realistic concurrency is low. No change to normal-case behavior; confirmed no errors under a 15-concurrent-request burst.
+
 - **0.0.51** — Fixed case-insensitive search and duplicate-name detection for accented characters (ö, ü, é, etc.) - SQLite's built-in case-folding only handles plain ASCII, so a lowercase search like "öre" previously failed to match "Örebro Brygghus" even though uppercase "Öre" worked. Affects any language, not just Swedish, and fixes duplicate detection the same way it fixes search - creating "örebro brygghus" now correctly gets flagged as a duplicate of the existing "Örebro Brygghus" instead of silently allowed through.
 
 - **0.0.50** — Added Örebro Brygghus to the pre-populated Swedish brewery list.

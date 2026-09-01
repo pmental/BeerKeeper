@@ -398,6 +398,26 @@ def _beer_usage_count(db: Session, beer_id: int) -> int:
     return cellar + logs + wanted
 
 
+def _beer_usage_counts(db: Session, beer_ids: list[int]) -> dict[int, int]:
+    """Same as _beer_usage_count() above, but for many beers in one go -
+    three aggregated GROUP BY queries total instead of three queries per
+    beer, so rendering a page of the admin beer list doesn't turn into
+    hundreds of individual round trips."""
+    counts: dict[int, int] = {bid: 0 for bid in beer_ids}
+    if not beer_ids:
+        return counts
+    for model in (models.CellarEntry, models.ConsumptionLog, models.WantedEntry):
+        rows = (
+            db.query(model.beer_id, func.count(model.id))
+            .filter(model.beer_id.in_(beer_ids))
+            .group_by(model.beer_id)
+            .all()
+        )
+        for beer_id, count in rows:
+            counts[beer_id] += count
+    return counts
+
+
 def _serialize_beer(beer: models.Beer, usage_count: int) -> schemas.AdminBeerOut:
     return schemas.AdminBeerOut(
         id=beer.id,
@@ -422,7 +442,8 @@ def list_beers_admin(
             or_(ilike_unicode(models.Beer.name, f"%{q}%"), ilike_unicode(models.Brewery.name, f"%{q}%"))
         )
     beers = query.order_by(models.Beer.name).limit(200).all()
-    return [_serialize_beer(b, _beer_usage_count(db, b.id)) for b in beers]
+    usage_counts = _beer_usage_counts(db, [b.id for b in beers])
+    return [_serialize_beer(b, usage_counts.get(b.id, 0)) for b in beers]
 
 
 @router.post("/beers", response_model=schemas.AdminBeerOut)

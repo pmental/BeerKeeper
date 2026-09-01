@@ -3,7 +3,7 @@ import os
 from sqlalchemy.orm import Session
 
 from app import models
-from app.database import DATA_DIR, ilike_unicode
+from app.database import DATA_DIR
 
 _DEFAULT_SOURCE = os.path.join(os.path.dirname(__file__), "breweries_default.txt")
 _SEEDED_NAMES_FILE = os.path.join(DATA_DIR, ".breweries_seeded_names")
@@ -46,6 +46,12 @@ def seed_breweries_if_needed(db: Session) -> None:
         return
 
     already_attempted = _load_seeded_names()
+    # One query up front instead of one per line (~10k+ round trips on a
+    # fresh install otherwise, which was the dominant cost of first
+    # boot). Python's str.lower() here, not SQLite's - see
+    # ilike_unicode() in database.py for why SQLite's own case-folding
+    # can't be trusted for accented names.
+    existing_names_lower = {name.lower() for (name,) in db.query(models.Brewery.name).all()}
     seen_this_run = set()
     newly_attempted = []
 
@@ -60,8 +66,9 @@ def seed_breweries_if_needed(db: Session) -> None:
                 continue
             seen_this_run.add(key)
             newly_attempted.append(key)
-            if not db.query(models.Brewery).filter(ilike_unicode(models.Brewery.name, name)).first():
+            if key not in existing_names_lower:
                 db.add(models.Brewery(name=name, website=website))
+                existing_names_lower.add(key)
 
     if not newly_attempted:
         return

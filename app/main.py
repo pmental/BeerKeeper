@@ -3,6 +3,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from app import auth, config
@@ -45,6 +46,12 @@ app.add_middleware(
     https_only=config.BASE_URL.startswith("https://"),
 )
 
+# Compresses response bodies (the JS/CSS bundle, JSON API responses) when
+# the client supports it - pure transfer-size/speed win, no behavior
+# change and nothing security-relevant here: it only touches the
+# response body, not headers, auth, or anything else.
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
 
 _CSP = (
     "default-src 'self'; "
@@ -79,6 +86,14 @@ async def security_headers(request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["Content-Security-Policy"] = _CSP
     response.headers["Referrer-Policy"] = "same-origin"
+    # Every asset URL already carries a ?v=<app version> query string
+    # (see the __APP_VERSION__ substitution below), so a new release
+    # naturally serves a brand new URL - there's no risk of a browser
+    # holding onto stale JS/CSS across an update. That's what makes it
+    # safe to tell it to cache aggressively rather than revalidate on
+    # every single page load.
+    if request.url.path.startswith("/assets/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
     return response
 
 
