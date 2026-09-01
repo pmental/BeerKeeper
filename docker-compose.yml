@@ -28,12 +28,6 @@ services:
       - CELLAR_SMTP_FROM_NAME=${CELLAR_SMTP_FROM_NAME:-BeerKeeper}
       - CELLAR_SMTP_SKIP_CERT_VERIFY=${CELLAR_SMTP_SKIP_CERT_VERIFY:-false}
     volumes:
-      # Deliberately still named "cellar-data", even post-rename: this is
-      # the literal Docker volume holding your database. Renaming it here
-      # would point at a brand new, empty volume instead of your existing
-      # one. Cosmetics aren't worth risking your data over - see the
-      # "Upgrading" section below before you deploy this on top of an
-      # existing install.
       - cellar-data:/data
 
 volumes:
