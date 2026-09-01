@@ -102,6 +102,7 @@ Värmdö Bryggeri AB | https://www.varmdobryggeri.se/
 Wapnö Gård | https://www.wapno.se/en-gb/
 Waxholms Bryggeri | https://www.waxholmsbryggeri.se/
 Ölkemi Bryggeri | https://olkemi.se/
+Örebro Brygghus | https://www.orebrobrygghus.se/
 
 # --- United States ---
 Dogfish Head Craft Brewery | https://www.dogfish.com
