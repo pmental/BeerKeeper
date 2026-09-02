@@ -192,7 +192,11 @@ const App = (() => {
     Api.version()
       .then(({ name, version }) => {
         const tag = document.getElementById("app-version-tag");
-        if (tag) tag.textContent = ` — ${name} v${version}`;
+        if (tag) {
+          tag.innerHTML = ` — <a href="https://github.com/pmental/BeerKeeper/releases" target="_blank" rel="noopener noreferrer">${UI.escapeHtml(
+            name
+          )} v${UI.escapeHtml(version)}</a>`;
+        }
       })
       .catch(() => {});
   }

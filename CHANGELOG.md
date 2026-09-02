@@ -1,59 +1,8 @@
 # Changelog
 
-- **0.0.57** — Added a search field (left of "+ Add a bottle") to filter the cellar list by beer name, live in the browser.
-- **0.0.56** — Replaced `python-jose` with the more actively maintained `PyJWT` for the app's own tokens. No functional change.
-- **0.0.55** — Moved "Cellar data" (CSV export/import) to the bottom of the Account page.
-- **0.0.54** — Beer styles moved from a text file into the database, with a new admin panel to manage them; existing custom styles are migrated in automatically.
-- **0.0.53** — Updated all dependencies to their latest versions. Fixed a password-length validation gap the bcrypt upgrade would otherwise have exposed.
-- **0.0.52** — Performance pass: faster brewery seeding on fresh installs, fixed an N+1 query in the admin Beers list, added gzip compression and long-lived caching for static assets, trimmed the DB connection pool size.
-- **0.0.51** — Fixed case-insensitive search and duplicate detection for accented characters (SQLite's built-in case-folding is ASCII-only).
-- **0.0.50** — Added Örebro Brygghus to the pre-populated Swedish brewery list.
-- **0.0.49** — Breweries sharing an exact name across countries (8 cases) now get a country appended to stay distinct. Minor README/docker-compose cleanup.
-- **0.0.48** — Merged 79 more near-duplicate brewery entries found within Open Brewery DB itself; restored 2 that were wrongly caught as duplicates.
-- **0.0.47** — Removed 34 hand-picked breweries that duplicated an Open Brewery DB entry under different punctuation.
-- **0.0.46** — Brewery list grew from ~215 to 10,562 via a bulk import from Open Brewery DB. Fixed a bug where a just-used beer/brewery could be missing from its own search results. Autocomplete now requires typing instead of showing suggestions on focus.
-- **0.0.45** — CSV export now includes both `size_oz` and `size_ml`. Top nav collapses into a hamburger menu on narrow screens.
-- **0.0.44** — Moved CSV import/export into Account → Cellar data. Moved History into the top nav. Fixed a stale "best-before" label.
-- **0.0.43** — Beer names with an external link no longer underline on hover on the cellar page.
-- **0.0.42** — Added a "Beers" admin panel (add/rename/reassign brewery/delete). "Edit bottle" now explains why some fields are locked, with an admin shortcut to fix them.
-- **0.0.41** — Added an optional external link field for beers; beer names become clickable wherever shown. URL validation now also applies to brewery websites.
-- **0.0.40** — docker-compose.yml now sets `container_name: BeerKeeper` (only one instance can run under this name at a time).
-- **0.0.39** — "Best before" is now "Drink by" everywhere it's shown, not just the add/edit form.
-- **0.0.38** — Renamed the "Best before / drink by" field label to just "Drink by".
-- **0.0.37** — Bottles due within 30 days (or overdue) show a "!" next to the beer name, in both cellar views.
-- **0.0.36** — The account page now shows your full display name instead of just the first name.
-- **0.0.35** — The "Users" section on the admin page is now a panel card like the rest of the page.
-- **0.0.34** — The profile chip no longer underlines on hover. The logo is now a link back to Home.
-- **0.0.33** — OIDC accounts show their provider's profile picture in the nav, with an initials fallback. Removed the separate "Account" nav button.
-- **0.0.32** — Brewery/Beer fields and admin brewery search now show suggestions on focus, matching the Style field. Fixed a bug where a just-used entry could be missing from its own results.
-- **0.0.31** — Added a "Breweries" admin panel: add/rename/delete plus CSV import/export.
-- **0.0.30** — Cellar page shows a running total next to the title. Added ~19 cider makers and meaderies to the brewery list.
-- **0.0.29** — Sort buttons toggle direction with an arrow. History entries are now editable, not just deletable. Removed the background glow.
-- **0.0.28** — Added ~65 breweries covering the UK, Ireland, Germany, Austria, Czechia, Poland, Latvia, and Lithuania (190+ total).
-- **0.0.27** — README fixes: accurate backup format and secret-key defaults. No functional changes.
-- **0.0.26** — Security hardening: random+persisted secret key, rate limiting on auth endpoints, token invalidation on password change, required OIDC email verification, password required for email change, upload size limits, CSP + security headers.
-- **0.0.25** — Backups are now a zip containing both the database and `beer_styles.txt`. Old single-file `.db` backups no longer work for restore.
-- **0.0.24** — New accounts default to metric units. Added whole-instance backup/restore to the admin page.
-- **0.0.23** — Condensed README.md substantially. No functional changes.
-- **0.0.22** — The admin "send test email" field now prepopulates with your own account email.
-- **0.0.21** — Added a Comfortable/Compact view toggle for the cellar list, remembered locally between sessions.
-- **0.0.20** — Imperial-account size suggestions are now genuine US customary sizes instead of the metric list converted to odd numbers.
-- **0.0.19** — The bottle size field now suggests common sizes, plus sizes you've personally used before.
-- **0.0.18** — Condensed this changelog: each entry is now a line or two instead of a paragraph.
-- **0.0.17** — Added a favicon (amber pint glass) as SVG/PNG/ICO + Apple touch icon.
-- **0.0.16** — Added an "Email (SMTP)" admin panel to configure SMTP through the UI, with a send-test-email button.
-- **0.0.15** — Added SMTP support: self-service "forgot password" and welcome emails on new accounts.
-- **0.0.14** — Moved the changelog out of README.md into this file.
-- **0.0.13** — Added an admin page: reset passwords, create/delete/promote users, toggle registrations on/off.
-- **0.0.12** — OIDC display name now shows first name only.
-- **0.0.11** — Fixed a bug where merging OIDC userinfo data could overwrite the display name with a blank.
-- **0.0.10** — Fixed OIDC display names for providers that split claims across the ID token and userinfo endpoint; fixed a crash for accounts with no email address.
-- **0.0.9** — The "Recently uncorked" feed now always includes your own activity, even with a private cellar.
-- **0.0.8** — Fixed a timezone bug that could reject valid dates as invalid.
-- **0.0.7** — Added drink-by-date sorting, and OIDC display names shown throughout the app.
-- **0.0.6** — Added a public, no-login trade/wanted list per account.
-- **0.0.5** — Expanded US/Belgian brewery lists; fixed seeding so future list updates reach existing installs.
-- **0.0.4** — Pre-populated ~80 real breweries for autocomplete.
-- **0.0.3** — Added a custom calendar picker for date fields.
-- **0.0.2** — Fixed stale browser caching after upgrades via versioned asset URLs.
+- **0.0.50** — Brewery catalog grew from ~215 to 10,500+ via a bulk Open Brewery DB import, with several rounds of duplicate cleanup and country disambiguation for name collisions. Added "Beers" and "Beer Styles" admin panels, an optional external-link field for beers, cellar-page search-by-name, and a hamburger menu for narrow screens. Reorganized the Account page, moving CSV import/export into its own "Cellar data" section. Fixed a bug where a just-used beer/brewery could be missing from its own search results, and a case-insensitive search/duplicate-detection gap for accented characters. Updated all dependencies (including replacing `python-jose` with `PyJWT`) and did a performance pass: faster brewery seeding, fixed an N+1 admin query, gzip + long-lived asset caching, a smaller DB connection pool.
+- **0.0.40** — Added a "Breweries" admin panel (add/rename/delete, CSV import/export) and OIDC profile pictures in the nav. Renamed "Best before" to "Drink by" throughout, and added a drink-by-soon "!" indicator. Various polish: full display names, admin panel layout consistency, hover-state fixes, a named Docker container.
+- **0.0.30** — Added a Comfortable/Compact cellar view, whole-instance backup/restore (a zip with the database and beer styles together), and a security hardening pass (persisted secret key, rate limiting, token invalidation on password change, CSP, upload size limits). Editable history entries, a sort-direction toggle, a cellar running total, and ~210 pre-populated breweries/ciders/meaderies total.
+- **0.0.20** — Added an admin page for user management, SMTP support with an admin panel for configuration, a favicon, and smarter bottle-size suggestions (common sizes plus your own history, unit-appropriate). Several OIDC display-name fixes.
+- **0.0.10** — Initial feature buildout: custom date picker, pre-populated breweries, public trade/wanted lists, drink-by-date sorting, OIDC display names. Fixes for browser caching, timezones, and OIDC edge cases.
 - **0.0.1** — Initial versioned release: OIDC/SSO, autocomplete, theming, units, ISO dates, renamed to BeerKeeper.
