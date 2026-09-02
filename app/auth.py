@@ -4,7 +4,7 @@ import secrets
 import warnings
 
 import bcrypt
-from jose import jwt, JWTError
+import jwt
 
 from app.database import DATA_DIR
 
@@ -82,5 +82,5 @@ def decode_access_token(token: str) -> dict | None:
     password change that should invalidate tokens issued before it."""
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except JWTError:
+    except jwt.PyJWTError:
         return None
