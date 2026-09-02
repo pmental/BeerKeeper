@@ -1369,25 +1369,6 @@ const Pages = (() => {
         </div>
       </div>
 
-      <div class="panel" style="margin-bottom:20px">
-        <h3>Cellar data</h3>
-        <p class="field-hint" style="margin-top:-4px">Export your whole cellar as a CSV file, or import one to add bottles in bulk.</p>
-        <div class="form-actions" style="margin-top:10px; justify-content:flex-start;">
-          <button class="btn btn-primary btn-sm" id="export-btn">Download CSV</button>
-        </div>
-        <div class="field" style="margin-top:14px">
-          <label>Import from CSV</label>
-          <p class="field-hint" style="margin-top:-4px">
-            Columns: <code>brewery, beer, style, abv, location, custom_location, quantity, size_oz, size_ml, bottle_date, best_before, batch_notes, trade_status</code>.
-            Export includes both size columns; import prefers whichever matches your unit setting above, falling back to the other if it's blank.
-          </p>
-          <div class="csv-drop">
-            <input type="file" accept=".csv" id="import-file" />
-          </div>
-          <div id="import-result" style="margin-top:14px"></div>
-        </div>
-      </div>
-
       ${
         a.trading_enabled
           ? `<div class="panel" style="margin-bottom:20px">
@@ -1413,7 +1394,7 @@ const Pages = (() => {
 
       ${
         ctx.authConfig.password_auth_enabled
-          ? `<div class="panel">
+          ? `<div class="panel" style="margin-bottom:20px">
               <h3>Change password</h3>
               <form data-pw-form>
                 <div class="field"><label>Current password</label><input class="input" type="password" name="current_password" required /></div>
@@ -1422,11 +1403,30 @@ const Pages = (() => {
                 <button type="submit" class="btn btn-ghost">Update password</button>
               </form>
             </div>`
-          : `<div class="panel">
+          : `<div class="panel" style="margin-bottom:20px">
               <h3>Password sign-in</h3>
               <p class="subtle">Password-based sign-in is disabled on this instance. Manage your login through your SSO provider instead.</p>
             </div>`
       }
+
+      <div class="panel">
+        <h3>Cellar data</h3>
+        <p class="field-hint" style="margin-top:-4px">Export your whole cellar as a CSV file, or import one to add bottles in bulk.</p>
+        <div class="form-actions" style="margin-top:10px; justify-content:flex-start;">
+          <button class="btn btn-primary btn-sm" id="export-btn">Download CSV</button>
+        </div>
+        <div class="field" style="margin-top:14px">
+          <label>Import from CSV</label>
+          <p class="field-hint" style="margin-top:-4px">
+            Columns: <code>brewery, beer, style, abv, location, custom_location, quantity, size_oz, size_ml, bottle_date, best_before, batch_notes, trade_status</code>.
+            Export includes both size columns; import prefers whichever matches your unit setting above, falling back to the other if it's blank.
+          </p>
+          <div class="csv-drop">
+            <input type="file" accept=".csv" id="import-file" />
+          </div>
+          <div id="import-result" style="margin-top:14px"></div>
+        </div>
+      </div>
     `;
 
     root.querySelectorAll("[data-toggle]").forEach((input) => {
