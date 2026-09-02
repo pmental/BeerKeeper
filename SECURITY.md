@@ -28,6 +28,9 @@ audit trail.
 - Every cellar/consumption/wanted-list endpoint scopes its query to the
   authenticated user - there's no way to read or modify another
   account's data by guessing an ID.
+- Every API endpoint requires a valid session except the auth flow
+  itself, static assets, and the deliberately public pages (Browse,
+  public cellar/trade profiles).
 - All database access goes through SQLAlchemy's parameterized query
   builder; the only raw SQL is static DDL in schema migrations, never
   built from request input.
@@ -47,6 +50,9 @@ audit trail.
   next clean startup - never against a live, in-use database.
 - No CORS headers are sent, so no other origin can read this app's API
   responses from a browser.
+- All API responses set `Cache-Control: no-store`, so a reverse proxy or
+  CDN in front of the app (e.g. Cloudflare) won't cache and misdirect a
+  per-user response.
 - The container runs as a non-root user.
 
 ## Reporting an issue
