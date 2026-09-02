@@ -1,11 +1,13 @@
 # Beer styles for BeerKeeper
 #
 # One style per line. Blank lines and lines starting with "#" are ignored.
-# This list seeds static/user data only once, on first boot (if
-# beer_styles.txt doesn't already exist in your data directory) - after
-# that, edit THIS FILE directly (it lives in your CELLAR_DATA_DIR, e.g. the
-# `cellar-data` Docker volume, not in the app's source code) and restart
-# the app to pick up changes. There's no in-app editor for it on purpose.
+# This list seeds the beer_styles TABLE, once, the first time the app
+# boots with an empty database. From that point on, styles are managed
+# from the admin page's "Beer Styles" panel, not this file - editing it
+# after first boot has no effect. If this install previously used the
+# old file-based version (a hand-edited beer_styles.txt in your data
+# directory), that file's contents were migrated in automatically instead
+# of this bundled list, preserving any customizations.
 #
 # Starting point compiled from the general/public beer style taxonomy
 # (style names only - no descriptions), organized similarly to how

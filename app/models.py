@@ -86,6 +86,23 @@ class Beer(Base):
     logs = relationship("ConsumptionLog", back_populates="beer")
 
 
+class BeerStyle(Base):
+    """A suggested style name for the beer-form autocomplete - a plain
+    lookup list, not a foreign key relationship. Beer.style above stays a
+    free-text field either way, exactly as it always has: someone can
+    still type a style that isn't in this list at all, same as before
+    this table existed."""
+    __tablename__ = "beer_styles"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(120), unique=True, nullable=False, index=True)
+    # Preserves the bundled list's own category-grouped order (e.g. all
+    # the "American ales" together) rather than flattening it to
+    # alphabetical, which would lose the deliberate curation. New styles
+    # added via the admin panel just get appended after everything else.
+    sort_order = Column(Integer, nullable=False, default=0)
+
+
 class CellarEntry(Base):
     """A held quantity of a beer, either In Cellar or In Fridge (or a custom location)."""
 

@@ -150,6 +150,19 @@ class AdminBeerPatch(BaseModel):
     reference_url: Optional[str] = None
 
 
+class AdminBeerStyleOut(BaseModel):
+    id: int
+    name: str
+
+
+class AdminBeerStyleIn(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+
+
+class AdminBeerStylePatch(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+
+
 # ---------- Cellar entries ----------
 
 class CellarEntryIn(BaseModel):
