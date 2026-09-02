@@ -1,5 +1,7 @@
 # Changelog
 
+- **0.0.57** — Added a search field to the cellar page, left of "+ Add a bottle", to quickly filter your list by beer name. Filters instantly in the browser (no server round-trip), stays applied across sort/location changes and after actions like +1 or Drink, and correctly handles accented names (e.g. searching lowercase finds an entry starting with an uppercase accented letter).
+
 - **0.0.56** — Replaced `python-jose` with `PyJWT` for the app's own JWT tokens, following up on the earlier dependency review: `python-jose` has a track record of algorithm-confusion and DoS CVEs, including one still incompletely patched in the latest release. Our usage (symmetric HS256 with our own fixed secret) was never exploitable via that class of bug, but PyJWT is more actively maintained and removes the concern entirely. Same behavior verified directly - token creation/verification, expiration, tampered-token rejection, password-change token invalidation, and OIDC login all retested and passing. As a bonus, PyJWT now warns on startup if `CELLAR_SECRET_KEY` is set to something shorter than recommended for HS256 (32 bytes) - the app's own auto-generated key was already well above this, so this only fires for an unusually short manually-set key.
 
 - **0.0.55** — Moved the "Cellar data" section (CSV export/import) to the bottom of the Account page, below Change password.

@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.56** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.57** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -28,7 +28,8 @@ CDN calls. No third-party accounts, analytics, or API keys required.
 
 - Track bottles in your cellar and/or fridge — quantity, size, bottle
   date, best-before date, notes — sortable by beer, brewery, or drink-by
-  date, in imperial or metric units (metric by default)
+  date, searchable by beer name, in imperial or metric units (metric by
+  default)
 - Autocomplete for beer, brewery, and style, backed by a shared database
   that grows as bottles are added, plus 10,400+ pre-populated breweries —
   see "Pre-populated breweries" below
