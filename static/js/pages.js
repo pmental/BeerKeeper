@@ -14,6 +14,12 @@ const Pages = (() => {
     }
     return _stylesCache;
   }
+  // Called after an admin adds/edits/deletes a style, so this same
+  // browser session doesn't keep suggesting a stale list elsewhere (e.g.
+  // add-bottle) without a full page reload.
+  function invalidateBeerStylesCache() {
+    _stylesCache = null;
+  }
 
   // Common bottle/can sizes shown in the size field's suggestions,
   // defined natively for each unit system rather than converting one into
@@ -1827,6 +1833,55 @@ const Pages = (() => {
     });
   }
 
+  function openBeerStyleModal(style, onSaved) {
+    const isEdit = !!style;
+    const html = `
+      <button class="modal-close" data-close>&times;</button>
+      <h2>${isEdit ? "Edit style" : "Add a style"}</h2>
+      <form data-style-form>
+        <div class="field">
+          <label>Name</label>
+          <input class="input" name="name" value="${escapeHtml(style?.name || "")}" required />
+        </div>
+        <div class="form-error" data-error style="display:none"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary btn-block">${isEdit ? "Save changes" : "Add style"}</button>
+        </div>
+      </form>
+    `;
+    openModal(html, {
+      onMount(modalEl, close) {
+        modalEl.querySelector("[data-close]").addEventListener("click", close);
+        const form = modalEl.querySelector("[data-style-form]");
+        const errorBox = modalEl.querySelector("[data-error]");
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          errorBox.style.display = "none";
+          const fd = new FormData(form);
+          const submitBtn = form.querySelector('button[type="submit"]');
+          submitBtn.disabled = true;
+          try {
+            const payload = { name: fd.get("name").trim() };
+            if (isEdit) {
+              await Api.adminPatchBeerStyle(style.id, payload);
+            } else {
+              await Api.adminCreateBeerStyle(payload);
+            }
+            invalidateBeerStylesCache();
+            close();
+            toast(isEdit ? "Style updated." : "Style added.");
+            onSaved();
+          } catch (err) {
+            errorBox.textContent = err.message;
+            errorBox.style.display = "block";
+          } finally {
+            submitBtn.disabled = false;
+          }
+        });
+      },
+    });
+  }
+
   function openBeerAdminModal(beer, onSaved) {
     const isEdit = !!beer;
     const html = `
@@ -2265,6 +2320,7 @@ const Pages = (() => {
       </div>
       <div class="panel" style="margin-bottom:20px" id="breweries-panel">${spinnerHtml()}</div>
       <div class="panel" style="margin-bottom:20px" id="beers-panel">${spinnerHtml()}</div>
+      <div class="panel" style="margin-bottom:20px" id="beer-styles-panel">${spinnerHtml()}</div>
       <div class="panel" id="backup-panel">${spinnerHtml()}</div>
     `;
 
@@ -2727,6 +2783,98 @@ const Pages = (() => {
       });
     }
 
+    let beerStylesSearchToken = 0;
+    async function loadBeerStylesPanel() {
+      const panel = root.querySelector("#beer-styles-panel");
+      panel.innerHTML = `
+        <h3>Beer Styles</h3>
+        <p class="field-hint" style="margin-top:-4px">
+          Suggestions offered while typing a beer's style - never a restriction, someone can still type
+          anything. Shown in a fixed, category-grouped order everywhere but here; new styles you add go
+          at the end of that list.
+        </p>
+        <div class="form-actions" style="margin-top:10px; justify-content:flex-start;">
+          <button class="btn btn-primary btn-sm" id="add-style-btn">+ Add style</button>
+        </div>
+        <div class="field" style="margin-top:14px">
+          <input class="input" id="style-search" placeholder="Search styles&hellip;" autocomplete="off" />
+        </div>
+        <div id="style-results" class="field-hint">Type to search the style list.</div>
+      `;
+
+      const resultsEl = panel.querySelector("#style-results");
+
+      async function runSearch(q) {
+        const myToken = ++beerStylesSearchToken;
+        if (!q.trim()) {
+          resultsEl.innerHTML = "";
+          resultsEl.textContent = "Type to search the style list.";
+          resultsEl.className = "field-hint";
+          return;
+        }
+        resultsEl.className = "";
+        resultsEl.innerHTML = spinnerHtml();
+        let results;
+        try {
+          results = await Api.adminListBeerStyles(q.trim());
+        } catch (err) {
+          if (myToken !== beerStylesSearchToken) return;
+          resultsEl.innerHTML = `<div class="empty-note">Couldn't load: ${escapeHtml(err.message)}</div>`;
+          return;
+        }
+        if (myToken !== beerStylesSearchToken) return; // a newer search finished first
+        if (!results.length) {
+          resultsEl.innerHTML = `<div class="empty-note">No styles match "${escapeHtml(q)}".</div>`;
+          return;
+        }
+        resultsEl.innerHTML = `<div class="entry-list">${results
+          .map(
+            (s) => `<div class="entry-card" style="padding:10px 14px;">
+              <div class="entry-main">
+                <h3 style="font-size:15px;">${escapeHtml(s.name)}</h3>
+              </div>
+              <div class="entry-actions">
+                <div class="row">
+                  <button class="btn btn-icon" data-edit-style="${s.id}">Edit</button>
+                  <button class="btn btn-icon" data-del-style="${s.id}">Del</button>
+                </div>
+              </div>
+            </div>`
+          )
+          .join("")}</div>`;
+
+        resultsEl.querySelectorAll("[data-edit-style]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const s = results.find((r) => r.id === Number(btn.dataset.editStyle));
+            if (s) openBeerStyleModal(s, () => runSearch(searchInput.value));
+          });
+        });
+        resultsEl.querySelectorAll("[data-del-style]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const s = results.find((r) => r.id === Number(btn.dataset.delStyle));
+            confirmDelete(`Delete "${s.name}" from the style list? This can't be undone.`, async () => {
+              try {
+                await Api.adminDeleteBeerStyle(s.id);
+                invalidateBeerStylesCache();
+                toast("Style deleted.");
+                runSearch(searchInput.value);
+              } catch (err) {
+                toast(err.message, "error");
+              }
+            });
+          });
+        });
+      }
+
+      const searchInput = panel.querySelector("#style-search");
+      const debouncedSearch = debounce((q) => runSearch(q), 300);
+      searchInput.addEventListener("input", () => debouncedSearch(searchInput.value));
+
+      panel.querySelector("#add-style-btn").addEventListener("click", () => {
+        openBeerStyleModal(null, () => runSearch(searchInput.value));
+      });
+    }
+
     async function loadBackupPanel() {
       const panel = root.querySelector("#backup-panel");
       let status;
@@ -2833,6 +2981,7 @@ const Pages = (() => {
     loadUsers();
     loadBreweriesPanel();
     loadBeersPanel();
+    loadBeerStylesPanel();
     loadBackupPanel();
   }
 

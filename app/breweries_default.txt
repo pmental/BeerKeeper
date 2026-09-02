@@ -5,11 +5,11 @@
 # are ignored.
 #
 # This file seeds the breweries TABLE, once, the first time the app boots
-# with an empty database - unlike beer_styles.txt (which is read fresh on
-# every request), these become real Brewery rows from that point on and
-# are managed like any other brewery: rename, delete, or add more through
-# the app itself. Editing this file after first boot has no effect; it's
-# only a seed, not a live source. See the README for details.
+# with an empty database - these become real Brewery rows from that point
+# on and are managed like any other brewery: rename, delete, or add more
+# through the app itself. Editing this file after first boot has no
+# effect; it's only a seed, not a live source. See the README for
+# details.
 #
 # Two sources make up this list:
 # 1. A hand-picked starting set compiled from public sources (mainly a mix

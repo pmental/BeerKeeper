@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.53** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.54** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -119,12 +119,9 @@ page. Works alongside password login, or set
 `CELLAR_PASSWORD_AUTH_ENABLED=false` to make SSO the only way in.
 
 Register `<CELLAR_BASE_URL>/api/auth/oidc/callback` as an allowed
-redirect URI with your provider. Any standard discovery-supporting OIDC
-provider should work; if yours needs something unusual, you may need to
-adjust `app/routers/oidc.py`. `CELLAR_OIDC_ISSUER` and `CELLAR_BASE_URL`
+redirect URI with your provider. `CELLAR_OIDC_ISSUER` and `CELLAR_BASE_URL`
 need a scheme (`https://`/`http://`) — if omitted, the app assumes
-`https://` and logs a warning. Login failures land back on the login page
-with a readable error instead of a blank 500.
+`https://` and logs a warning.
 
 ## Admin
 
@@ -142,10 +139,11 @@ link in the nav (`#/admin`) for:
 - The same for beers - name, brewery, style, ABV, and external link are
   all editable, and a beer can only be deleted once nothing (cellar,
   history, or wanted list) references it
+- Adding, renaming, or deleting beer styles in the shared suggestion
+  list - see "Beer styles" below
 - Downloading a full backup of the whole instance (every account, not
-  just your own, plus your custom beer styles) as a single zip file, and
-  restoring one — validated on upload, applied at the next restart rather
-  than live
+  just your own) as a single zip file, and restoring one — validated on
+  upload, applied at the next restart rather than live
 
 You can't remove the last admin or delete your own account from this
 page. If a deployment ever ends up with zero admins, set
@@ -172,15 +170,16 @@ page itself.
 
 ## Beer styles
 
-The Style field suggests from a list as you type. That list lives in a
-plain text file, `beer_styles.txt`, in your data directory — one style
-per line — seeded once from a built-in default on first boot. Edit the
-file and restart to pick up changes:
+The Style field suggests from a list as you type — a hand-picked default
+set of ~105 styles, seeded into the database once on first boot. Managed
+from the admin page's "Beer Styles" panel from that point on: add,
+rename, or delete freely. Like the brewery list, it's just suggestions;
+typing something not on the list is always fine.
 
-```bash
-docker compose exec beerkeeper sh -c 'echo "My Custom Style" >> /data/beer_styles.txt'
-docker compose restart beerkeeper
-```
+If this install previously used an older version where styles lived in
+a hand-edited `beer_styles.txt` file instead, that file's contents were
+migrated into the database automatically on first boot after upgrading,
+preserving any customizations — the file itself is no longer read.
 
 ## Pre-populated breweries
 
@@ -207,22 +206,20 @@ folder or update `volumes:` in `docker-compose.yml` to match.
 ## Backup and restore
 
 Easiest: the admin page's "Backup and restore" panel — downloads a single
-zip file with everything (the database *and* `beer_styles.txt`, which
-lives outside the database as its own file), and restores one (validated
-on upload, applied on the next restart, not live).
+zip file with a snapshot of the whole database (validated on upload,
+restore applied on the next restart, not live).
 
-For a manual copy, there are two files, both in your data directory/volume:
-`cellar.db` (plus the `-wal`/`-shm` companion files SQLite uses while
-running) and `beer_styles.txt`.
+For a manual copy, everything lives in one file in your data
+directory/volume: `cellar.db` (plus the `-wal`/`-shm` companion files
+SQLite uses while running).
 
 ```bash
 docker compose exec beerkeeper sh -c "sqlite3 /data/cellar.db '.backup /data/backup.db'"
 docker cp $(docker compose ps -q beerkeeper):/data/backup.db ./cellar-backup.db
-docker cp $(docker compose ps -q beerkeeper):/data/beer_styles.txt ./beer_styles-backup.txt
 ```
 
-To restore manually, stop the container, replace both files in the
-volume with your backups, and start it again. Each user can also
+To restore manually, stop the container, replace that file in the
+volume with your backup, and start it again. Each user can also
 self-serve a partial backup of just their own cellar any time from
 **Account → Cellar data → Download CSV**.
 

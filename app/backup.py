@@ -4,17 +4,11 @@ import sqlite3
 import tempfile
 import zipfile
 
-from app.beer_styles import STYLES_FILE
 from app.database import DATA_DIR, DB_PATH
 
 PENDING_RESTORE_PATH = os.path.join(DATA_DIR, ".pending_restore.zip")
 
-# The two entries a backup zip bundles together. beer_styles.txt lives
-# outside the database as a plain text file (see app/beer_styles.py), so a
-# database-only backup would silently drop any custom styles you've added -
-# this is exactly the gap that prompted bundling both into one file.
 ZIP_DB_ENTRY = "cellar.db"
-ZIP_STYLES_ENTRY = "beer_styles.txt"
 
 # A backup/restore of a database that doesn't even loosely resemble this
 # app's schema would be worse than useless - this is a cheap sanity check
@@ -23,11 +17,10 @@ _EXPECTED_TABLES = {"users", "beers", "breweries", "cellar_entries", "consumptio
 
 
 def create_backup_bytes() -> bytes:
-    """A single zip bundling a consistent, point-in-time snapshot of the
-    live database (every account, cellar, brewery, and beer - using
-    SQLite's own backup API, not just reading the file, which could catch
-    it mid-write in this app's WAL mode) together with the current
-    beer_styles.txt."""
+    """A single zip with a consistent, point-in-time snapshot of the live
+    database - every account, cellar, brewery, beer, and beer style, not
+    just your own - using SQLite's own backup API, not just reading the
+    file, which could catch it mid-write in this app's WAL mode."""
     source = sqlite3.connect(DB_PATH)
     dest = sqlite3.connect(":memory:")
     try:
@@ -37,15 +30,9 @@ def create_backup_bytes() -> bytes:
         source.close()
         dest.close()
 
-    styles_bytes = b""
-    if os.path.exists(STYLES_FILE):
-        with open(STYLES_FILE, "rb") as f:
-            styles_bytes = f.read()
-
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
         zf.writestr(ZIP_DB_ENTRY, db_bytes)
-        zf.writestr(ZIP_STYLES_ENTRY, styles_bytes)
     return buf.getvalue()
 
 
@@ -136,19 +123,13 @@ def apply_pending_restore_if_any() -> bool:
         if os.path.exists(stale):
             os.remove(stale)
 
-    # Write-to-temp-then-atomic-replace for each file, rather than writing
-    # directly over the destination, so a process interrupted mid-write
-    # can't leave a half-written database or styles file behind.
+    # Write-to-temp-then-atomic-replace rather than writing directly over
+    # the destination, so a process interrupted mid-write can't leave a
+    # half-written database behind.
     tmp_db = DB_PATH + ".restoring"
     with open(tmp_db, "wb") as f:
         f.write(zf.read(ZIP_DB_ENTRY))
     os.replace(tmp_db, DB_PATH)
-
-    if ZIP_STYLES_ENTRY in zf.namelist():
-        tmp_styles = STYLES_FILE + ".restoring"
-        with open(tmp_styles, "wb") as f:
-            f.write(zf.read(ZIP_STYLES_ENTRY))
-        os.replace(tmp_styles, STYLES_FILE)
 
     os.remove(PENDING_RESTORE_PATH)
     return True

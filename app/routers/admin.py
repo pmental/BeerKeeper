@@ -209,11 +209,9 @@ def delete_user(
 @router.get("/backup")
 def download_backup(_admin: models.User = Depends(require_admin)):
     """A single-file snapshot of the entire instance - every user, cellar
-    entry, beer, brewery, and your custom beer_styles.txt (which lives
-    outside the database, so it's zipped alongside it rather than
-    silently left out) - not just one account's data (unlike
-    Import/Export's CSV, which is per-user). Meant for moving a whole
-    instance to a new install."""
+    entry, beer, brewery, and beer style - not just one account's data
+    (unlike Import/Export's CSV, which is per-user). Meant for moving a
+    whole instance to a new install."""
     data = backup.create_backup_bytes()
     filename = f"beerkeeper-backup-{dt.date.today().isoformat()}.zip"
     return Response(
@@ -611,3 +609,78 @@ async def import_beers_admin(
 
     db.commit()
     return schemas.AdminBreweryImportResult(created=created, skipped=skipped, errors=errors[:20])
+
+
+@router.get("/beer-styles", response_model=list[schemas.AdminBeerStyleOut])
+def list_beer_styles_admin(
+    q: str = "",
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(require_admin),
+):
+    query = db.query(models.BeerStyle)
+    if q:
+        query = query.filter(ilike_unicode(models.BeerStyle.name, f"%{q}%"))
+    # Alphabetical here, unlike the public autocomplete's preserved
+    # category order (see beer_styles.py) - finding a specific style to
+    # edit or delete matters more here than browsing by category.
+    return query.order_by(models.BeerStyle.name).limit(200).all()
+
+
+@router.post("/beer-styles", response_model=schemas.AdminBeerStyleOut)
+def create_beer_style_admin(
+    payload: schemas.AdminBeerStyleIn,
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(require_admin),
+):
+    existing = db.query(models.BeerStyle).filter(ilike_unicode(models.BeerStyle.name, payload.name)).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="That style already exists.")
+    # New styles go at the end of the (otherwise category-grouped)
+    # public suggestion list, rather than needing a real position picked.
+    next_order = (db.query(func.max(models.BeerStyle.sort_order)).scalar() or 0) + 1
+    style = models.BeerStyle(name=payload.name.strip(), sort_order=next_order)
+    db.add(style)
+    db.commit()
+    db.refresh(style)
+    return style
+
+
+@router.patch("/beer-styles/{style_id}", response_model=schemas.AdminBeerStyleOut)
+def update_beer_style_admin(
+    style_id: int,
+    payload: schemas.AdminBeerStylePatch,
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(require_admin),
+):
+    style = db.query(models.BeerStyle).filter(models.BeerStyle.id == style_id).first()
+    if not style:
+        raise HTTPException(status_code=404, detail="Style not found.")
+    new_name = payload.name.strip()
+    dupe = (
+        db.query(models.BeerStyle)
+        .filter(ilike_unicode(models.BeerStyle.name, new_name), models.BeerStyle.id != style_id)
+        .first()
+    )
+    if dupe:
+        raise HTTPException(status_code=400, detail="Another style already has that name.")
+    style.name = new_name
+    db.commit()
+    db.refresh(style)
+    return style
+
+
+@router.delete("/beer-styles/{style_id}")
+def delete_beer_style_admin(
+    style_id: int,
+    db: Session = Depends(get_db),
+    _admin: models.User = Depends(require_admin),
+):
+    # No usage-blocking check here, unlike breweries/beers - style is (and
+    # always has been) a free-text field on Beer, never a foreign key
+    # into this table, so nothing actually references a style row by ID.
+    style = db.query(models.BeerStyle).filter(models.BeerStyle.id == style_id).first()
+    if not style:
+        raise HTTPException(status_code=404, detail="Style not found.")
+    db.delete(style)
+    db.commit()
+    return {"ok": True}

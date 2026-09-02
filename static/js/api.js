@@ -204,6 +204,12 @@ const Api = (() => {
       }
       return data;
     },
+
+    adminListBeerStyles: (q) => request("GET", "/api/admin/beer-styles" + (q ? `?q=${encodeURIComponent(q)}` : "")),
+    adminCreateBeerStyle: (payload) => request("POST", "/api/admin/beer-styles", { body: payload }),
+    adminPatchBeerStyle: (id, payload) => request("PATCH", `/api/admin/beer-styles/${id}`, { body: payload }),
+    adminDeleteBeerStyle: (id) => request("DELETE", `/api/admin/beer-styles/${id}`),
+
     async adminUploadRestore(file) {
       const token = getToken();
       const fd = new FormData();
