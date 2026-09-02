@@ -178,11 +178,6 @@ from the admin page's "Beer Styles" panel from that point on: add,
 rename, or delete freely. Like the brewery list, it's just suggestions;
 typing something not on the list is always fine.
 
-If this install previously used an older version where styles lived in
-a hand-edited `beer_styles.txt` file instead, that file's contents were
-migrated into the database automatically on first boot after upgrading,
-preserving any customizations — the file itself is no longer read.
-
 ## Pre-populated breweries
 
 The database starts with 10,400+ real, currently-operating breweries — a hand-picked starting set (Swedish craft breweries, major American and Belgian names, cider makers and meaderies, and a spread across the rest of Europe), plus a bulk import from [Open Brewery DB](https://www.openbrewerydb.org/) covering the US and 20+ other countries.
