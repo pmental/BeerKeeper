@@ -1207,6 +1207,13 @@ const Pages = (() => {
     let sort = ctx.account.default_sort;
     let sortDirection = "asc";
     let locationFilter = null;
+    let searchText = "";
+    // The full set for the current sort/location, fetched from the
+    // server; search filters this in the browser rather than re-fetching
+    // on every keystroke - a personal cellar is small enough that this
+    // is instant, and it means the search has no server-side cost at
+    // all.
+    let allEntries = [];
     // Purely a display preference, not account data - same treatment as
     // the theme setting, which also lives in localStorage rather than
     // the account record.
@@ -1223,6 +1230,7 @@ const Pages = (() => {
       <div class="page-head">
         <h1>My cellar <span class="subtle" style="font-size:14px; font-weight:400;" id="cellar-total"></span></h1>
         <div style="display:flex; gap:8px;">
+          <input class="input" id="cellar-search" placeholder="Search by beer name&hellip;" autocomplete="off" style="width:200px" />
           ${ctx.account.trading_enabled ? `<button class="btn btn-ghost" id="add-wanted">+ Add to wanted list</button>` : ""}
           <button class="btn btn-primary" id="add-bottle">+ Add a bottle</button>
         </div>
@@ -1307,30 +1315,50 @@ const Pages = (() => {
       });
     });
 
-    async function load() {
+    function renderEntries() {
       const container = root.querySelector("#entries");
       const totalEl = root.querySelector("#cellar-total");
-      container.innerHTML = spinnerHtml();
-      try {
-        const entries = await Api.listCellar(sort, locationFilter, sortDirection);
-        if (!entries.length) {
-          container.innerHTML = `<div class="panel empty-note">Your cellar's empty. Add your first bottle to start tracking it.</div>`;
-          if (totalEl) totalEl.textContent = "";
-          return;
-        }
-        container.innerHTML = `<div class="entry-list${viewMode === "compact" ? " compact" : ""}">${entries
-          .map((e) => entryCardHtml(e, ctx.account, { editable: true }))
-          .join("")}</div>`;
-        wireEntryCards(container, entries, ctx.account, load);
-        if (totalEl) {
-          const totalBottles = entries.reduce((sum, e) => sum + e.quantity, 0);
-          totalEl.textContent = `${entries.length} beer${entries.length === 1 ? "" : "s"} \u00b7 ${totalBottles} on hand`;
-        }
-      } catch (e) {
-        container.innerHTML = `<div class="panel empty-note">Couldn't load your cellar: ${escapeHtml(e.message)}</div>`;
+      if (!allEntries.length) {
+        container.innerHTML = `<div class="panel empty-note">Your cellar's empty. Add your first bottle to start tracking it.</div>`;
         if (totalEl) totalEl.textContent = "";
+        return;
+      }
+      const q = searchText.trim().toLowerCase();
+      const filtered = q ? allEntries.filter((e) => e.beer.name.toLowerCase().includes(q)) : allEntries;
+      if (!filtered.length) {
+        container.innerHTML = `<div class="panel empty-note">No beers match "${escapeHtml(searchText.trim())}".</div>`;
+        if (totalEl) totalEl.textContent = "";
+        return;
+      }
+      container.innerHTML = `<div class="entry-list${viewMode === "compact" ? " compact" : ""}">${filtered
+        .map((e) => entryCardHtml(e, ctx.account, { editable: true }))
+        .join("")}</div>`;
+      wireEntryCards(container, filtered, ctx.account, load);
+      if (totalEl) {
+        const totalBottles = filtered.reduce((sum, e) => sum + e.quantity, 0);
+        totalEl.textContent = `${filtered.length} beer${filtered.length === 1 ? "" : "s"} \u00b7 ${totalBottles} on hand`;
       }
     }
+
+    async function load() {
+      const container = root.querySelector("#entries");
+      container.innerHTML = spinnerHtml();
+      try {
+        allEntries = await Api.listCellar(sort, locationFilter, sortDirection);
+      } catch (e) {
+        container.innerHTML = `<div class="panel empty-note">Couldn't load your cellar: ${escapeHtml(e.message)}</div>`;
+        const totalEl = root.querySelector("#cellar-total");
+        if (totalEl) totalEl.textContent = "";
+        return;
+      }
+      renderEntries();
+    }
+
+    root.querySelector("#cellar-search").addEventListener("input", (e) => {
+      searchText = e.target.value;
+      renderEntries();
+    });
+
     load();
   }
 
