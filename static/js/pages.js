@@ -2533,7 +2533,52 @@ const Pages = (() => {
       openAddUserModal(loadUsers, !!(currentSettings && currentSettings.smtp_enabled));
     });
 
-    let breweriesSearchToken = 0;
+    // Wires a debounced, race-safe "type to search" list into an admin
+    // panel - shared by the Breweries, Beers, and Beer Styles panels
+    // below, which otherwise each reimplemented the same loading/empty/
+    // stale-response logic (including their own separate "is this
+    // response still the latest one" counter) three times over. Each
+    // panel keeps its own header, buttons, and card markup; this only
+    // owns the search-box-to-results wiring in between.
+    function wireAdminSearchList(panel, config) {
+      const searchInput = panel.querySelector(config.searchSelector);
+      const resultsEl = panel.querySelector(config.resultsSelector);
+      let token = 0;
+
+      async function runSearch(q) {
+        const myToken = ++token;
+        if (!q.trim()) {
+          resultsEl.innerHTML = "";
+          resultsEl.textContent = config.emptyHint;
+          resultsEl.className = "field-hint";
+          return;
+        }
+        resultsEl.className = "";
+        resultsEl.innerHTML = spinnerHtml();
+        let results;
+        try {
+          results = await config.fetchResults(q.trim());
+        } catch (err) {
+          if (myToken !== token) return;
+          resultsEl.innerHTML = `<div class="empty-note">Couldn't load: ${escapeHtml(err.message)}</div>`;
+          return;
+        }
+        if (myToken !== token) return; // a newer search finished first
+        if (!results.length) {
+          resultsEl.innerHTML = `<div class="empty-note">${config.noMatchesMessage(q)}</div>`;
+          return;
+        }
+        resultsEl.innerHTML = `<div class="entry-list">${results.map(config.renderItem).join("")}</div>`;
+        config.wireItems(resultsEl, results, refresh);
+      }
+
+      const refresh = () => runSearch(searchInput.value);
+      const debouncedSearch = debounce((q) => runSearch(q), 300);
+      searchInput.addEventListener("input", () => debouncedSearch(searchInput.value));
+
+      return { refresh };
+    }
+
     async function loadBreweriesPanel() {
       const panel = root.querySelector("#breweries-panel");
       panel.innerHTML = `
@@ -2555,80 +2600,54 @@ const Pages = (() => {
         <div id="brewery-results" class="field-hint">Type to search the brewery list.</div>
       `;
 
-      const resultsEl = panel.querySelector("#brewery-results");
-
-      async function runSearch(q) {
-        const myToken = ++breweriesSearchToken;
-        if (!q.trim()) {
-          resultsEl.innerHTML = "";
-          resultsEl.textContent = "Type to search the brewery list.";
-          resultsEl.className = "field-hint";
-          return;
-        }
-        resultsEl.className = "";
-        resultsEl.innerHTML = spinnerHtml();
-        let results;
-        try {
-          results = await Api.adminListBreweries(q.trim());
-        } catch (err) {
-          if (myToken !== breweriesSearchToken) return;
-          resultsEl.innerHTML = `<div class="empty-note">Couldn't load: ${escapeHtml(err.message)}</div>`;
-          return;
-        }
-        if (myToken !== breweriesSearchToken) return; // a newer search finished first
-        if (!results.length) {
-          resultsEl.innerHTML = `<div class="empty-note">No breweries match "${escapeHtml(q)}".</div>`;
-          return;
-        }
-        resultsEl.innerHTML = `<div class="entry-list">${results
-          .map(
-            (b) => `<div class="entry-card" style="padding:10px 14px;">
-              <div class="entry-main">
-                <h3 style="font-size:15px; margin-bottom:2px;">${escapeHtml(b.name)}</h3>
-                <div class="entry-meta">
-                  ${b.website ? `<a href="${escapeHtml(b.website)}" target="_blank" rel="noopener noreferrer">${escapeHtml(b.website)}</a>` : `<span class="subtle">No website</span>`}
-                  <span>&middot;</span>
-                  <span>${b.beer_count} beer${b.beer_count === 1 ? "" : "s"}</span>
-                </div>
-              </div>
-              <div class="entry-actions">
-                <div class="row">
-                  <button class="btn btn-icon" data-edit-brewery="${b.id}">Edit</button>
-                  <button class="btn btn-icon" data-del-brewery="${b.id}" ${b.beer_count ? "disabled title=\"In use - can't delete\"" : ""}>Del</button>
-                </div>
-              </div>
-            </div>`
-          )
-          .join("")}</div>`;
-
-        resultsEl.querySelectorAll("[data-edit-brewery]").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const b = results.find((r) => r.id === Number(btn.dataset.editBrewery));
-            if (b) openBreweryModal(b, () => runSearch(searchInput.value));
-          });
-        });
-        resultsEl.querySelectorAll("[data-del-brewery]:not([disabled])").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const b = results.find((r) => r.id === Number(btn.dataset.delBrewery));
-            confirmDelete(`Delete "${b.name}" from the brewery list? This can't be undone.`, async () => {
-              try {
-                await Api.adminDeleteBrewery(b.id);
-                toast("Brewery deleted.");
-                runSearch(searchInput.value);
-              } catch (err) {
-                toast(err.message, "error");
-              }
+      const { refresh } = wireAdminSearchList(panel, {
+        searchSelector: "#brewery-search",
+        resultsSelector: "#brewery-results",
+        emptyHint: "Type to search the brewery list.",
+        fetchResults: (q) => Api.adminListBreweries(q),
+        noMatchesMessage: (q) => `No breweries match "${escapeHtml(q)}".`,
+        renderItem: (b) => `<div class="entry-card" style="padding:10px 14px;">
+          <div class="entry-main">
+            <h3 style="font-size:15px; margin-bottom:2px;">${escapeHtml(b.name)}</h3>
+            <div class="entry-meta">
+              ${b.website ? `<a href="${escapeHtml(b.website)}" target="_blank" rel="noopener noreferrer">${escapeHtml(b.website)}</a>` : `<span class="subtle">No website</span>`}
+              <span>&middot;</span>
+              <span>${b.beer_count} beer${b.beer_count === 1 ? "" : "s"}</span>
+            </div>
+          </div>
+          <div class="entry-actions">
+            <div class="row">
+              <button class="btn btn-icon" data-edit-brewery="${b.id}">Edit</button>
+              <button class="btn btn-icon" data-del-brewery="${b.id}" ${b.beer_count ? "disabled title=\"In use - can't delete\"" : ""}>Del</button>
+            </div>
+          </div>
+        </div>`,
+        wireItems: (container, results, refresh) => {
+          container.querySelectorAll("[data-edit-brewery]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const b = results.find((r) => r.id === Number(btn.dataset.editBrewery));
+              if (b) openBreweryModal(b, refresh);
             });
           });
-        });
-      }
-
-      const searchInput = panel.querySelector("#brewery-search");
-      const debouncedSearch = debounce((q) => runSearch(q), 300);
-      searchInput.addEventListener("input", () => debouncedSearch(searchInput.value));
+          container.querySelectorAll("[data-del-brewery]:not([disabled])").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const b = results.find((r) => r.id === Number(btn.dataset.delBrewery));
+              confirmDelete(`Delete "${b.name}" from the brewery list? This can't be undone.`, async () => {
+                try {
+                  await Api.adminDeleteBrewery(b.id);
+                  toast("Brewery deleted.");
+                  refresh();
+                } catch (err) {
+                  toast(err.message, "error");
+                }
+              });
+            });
+          });
+        },
+      });
 
       panel.querySelector("#add-brewery-btn").addEventListener("click", () => {
-        openBreweryModal(null, () => runSearch(searchInput.value));
+        openBreweryModal(null, refresh);
       });
 
       panel.querySelector("#export-breweries-btn").addEventListener("click", async (e) => {
@@ -2662,7 +2681,7 @@ const Pages = (() => {
           if (result.errors.length) {
             toast(result.errors[0], "error");
           }
-          if (searchInput.value.trim()) runSearch(searchInput.value);
+          refresh();
         } catch (err) {
           toast(err.message, "error");
         } finally {
@@ -2671,7 +2690,6 @@ const Pages = (() => {
       });
     }
 
-    let beersSearchToken = 0;
     async function loadBeersPanel() {
       const panel = root.querySelector("#beers-panel");
       panel.innerHTML = `
@@ -2693,82 +2711,56 @@ const Pages = (() => {
         <div id="beer-results" class="field-hint">Type to search the beer list.</div>
       `;
 
-      const resultsEl = panel.querySelector("#beer-results");
-
-      async function runSearch(q) {
-        const myToken = ++beersSearchToken;
-        if (!q.trim()) {
-          resultsEl.innerHTML = "";
-          resultsEl.textContent = "Type to search the beer list.";
-          resultsEl.className = "field-hint";
-          return;
-        }
-        resultsEl.className = "";
-        resultsEl.innerHTML = spinnerHtml();
-        let results;
-        try {
-          results = await Api.adminListBeers(q.trim());
-        } catch (err) {
-          if (myToken !== beersSearchToken) return;
-          resultsEl.innerHTML = `<div class="empty-note">Couldn't load: ${escapeHtml(err.message)}</div>`;
-          return;
-        }
-        if (myToken !== beersSearchToken) return; // a newer search finished first
-        if (!results.length) {
-          resultsEl.innerHTML = `<div class="empty-note">No beers match "${escapeHtml(q)}".</div>`;
-          return;
-        }
-        resultsEl.innerHTML = `<div class="entry-list">${results
-          .map(
-            (b) => `<div class="entry-card" style="padding:10px 14px;">
-              <div class="entry-main">
-                <h3 style="font-size:15px; margin-bottom:2px;">${escapeHtml(b.name)}</h3>
-                <div class="entry-meta">
-                  <span>${escapeHtml(b.brewery.name)}</span>
-                  ${b.style ? `<span class="dot">&middot;</span><span>${escapeHtml(b.style)}</span>` : ""}
-                  ${b.abv !== null && b.abv !== undefined ? `<span class="dot">&middot;</span><span>${b.abv}% ABV</span>` : ""}
-                  <span class="dot">&middot;</span>
-                  <span>${b.usage_count} use${b.usage_count === 1 ? "" : "s"}</span>
-                </div>
-              </div>
-              <div class="entry-actions">
-                <div class="row">
-                  <button class="btn btn-icon" data-edit-beer="${b.id}">Edit</button>
-                  <button class="btn btn-icon" data-del-beer="${b.id}" ${b.usage_count ? "disabled title=\"In use - can't delete\"" : ""}>Del</button>
-                </div>
-              </div>
-            </div>`
-          )
-          .join("")}</div>`;
-
-        resultsEl.querySelectorAll("[data-edit-beer]").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const b = results.find((r) => r.id === Number(btn.dataset.editBeer));
-            if (b) openBeerAdminModal(b, () => runSearch(searchInput.value));
-          });
-        });
-        resultsEl.querySelectorAll("[data-del-beer]:not([disabled])").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const b = results.find((r) => r.id === Number(btn.dataset.delBeer));
-            confirmDelete(`Delete "${b.name}" from the beer list? This can't be undone.`, async () => {
-              try {
-                await Api.adminDeleteBeer(b.id);
-                toast("Beer deleted.");
-                runSearch(searchInput.value);
-              } catch (err) {
-                toast(err.message, "error");
-              }
+      const { refresh } = wireAdminSearchList(panel, {
+        searchSelector: "#beer-search",
+        resultsSelector: "#beer-results",
+        emptyHint: "Type to search the beer list.",
+        fetchResults: (q) => Api.adminListBeers(q),
+        noMatchesMessage: (q) => `No beers match "${escapeHtml(q)}".`,
+        renderItem: (b) => `<div class="entry-card" style="padding:10px 14px;">
+          <div class="entry-main">
+            <h3 style="font-size:15px; margin-bottom:2px;">${escapeHtml(b.name)}</h3>
+            <div class="entry-meta">
+              <span>${escapeHtml(b.brewery.name)}</span>
+              ${b.style ? `<span class="dot">&middot;</span><span>${escapeHtml(b.style)}</span>` : ""}
+              ${b.abv !== null && b.abv !== undefined ? `<span class="dot">&middot;</span><span>${b.abv}% ABV</span>` : ""}
+              <span class="dot">&middot;</span>
+              <span>${b.usage_count} use${b.usage_count === 1 ? "" : "s"}</span>
+            </div>
+          </div>
+          <div class="entry-actions">
+            <div class="row">
+              <button class="btn btn-icon" data-edit-beer="${b.id}">Edit</button>
+              <button class="btn btn-icon" data-del-beer="${b.id}" ${b.usage_count ? "disabled title=\"In use - can't delete\"" : ""}>Del</button>
+            </div>
+          </div>
+        </div>`,
+        wireItems: (container, results, refresh) => {
+          container.querySelectorAll("[data-edit-beer]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const b = results.find((r) => r.id === Number(btn.dataset.editBeer));
+              if (b) openBeerAdminModal(b, refresh);
             });
           });
-        });
-      }
-
-      const searchInput = panel.querySelector("#beer-search");
-      const debouncedSearch = debounce((q) => runSearch(q), 300);
-      searchInput.addEventListener("input", () => debouncedSearch(searchInput.value));
+          container.querySelectorAll("[data-del-beer]:not([disabled])").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const b = results.find((r) => r.id === Number(btn.dataset.delBeer));
+              confirmDelete(`Delete "${b.name}" from the beer list? This can't be undone.`, async () => {
+                try {
+                  await Api.adminDeleteBeer(b.id);
+                  toast("Beer deleted.");
+                  refresh();
+                } catch (err) {
+                  toast(err.message, "error");
+                }
+              });
+            });
+          });
+        },
+      });
 
       panel.querySelector("#add-beer-btn").addEventListener("click", () => {
-        openBeerAdminModal(null, () => runSearch(searchInput.value));
+        openBeerAdminModal(null, refresh);
       });
 
       panel.querySelector("#export-beers-btn").addEventListener("click", async (e) => {
@@ -2802,7 +2794,7 @@ const Pages = (() => {
           if (result.errors.length) {
             toast(result.errors[0], "error");
           }
-          if (searchInput.value.trim()) runSearch(searchInput.value);
+          refresh();
         } catch (err) {
           toast(err.message, "error");
         } finally {
@@ -2811,7 +2803,6 @@ const Pages = (() => {
       });
     }
 
-    let beerStylesSearchToken = 0;
     async function loadBeerStylesPanel() {
       const panel = root.querySelector("#beer-styles-panel");
       panel.innerHTML = `
@@ -2830,76 +2821,50 @@ const Pages = (() => {
         <div id="style-results" class="field-hint">Type to search the style list.</div>
       `;
 
-      const resultsEl = panel.querySelector("#style-results");
-
-      async function runSearch(q) {
-        const myToken = ++beerStylesSearchToken;
-        if (!q.trim()) {
-          resultsEl.innerHTML = "";
-          resultsEl.textContent = "Type to search the style list.";
-          resultsEl.className = "field-hint";
-          return;
-        }
-        resultsEl.className = "";
-        resultsEl.innerHTML = spinnerHtml();
-        let results;
-        try {
-          results = await Api.adminListBeerStyles(q.trim());
-        } catch (err) {
-          if (myToken !== beerStylesSearchToken) return;
-          resultsEl.innerHTML = `<div class="empty-note">Couldn't load: ${escapeHtml(err.message)}</div>`;
-          return;
-        }
-        if (myToken !== beerStylesSearchToken) return; // a newer search finished first
-        if (!results.length) {
-          resultsEl.innerHTML = `<div class="empty-note">No styles match "${escapeHtml(q)}".</div>`;
-          return;
-        }
-        resultsEl.innerHTML = `<div class="entry-list">${results
-          .map(
-            (s) => `<div class="entry-card" style="padding:10px 14px;">
-              <div class="entry-main">
-                <h3 style="font-size:15px;">${escapeHtml(s.name)}</h3>
-              </div>
-              <div class="entry-actions">
-                <div class="row">
-                  <button class="btn btn-icon" data-edit-style="${s.id}">Edit</button>
-                  <button class="btn btn-icon" data-del-style="${s.id}">Del</button>
-                </div>
-              </div>
-            </div>`
-          )
-          .join("")}</div>`;
-
-        resultsEl.querySelectorAll("[data-edit-style]").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const s = results.find((r) => r.id === Number(btn.dataset.editStyle));
-            if (s) openBeerStyleModal(s, () => runSearch(searchInput.value));
-          });
-        });
-        resultsEl.querySelectorAll("[data-del-style]").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const s = results.find((r) => r.id === Number(btn.dataset.delStyle));
-            confirmDelete(`Delete "${s.name}" from the style list? This can't be undone.`, async () => {
-              try {
-                await Api.adminDeleteBeerStyle(s.id);
-                invalidateBeerStylesCache();
-                toast("Style deleted.");
-                runSearch(searchInput.value);
-              } catch (err) {
-                toast(err.message, "error");
-              }
+      const { refresh } = wireAdminSearchList(panel, {
+        searchSelector: "#style-search",
+        resultsSelector: "#style-results",
+        emptyHint: "Type to search the style list.",
+        fetchResults: (q) => Api.adminListBeerStyles(q),
+        noMatchesMessage: (q) => `No styles match "${escapeHtml(q)}".`,
+        renderItem: (s) => `<div class="entry-card" style="padding:10px 14px;">
+          <div class="entry-main">
+            <h3 style="font-size:15px;">${escapeHtml(s.name)}</h3>
+          </div>
+          <div class="entry-actions">
+            <div class="row">
+              <button class="btn btn-icon" data-edit-style="${s.id}">Edit</button>
+              <button class="btn btn-icon" data-del-style="${s.id}">Del</button>
+            </div>
+          </div>
+        </div>`,
+        wireItems: (container, results, refresh) => {
+          container.querySelectorAll("[data-edit-style]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const s = results.find((r) => r.id === Number(btn.dataset.editStyle));
+              if (s) openBeerStyleModal(s, refresh);
             });
           });
-        });
-      }
-
-      const searchInput = panel.querySelector("#style-search");
-      const debouncedSearch = debounce((q) => runSearch(q), 300);
-      searchInput.addEventListener("input", () => debouncedSearch(searchInput.value));
+          container.querySelectorAll("[data-del-style]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const s = results.find((r) => r.id === Number(btn.dataset.delStyle));
+              confirmDelete(`Delete "${s.name}" from the style list? This can't be undone.`, async () => {
+                try {
+                  await Api.adminDeleteBeerStyle(s.id);
+                  invalidateBeerStylesCache();
+                  toast("Style deleted.");
+                  refresh();
+                } catch (err) {
+                  toast(err.message, "error");
+                }
+              });
+            });
+          });
+        },
+      });
 
       panel.querySelector("#add-style-btn").addEventListener("click", () => {
-        openBeerStyleModal(null, () => runSearch(searchInput.value));
+        openBeerStyleModal(null, refresh);
       });
     }
 
