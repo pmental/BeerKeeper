@@ -21,6 +21,7 @@ CDN calls. No third-party accounts, analytics, or API keys required.
 - [Backup and restore](#backup-and-restore)
 - [CSV format](#csv-format)
 - [Architecture](#architecture)
+- [Screenshots](#screenshots)
 - [License](#license)
 
 ## Features
@@ -251,6 +252,10 @@ if one matches, otherwise creates it.
   `static/`, hash-routed single-page app (`static/js/app.js` is the router,
   `pages.js` renders each screen, `api.js` wraps `fetch`, `theme.js` handles
   dark/light/system theme switching).
+
+## Screenshots
+<img width="1229" height="982" alt="image" src="https://github.com/user-attachments/assets/c4b606c0-720e-460a-9cb6-3326a0e8d2c7" />
+<img width="1229" height="984" alt="image" src="https://github.com/user-attachments/assets/be122cc5-45fa-46c3-a7f0-446beef4d6a7" />
 
 ## License
 
