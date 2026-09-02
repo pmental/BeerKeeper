@@ -27,7 +27,7 @@ CDN calls. No third-party accounts, analytics, or API keys required.
 ## Features
 
 - Track bottles in your cellar and/or fridge — quantity, size, bottle
-  date, best-before date, notes — sortable by beer, brewery, or drink-by
+  date, drink-by date, notes — sortable by beer, brewery, or drink-by
   date, searchable by beer name, in imperial or metric units (metric by
   default)
 - Autocomplete for beer, brewery, and style, backed by a shared database
