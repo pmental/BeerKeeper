@@ -10,11 +10,27 @@ const App = (() => {
     }
   }
 
+  async function refreshVersionTag() {
+    const tag = document.getElementById("app-version-tag");
+    if (!tag) return;
+    if (!state.user) {
+      tag.textContent = "BeerKeeper";
+      return;
+    }
+    try {
+      const { name, version } = await Api.version();
+      tag.textContent = `${name} v${version}`;
+    } catch (e) {
+      tag.textContent = "BeerKeeper";
+    }
+  }
+
   async function refreshUser() {
     if (!Api.getToken()) {
       state.user = null;
       state.displayName = null;
       state.account = null;
+      await refreshVersionTag();
       return;
     }
     try {
@@ -28,6 +44,7 @@ const App = (() => {
       state.account = null;
       Api.setToken(null);
     }
+    await refreshVersionTag();
   }
 
   function renderNav(activeHash) {
@@ -73,6 +90,7 @@ const App = (() => {
           Api.setToken(null);
           state.user = null;
           state.account = null;
+          refreshVersionTag();
           UI.toast("Logged out.");
           location.hash = "#/";
           router();
@@ -188,17 +206,6 @@ const App = (() => {
         navToggle.setAttribute("aria-expanded", "false");
       });
     }
-
-    Api.version()
-      .then(({ name, version }) => {
-        const tag = document.getElementById("app-version-tag");
-        if (tag) {
-          tag.innerHTML = ` — <a href="https://github.com/pmental/BeerKeeper/releases" target="_blank" rel="noopener noreferrer">${UI.escapeHtml(
-            name
-          )} v${UI.escapeHtml(version)}</a>`;
-        }
-      })
-      .catch(() => {});
   }
 
   return { init, router, state };

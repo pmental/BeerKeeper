@@ -1,12 +1,13 @@
 import os
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from app import auth, config
+from app.deps import get_current_user
 from app.database import Base, engine, run_migrations, SessionLocal
 from app import models  # noqa: F401  (ensures models are registered before create_all)
 from app.backup import apply_pending_restore_if_any
@@ -96,6 +97,15 @@ async def security_headers(request, call_next):
     # every single page load.
     if request.url.path.startswith("/assets/"):
         response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    elif request.url.path.startswith("/api/"):
+        # Explicit, not just "no header set" - a reverse proxy or CDN
+        # sitting in front of this app (nginx, Cloudflare Tunnel, etc.)
+        # has no way to know these responses are per-user and
+        # authorization-dependent unless told outright. Without this,
+        # a cache that doesn't vary by the Authorization header could
+        # serve one person's response - success or failure - to someone
+        # else entirely.
+        response.headers["Cache-Control"] = "no-store"
     return response
 
 
@@ -119,7 +129,7 @@ def health():
 
 
 @app.get("/api/version")
-def version():
+def version(_user: models.User = Depends(get_current_user)):
     return {"name": config.APP_NAME, "version": config.APP_VERSION}
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")

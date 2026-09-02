@@ -59,7 +59,7 @@ const Api = (() => {
       request("POST", "/api/auth/login", { body: { username, password }, form: true, auth: false }),
     me: () => request("GET", "/api/auth/me"),
     authConfig: () => request("GET", "/api/auth/config", { auth: false }),
-    version: () => request("GET", "/api/version", { auth: false }),
+    version: () => request("GET", "/api/version"),
     changePassword: (current_password, new_password) =>
       request("POST", "/api/auth/change-password", { body: { current_password, new_password } }),
     forgotPassword: (email) => request("POST", "/api/auth/forgot-password", { body: { email }, auth: false }),
@@ -77,7 +77,7 @@ const Api = (() => {
       if (q) params.set("q", q);
       return request("GET", "/api/breweries?" + params.toString());
     },
-    beerStyles: () => request("GET", "/api/beer-styles", { auth: false }),
+    beerStyles: () => request("GET", "/api/beer-styles"),
 
     listCellar: (sort, location, direction) => {
       const params = new URLSearchParams();

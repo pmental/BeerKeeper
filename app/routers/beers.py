@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app import models, schemas
 from app.database import get_db, ilike_unicode
-from app.deps import get_current_user, get_optional_user
+from app.deps import get_current_user
 from app.url_utils import sanitize_url
 
 router = APIRouter(prefix="/api/beers", tags=["beers"])
@@ -52,47 +52,51 @@ def _user_brewery_recency(db: Session, user_id: int) -> dict[int, object]:
     return recency
 
 
+def _search_with_recency(query, model, recency: dict):
+    """Shared by search_breweries and search_beers below - a generous but
+    bounded limit on the general/alphabetical candidate set, since
+    fetching literally everything doesn't scale once the catalog is in
+    the thousands (each search allocates and sorts the whole matching set
+    in Python). But a flat limit alone would silently reintroduce the
+    exact bug this app already fixed once: at 10,000+ rows, a plain
+    alphabetical LIMIT 500 only ever covers names starting with roughly
+    A-D, so anything the user used that happens to sort later than that
+    would never even reach the recency re-sort below, however recently
+    they used it. So anything in the user's own recency set is fetched
+    separately and guaranteed a spot, regardless of where it falls
+    alphabetically or how large the catalog gets; the cap only ever trims
+    the generic "everything else" candidates."""
+    results = query.order_by(model.name).limit(500).all()
+    if recency:
+        seen_ids = {r.id for r in results}
+        missing_ids = [rid for rid in recency if rid not in seen_ids]
+        if missing_ids:
+            results.extend(query.filter(model.id.in_(missing_ids)).all())
+
+        def sort_key(r):
+            used = r.id in recency
+            # Used-before items first (0 before 1), most-recently-used
+            # first within that group; everything else falls back to
+            # alphabetical.
+            return (0 if used else 1, -recency[r.id].timestamp() if used else 0, r.name.lower())
+
+        results.sort(key=sort_key)
+
+    return results[:25]
+
+
 @brewery_router.get("", response_model=list[schemas.BreweryOut])
 def search_breweries(
     q: str = "",
     db: Session = Depends(get_db),
-    current_user: models.User | None = Depends(get_optional_user),
+    current_user: models.User = Depends(get_current_user),
 ):
     query = db.query(models.Brewery)
     if q:
         query = query.filter(ilike_unicode(models.Brewery.name, f"%{q}%"))
 
-    recency = _user_brewery_recency(db, current_user.id) if current_user else {}
-
-    # A generous but bounded limit on the general/alphabetical candidate
-    # set - fetching literally everything doesn't scale once the catalog
-    # is in the thousands (each search allocates and sorts the whole
-    # matching set in Python). But a flat limit here alone would silently
-    # reintroduce the exact bug this app already fixed once: at 10,000+
-    # breweries, a plain alphabetical LIMIT 500 only ever covers names
-    # starting with roughly A-D, so anything the user used that happens
-    # to sort later than that would never even reach the recency re-sort
-    # below, however recently they used it. So anything in the user's own
-    # recency set is fetched separately and guaranteed a spot, regardless
-    # of where it falls alphabetically or how large the catalog gets; the
-    # cap only ever trims the generic "everything else" candidates.
-    results = query.order_by(models.Brewery.name).limit(500).all()
-    if recency:
-        seen_ids = {b.id for b in results}
-        missing_ids = [bid for bid in recency if bid not in seen_ids]
-        if missing_ids:
-            results.extend(query.filter(models.Brewery.id.in_(missing_ids)).all())
-
-    if current_user:
-        def sort_key(b):
-            used = b.id in recency
-            # Used-before items first (0 before 1), most-recently-used first
-            # within that group; everything else falls back to alphabetical.
-            return (0 if used else 1, -recency[b.id].timestamp() if used else 0, b.name.lower())
-
-        results.sort(key=sort_key)
-
-    return results[:25]
+    recency = _user_brewery_recency(db, current_user.id)
+    return _search_with_recency(query, models.Brewery, recency)
 
 
 @brewery_router.post("", response_model=schemas.BreweryOut)
@@ -166,7 +170,7 @@ def search_beers(
     q: str = "",
     brewery_id: int | None = None,
     db: Session = Depends(get_db),
-    current_user: models.User | None = Depends(get_optional_user),
+    current_user: models.User = Depends(get_current_user),
 ):
     query = db.query(models.Beer)
     if brewery_id:
@@ -176,33 +180,12 @@ def search_beers(
             or_(ilike_unicode(models.Beer.name, f"%{q}%"), ilike_unicode(models.Brewery.name, f"%{q}%"))
         )
 
-    recency = _user_beer_recency(db, current_user.id) if current_user else {}
-
-    # Same bounded-limit trade-off as search_breweries above, and the same
-    # fix for the same reason: a flat LIMIT here can't guarantee a beer
-    # the user just logged actually reaches the recency re-sort once the
-    # catalog is bigger than the limit, so anything in their own recency
-    # set is fetched separately and always included regardless of where
-    # it'd otherwise fall.
-    results = query.order_by(models.Beer.name).limit(500).all()
-    if recency:
-        seen_ids = {b.id for b in results}
-        missing_ids = [bid for bid in recency if bid not in seen_ids]
-        if missing_ids:
-            results.extend(query.filter(models.Beer.id.in_(missing_ids)).all())
-
-    if current_user:
-        def sort_key(beer):
-            used = beer.id in recency
-            return (0 if used else 1, -recency[beer.id].timestamp() if used else 0, beer.name.lower())
-
-        results.sort(key=sort_key)
-
-    return results[:25]
+    recency = _user_beer_recency(db, current_user.id)
+    return _search_with_recency(query, models.Beer, recency)
 
 
 @router.get("/{beer_id}", response_model=schemas.BeerOut)
-def get_beer(beer_id: int, db: Session = Depends(get_db)):
+def get_beer(beer_id: int, db: Session = Depends(get_db), _user: models.User = Depends(get_current_user)):
     beer = db.query(models.Beer).filter(models.Beer.id == beer_id).first()
     if not beer:
         raise HTTPException(status_code=404, detail="Beer not found.")

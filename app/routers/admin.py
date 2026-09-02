@@ -148,7 +148,7 @@ def patch_user(
     user_id: int,
     payload: schemas.AdminUserPatch,
     db: Session = Depends(get_db),
-    admin: models.User = Depends(require_admin),
+    _admin: models.User = Depends(require_admin),
 ):
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
