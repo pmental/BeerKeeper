@@ -1326,7 +1326,8 @@ const Pages = (() => {
       const container = root.querySelector("#entries");
       const totalEl = root.querySelector("#cellar-total");
       if (!allEntries.length) {
-        container.innerHTML = `<div class="panel empty-note">Your cellar's empty. Add your first bottle to start tracking it.</div>`;
+        const emptyText = locationFilter === "fridge" ? "Your fridge is empty." : "Your cellar's empty.";
+        container.innerHTML = `<div class="panel empty-note">${emptyText} Add your first bottle to start tracking it.</div>`;
         if (totalEl) totalEl.textContent = "";
         return;
       }
