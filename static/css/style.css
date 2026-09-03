@@ -687,6 +687,15 @@ textarea.input {
   color: var(--accent);
   margin-left: 4px;
 }
+.notes-icon {
+  /* Compact view only - batch notes are hidden behind a hover instead
+     of a full extra row, to keep compact cards genuinely compact. Same
+     color as .drinkby-alert, by request. */
+  color: var(--accent);
+  margin-left: 6px;
+  cursor: help;
+  font-size: 13px;
+}
 .beer-link:hover {
   /* Without this, the general a:hover rule (higher specificity than a
      plain element selector) wins and underlines it anyway. */

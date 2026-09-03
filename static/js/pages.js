@@ -825,10 +825,10 @@ const Pages = (() => {
     return "";
   }
 
-  function entryCardHtml(entry, account, { editable }) {
+  function entryCardHtml(entry, account, { editable, compact = false }) {
     const metaBits = [];
-    if (entry.beer.style) metaBits.push(escapeHtml(entry.beer.style));
-    if (entry.beer.abv !== null && entry.beer.abv !== undefined) metaBits.push(`${entry.beer.abv}% ABV`);
+    if (!compact && entry.beer.style) metaBits.push(escapeHtml(entry.beer.style));
+    if (!compact && entry.beer.abv !== null && entry.beer.abv !== undefined) metaBits.push(`${entry.beer.abv}% ABV`);
     if (entry.size_oz) metaBits.push(`${ozToDisplay(entry.size_oz, account.unit_system)} ${volumeUnitLabel(account.unit_system)}`);
     if (entry.custom_location) metaBits.push(escapeHtml(entry.custom_location));
     if (entry.best_before) metaBits.push(`Drink by ${fmtDate(entry.best_before)}`);
@@ -855,6 +855,11 @@ const Pages = (() => {
          </div>`
       : "";
 
+    const notesIconHtml =
+      compact && entry.batch_notes
+        ? `<span class="notes-icon" title="${escapeHtml(entry.batch_notes)}">&#128456;</span>`
+        : "";
+
     return `
       <div class="entry-card" data-entry-id="${entry.id}">
         <div class="entry-main">
@@ -866,7 +871,7 @@ const Pages = (() => {
       isDrinkBySoon(entry.best_before)
         ? `<span class="drinkby-alert" title="Drink by ${escapeHtml(fmtDate(entry.best_before))}">!</span>`
         : ""
-    }</h3>
+    }${notesIconHtml}</h3>
           <div class="entry-meta">
             <span>${escapeHtml(entry.beer.brewery.name)}</span>
             ${metaBits.map((m) => `<span class="dot">&middot;</span><span>${m}</span>`).join("")}
@@ -876,7 +881,7 @@ const Pages = (() => {
           ${isWantedOnly ? "" : tally(entry.quantity)}
         </div>
         ${actions}
-        ${entry.batch_notes ? `<div class="entry-notes">${escapeHtml(entry.batch_notes)}</div>` : ""}
+        ${!compact && entry.batch_notes ? `<div class="entry-notes">${escapeHtml(entry.batch_notes)}</div>` : ""}
       </div>
     `;
   }
@@ -1310,8 +1315,10 @@ const Pages = (() => {
         viewMode = btn.dataset.val;
         localStorage.setItem("cellar_view_mode", viewMode);
         root.querySelectorAll("[data-view] button").forEach((b) => b.classList.toggle("active", b === btn));
-        const list = root.querySelector(".entry-list");
-        if (list) list.classList.toggle("compact", viewMode === "compact");
+        // Compact now hides different fields, not just different CSS, so
+        // switching modes has to re-render the cards, not just toggle a
+        // class on the container.
+        renderEntries();
       });
     });
 
@@ -1331,12 +1338,12 @@ const Pages = (() => {
         return;
       }
       container.innerHTML = `<div class="entry-list${viewMode === "compact" ? " compact" : ""}">${filtered
-        .map((e) => entryCardHtml(e, ctx.account, { editable: true }))
+        .map((e) => entryCardHtml(e, ctx.account, { editable: true, compact: viewMode === "compact" }))
         .join("")}</div>`;
       wireEntryCards(container, filtered, ctx.account, load);
       if (totalEl) {
         const totalBottles = filtered.reduce((sum, e) => sum + e.quantity, 0);
-        totalEl.textContent = `${filtered.length} beer${filtered.length === 1 ? "" : "s"} \u00b7 ${totalBottles} on hand`;
+        totalEl.textContent = `${filtered.length} unique, ${totalBottles} total`;
       }
     }
 
