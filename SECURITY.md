@@ -21,6 +21,10 @@ audit trail.
 - OIDC account linking only auto-links to an existing local account when
   the provider marks the email `email_verified` - an unverified email
   claim can't be used to take over someone else's account.
+- OIDC identity is keyed on issuer *and* subject together, not subject
+  alone - a provider's `sub` is only guaranteed unique within that
+  provider, so switching OIDC providers can't collide a new provider's
+  subject value with an old, unrelated account already on file.
 - Changing your account's email requires re-entering your current
   password, and (if outgoing mail is configured) sends a notice to the
   old address.

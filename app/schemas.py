@@ -98,9 +98,9 @@ class BeerIn(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     brewery_id: Optional[int] = None
     new_brewery_name: Optional[str] = None
-    style: Optional[str] = None
+    style: Optional[str] = Field(default=None, max_length=120)
     abv: Optional[float] = Field(default=None, ge=0, le=100)
-    description: Optional[str] = None
+    description: Optional[str] = Field(default=None, max_length=4000)
     reference_url: Optional[str] = None
 
     @field_validator("new_brewery_name")
@@ -137,7 +137,7 @@ class AdminBeerOut(BaseModel):
 class AdminBeerIn(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     brewery_id: int
-    style: Optional[str] = None
+    style: Optional[str] = Field(default=None, max_length=120)
     abv: Optional[float] = Field(default=None, ge=0, le=100)
     reference_url: Optional[str] = None
 
@@ -145,7 +145,7 @@ class AdminBeerIn(BaseModel):
 class AdminBeerPatch(BaseModel):
     name: Optional[str] = Field(default=None, min_length=1, max_length=255)
     brewery_id: Optional[int] = None
-    style: Optional[str] = None
+    style: Optional[str] = Field(default=None, max_length=120)
     abv: Optional[float] = Field(default=None, ge=0, le=100)
     reference_url: Optional[str] = None
 
@@ -169,23 +169,23 @@ class CellarEntryIn(BaseModel):
     beer_id: Optional[int] = None
     beer: Optional[BeerIn] = None  # allow creating the beer inline
     location: str = Field(default="cellar", pattern="^(cellar|fridge)$")
-    custom_location: Optional[str] = None
+    custom_location: Optional[str] = Field(default=None, max_length=120)
     quantity: int = Field(default=1, ge=0)
     size_oz: Optional[float] = Field(default=None, ge=0)
     bottle_date: Optional[dt.date] = None
     best_before: Optional[dt.date] = None
-    batch_notes: Optional[str] = None
+    batch_notes: Optional[str] = Field(default=None, max_length=4000)
     trade_status: str = Field(default="none", pattern="^(none|ft|iso)$")
 
 
 class CellarEntryPatch(BaseModel):
     location: Optional[str] = Field(default=None, pattern="^(cellar|fridge)$")
-    custom_location: Optional[str] = None
+    custom_location: Optional[str] = Field(default=None, max_length=120)
     quantity: Optional[int] = Field(default=None, ge=0)
     size_oz: Optional[float] = Field(default=None, ge=0)
     bottle_date: Optional[dt.date] = None
     best_before: Optional[dt.date] = None
-    batch_notes: Optional[str] = None
+    batch_notes: Optional[str] = Field(default=None, max_length=4000)
     trade_status: Optional[str] = Field(default=None, pattern="^(none|ft|iso)$")
 
 
@@ -208,7 +208,7 @@ class CellarEntryOut(BaseModel):
 
 class DrinkIn(BaseModel):
     quantity: int = Field(default=1, ge=1)
-    note: Optional[str] = None
+    note: Optional[str] = Field(default=None, max_length=4000)
     rating: Optional[float] = Field(default=None, ge=0, le=5)
     consumed_on: Optional[dt.date] = None
     delete_if_empty: bool = False
@@ -236,14 +236,14 @@ class ConsumptionLogIn(BaseModel):
     beer_id: int
     quantity: int = Field(default=1, ge=1)
     consumed_on: Optional[dt.date] = None
-    note: Optional[str] = None
+    note: Optional[str] = Field(default=None, max_length=4000)
     rating: Optional[float] = Field(default=None, ge=0, le=5)
 
 
 class ConsumptionLogPatch(BaseModel):
     quantity: Optional[int] = Field(default=None, ge=1)
     consumed_on: Optional[dt.date] = None
-    note: Optional[str] = None
+    note: Optional[str] = Field(default=None, max_length=4000)
     rating: Optional[float] = Field(default=None, ge=0, le=5)
 
 
@@ -262,7 +262,7 @@ class WantedEntryOut(BaseModel):
 class WantedEntryIn(BaseModel):
     beer_id: Optional[int] = None
     beer: Optional[BeerIn] = None  # allow creating the beer inline, same as CellarEntryIn
-    notes: Optional[str] = None
+    notes: Optional[str] = Field(default=None, max_length=4000)
 
 
 # ---------- Account ----------
@@ -380,13 +380,13 @@ class InstanceSettingsOut(BaseModel):
 
 class InstanceSettingsPatch(BaseModel):
     registration_enabled: Optional[bool] = None
-    smtp_host: Optional[str] = None
+    smtp_host: Optional[str] = Field(default=None, max_length=255)
     smtp_port: Optional[int] = None
     smtp_security: Optional[str] = Field(default=None, pattern="^(starttls|ssl|none)$")
-    smtp_username: Optional[str] = None
-    smtp_password: Optional[str] = None
-    smtp_from_email: Optional[str] = None
-    smtp_from_name: Optional[str] = None
+    smtp_username: Optional[str] = Field(default=None, max_length=255)
+    smtp_password: Optional[str] = Field(default=None, max_length=255)
+    smtp_from_email: Optional[str] = Field(default=None, max_length=255)
+    smtp_from_name: Optional[str] = Field(default=None, max_length=255)
     smtp_skip_cert_verify: Optional[bool] = None
 
 

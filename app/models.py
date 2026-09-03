@@ -28,7 +28,14 @@ class User(Base):
     username = Column(String(32), unique=True, nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
-    oidc_subject = Column(String(255), unique=True, nullable=True, index=True)
+    oidc_subject = Column(String(255), nullable=True, index=True)
+    # sub is only guaranteed unique *within* a given issuer, per the OIDC
+    # spec - storing it alone and enforcing global uniqueness on it means
+    # switching OIDC providers could, in principle, collide a new
+    # provider's subject value with an old, unrelated one already on file
+    # and link the wrong account. The two together, uniquely, is the
+    # actually-correct identity key.
+    oidc_issuer = Column(String(500), nullable=True)
     display_name = Column(String(255), nullable=True)  # from OIDC's "name" claim; falls back to username
     avatar_url = Column(String(1024), nullable=True)  # from OIDC's "picture" claim; never set for password accounts
     # Tokens issued before this timestamp are rejected even if not yet
@@ -55,6 +62,8 @@ class User(Base):
     entries = relationship("CellarEntry", back_populates="user", cascade="all, delete-orphan")
     logs = relationship("ConsumptionLog", back_populates="user", cascade="all, delete-orphan")
     wanted = relationship("WantedEntry", back_populates="user", cascade="all, delete-orphan")
+
+    __table_args__ = (UniqueConstraint("oidc_issuer", "oidc_subject", name="uq_users_oidc_issuer_subject"),)
 
 
 class Brewery(Base):
