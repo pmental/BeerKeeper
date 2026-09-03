@@ -1,10 +1,11 @@
 # Changelog
 
-## Unreleased
+- **0.0.63** — Three fixes from continued external review: capped previously-unbounded free-text fields (style/location at 120 chars, notes/descriptions at 4,000, SMTP settings at 255) after confirming SQLite doesn't actually enforce the lengths the model already declared; URL-encoded dynamic error text in OIDC's error-redirect paths, which could previously garble the URL; and switched OIDC's `email_verified` check from `bool(...)` to a strict `is True` comparison, since `bool("false")` is `True` in Python - a non-conformant provider sending that claim as a string instead of a real boolean could have caused an unverified email to be treated as verified.
+- Three small auth hardening fixes from a third external review: `hash_password` now fails loudly instead of silently truncating on an over-length input (unreachable today since every password field already enforces the 72-byte limit at the schema level, but a real safety net against a future regression); JWT decoding now explicitly requires the `exp`/`iat` claims instead of relying on library defaults; replaced a deprecated `datetime.utcnow()` call in token creation.
 
-- Replaced the photo-based favicon with a hand-drawn SVG approximating it (a dark porter with a foam cap), restoring the SVG favicon link for crisp rendering at any size. All sizes regenerated from the new vector source; old photo-derived files removed. Tightened the SVG's viewBox afterward to crop out excess empty space around the glass, since it looked small within the frame at a glance.
+- Fixed an OIDC identity-model gap (another external review finding): accounts were matched by the provider's `sub` alone, but `sub` is only guaranteed unique *within* a provider - switching OIDC providers could in principle collide a new provider's subject value with an old, unrelated account. Now keyed on issuer+subject together. Existing installs get their current issuer backfilled automatically; no action needed unless you've actually changed providers.
 
-- Removed the old, unused `favicon.svg` file (left in place but unreferenced since 0.0.62's favicon change).
+- Updated favicon.
 
 - **0.0.62** — Four fixes from an external code review: capped an unbounded API `limit` param (a negative value could bypass it entirely via a SQLite quirk); the rate limiter now cleans up stale entries and also limits password-reset attempts per email, not just per IP; shortened JWT lifetime from 30 to 14 days; fixed a memory leak where the autocomplete dropdowns never cleaned up their click listeners. Also replaced the favicon with a photo-based icon.
 

@@ -46,20 +46,34 @@ SECRET_KEY = _load_or_create_secret_key()
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_DAYS = 14
 
-# bcrypt only uses the first 72 bytes of input; longer passwords are truncated
-# up front so hashing never raises on unusually long (but valid) passwords.
+# bcrypt only uses the first 72 bytes of input. Every password-setting
+# endpoint already enforces this at the schema level (see PasswordStr in
+# schemas.py), so a call here with something longer means that guard was
+# skipped somewhere - surface it loudly rather than silently truncate,
+# which risks two different long passwords quietly hashing to the same
+# value.
 _MAX_PASSWORD_BYTES = 72
 
 
 def hash_password(password: str) -> str:
-    truncated = password.encode("utf-8")[:_MAX_PASSWORD_BYTES]
-    return bcrypt.hashpw(truncated, bcrypt.gensalt()).decode("utf-8")
+    encoded = password.encode("utf-8")
+    if len(encoded) > _MAX_PASSWORD_BYTES:
+        raise ValueError(
+            f"Password is {len(encoded)} bytes, over bcrypt's {_MAX_PASSWORD_BYTES}-byte limit - "
+            "this should have been rejected before reaching hash_password()."
+        )
+    return bcrypt.hashpw(encoded, bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(password: str, password_hash: str) -> bool:
-    truncated = password.encode("utf-8")[:_MAX_PASSWORD_BYTES]
+    encoded = password.encode("utf-8")
+    if len(encoded) > _MAX_PASSWORD_BYTES:
+        # No stored hash could ever have been created from something this
+        # long (hash_password() above refuses it), so this can never be a
+        # correct password - a wrong-length guess, not an error.
+        return False
     try:
-        return bcrypt.checkpw(truncated, password_hash.encode("utf-8"))
+        return bcrypt.checkpw(encoded, password_hash.encode("utf-8"))
     except ValueError:
         return False
 
@@ -70,7 +84,7 @@ def create_access_token(user_id: int, username: str, issued_at: dt.datetime | No
     # "now" (e.g. token_valid_after in a password-change/reset endpoint),
     # rather than risking the sub-second part getting lost only on one
     # side of that comparison and the token rejecting itself.
-    now = (issued_at or dt.datetime.utcnow()).replace(microsecond=0)
+    now = (issued_at or dt.datetime.now(dt.timezone.utc)).replace(microsecond=0)
     expire = now + dt.timedelta(days=TOKEN_EXPIRE_DAYS)
     payload = {"sub": str(user_id), "username": username, "iat": now, "exp": expire}
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
@@ -81,6 +95,16 @@ def decode_access_token(token: str) -> dict | None:
     check claims like `iat` against server-side state, e.g. to honor a
     password change that should invalidate tokens issued before it."""
     try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Every token this app issues always has exp and iat (see
+        # create_access_token above) - requiring them explicitly rather
+        # than relying on PyJWT's own defaults means a future library
+        # change or misconfiguration can't silently accept a token
+        # missing either.
+        return jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
+            options={"require": ["exp", "iat"]},
+        )
     except jwt.PyJWTError:
         return None

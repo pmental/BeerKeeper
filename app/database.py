@@ -2,6 +2,8 @@ import os
 from sqlalchemy import create_engine, event, func
 from sqlalchemy.orm import sessionmaker, declarative_base
 
+from app import config
+
 DATA_DIR = os.environ.get("CELLAR_DATA_DIR", "/data")
 os.makedirs(DATA_DIR, exist_ok=True)
 DB_PATH = os.path.join(DATA_DIR, "cellar.db")
@@ -76,12 +78,48 @@ def run_migrations():
                 text("ALTER TABLE users ADD COLUMN unit_system VARCHAR(8) NOT NULL DEFAULT 'metric'")
             )
         if "oidc_subject" not in existing_cols:
+            # A genuinely old install predating OIDC support entirely -
+            # both columns are new here, so there's no existing data to
+            # preserve or backfill.
             conn.execute(text("ALTER TABLE users ADD COLUMN oidc_subject VARCHAR(255)"))
-            # SQLite treats each NULL as distinct for UNIQUE purposes, so a plain
-            # unique index here still allows any number of password-only users
-            # (oidc_subject IS NULL) to coexist.
+            conn.execute(text("ALTER TABLE users ADD COLUMN oidc_issuer VARCHAR(500)"))
+            # SQLite treats each NULL as distinct for UNIQUE purposes, so a
+            # composite unique index here still allows any number of
+            # password-only users (both columns NULL) to coexist.
             conn.execute(
-                text("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_oidc_subject ON users (oidc_subject)")
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_oidc_issuer_subject "
+                    "ON users (oidc_issuer, oidc_subject)"
+                )
+            )
+        elif "oidc_issuer" not in existing_cols:
+            # oidc_subject already exists and may already have real linked
+            # accounts on it. OIDC's `sub` is only guaranteed unique
+            # *within* a given issuer, so enforcing global uniqueness on
+            # subject alone (the old index below) is a latent correctness
+            # bug: if this instance ever switches OIDC providers, a new
+            # provider's subject value could coincidentally collide with
+            # an old, unrelated one already on file and link the wrong
+            # account. Backfill the currently-configured issuer onto
+            # already-linked accounts - correct for the overwhelming
+            # majority of installs, which never change providers - then
+            # replace the old single-column unique index with a composite
+            # one on (issuer, subject) together.
+            conn.execute(text("ALTER TABLE users ADD COLUMN oidc_issuer VARCHAR(500)"))
+            if config.OIDC_ISSUER:
+                conn.execute(
+                    text(
+                        "UPDATE users SET oidc_issuer = :issuer "
+                        "WHERE oidc_subject IS NOT NULL AND oidc_issuer IS NULL"
+                    ),
+                    {"issuer": config.OIDC_ISSUER},
+                )
+            conn.execute(text("DROP INDEX IF EXISTS ix_users_oidc_subject"))
+            conn.execute(
+                text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_oidc_issuer_subject "
+                    "ON users (oidc_issuer, oidc_subject)"
+                )
             )
         if "display_name" not in existing_cols:
             conn.execute(text("ALTER TABLE users ADD COLUMN display_name VARCHAR(255)"))

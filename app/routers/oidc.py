@@ -1,5 +1,6 @@
 import re
 import secrets
+from urllib.parse import quote
 
 from authlib.integrations.starlette_client import OAuth
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Request
@@ -79,7 +80,11 @@ def _find_or_create_user(
     display_name: str | None,
     avatar_url: str | None,
 ) -> tuple[models.User, bool]:
-    user = db.query(models.User).filter(models.User.oidc_subject == sub).first()
+    user = (
+        db.query(models.User)
+        .filter(models.User.oidc_subject == sub, models.User.oidc_issuer == config.OIDC_ISSUER)
+        .first()
+    )
     if user:
         # Keep the display name and picture in sync with the provider on
         # every login (e.g. after a legal name or photo change), but don't
@@ -107,6 +112,7 @@ def _find_or_create_user(
     if existing:
         if email_verified and not existing.oidc_subject:
             existing.oidc_subject = sub
+            existing.oidc_issuer = config.OIDC_ISSUER
             if display_name:
                 existing.display_name = display_name
             if avatar_url:
@@ -130,6 +136,7 @@ def _find_or_create_user(
         # so password login for this account will simply never succeed.
         password_hash=hash_password(secrets.token_urlsafe(32)),
         oidc_subject=sub,
+        oidc_issuer=config.OIDC_ISSUER,
         display_name=display_name,
         avatar_url=avatar_url,
     )
@@ -152,7 +159,7 @@ async def oidc_login(request: Request):
         # issue) that broke discovery. Send the browser back with a readable
         # message instead of a bare 500 and a stack trace.
         message = f"Couldn't reach the SSO provider ({type(e).__name__}: {e})."[:300]
-        return RedirectResponse(f"{config.BASE_URL}/#/login?oidc_error=" + message)
+        return RedirectResponse(f"{config.BASE_URL}/#/login?oidc_error=" + quote(message, safe=""))
 
 
 @router.get("/callback")
@@ -161,7 +168,7 @@ async def oidc_callback(request: Request, background_tasks: BackgroundTasks):
     try:
         token = await oauth.oidc.authorize_access_token(request)
     except Exception as e:
-        return RedirectResponse(f"{config.BASE_URL}/#/login?oidc_error=" + str(e)[:200])
+        return RedirectResponse(f"{config.BASE_URL}/#/login?oidc_error=" + quote(str(e)[:200], safe=""))
 
     # Some providers put a full claim set in the ID token; others put only
     # the bare minimum there (sometimes just `sub`) and expect the rest
@@ -190,7 +197,14 @@ async def oidc_callback(request: Request, background_tasks: BackgroundTasks):
         return RedirectResponse(f"{config.BASE_URL}/#/login?oidc_error=missing_subject")
 
     email = userinfo.get("email")
-    email_verified = bool(userinfo.get("email_verified"))
+    # Strict identity check, not bool(...): some providers send this as
+    # the literal string "false" instead of a real JSON boolean, and
+    # bool("false") is True in Python - a non-empty string is truthy
+    # regardless of its content. That would have silently treated an
+    # unverified email as verified, undermining the whole point of this
+    # check (see _find_or_create_user below, where this gates whether an
+    # OIDC identity gets auto-linked to an existing local account).
+    email_verified = userinfo.get("email_verified") is True
     preferred_username = userinfo.get("preferred_username") or userinfo.get("nickname")
     # "name" is the standard OIDC claim for a full display name, but not
     # every provider sends it even when it sends the pieces - fall back to
