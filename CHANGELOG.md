@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Replaced the photo-based favicon with a hand-drawn SVG approximating it (a dark porter with a foam cap), restoring the SVG favicon link for crisp rendering at any size. All sizes regenerated from the new vector source; old photo-derived files removed. Tightened the SVG's viewBox afterward to crop out excess empty space around the glass, since it looked small within the frame at a glance.
+
+- Removed the old, unused `favicon.svg` file (left in place but unreferenced since 0.0.62's favicon change).
+
+- **0.0.62** — Four fixes from an external code review: capped an unbounded API `limit` param (a negative value could bypass it entirely via a SQLite quirk); the rate limiter now cleans up stale entries and also limits password-reset attempts per email, not just per IP; shortened JWT lifetime from 30 to 14 days; fixed a memory leak where the autocomplete dropdowns never cleaned up their click listeners. Also replaced the favicon with a photo-based icon.
+
 - **0.0.61** — Compact cellar view is more compact (Style/ABV hidden, batch notes behind a hover icon). Reworded the cellar summary text and the empty-fridge message.
 - **0.0.60** — Locked down every API endpoint that didn't need to be public (version info, beer styles, brewery/beer search, single-beer lookup) - nothing in the app's own UI ever used them without a login. Added explicit `Cache-Control: no-store` to all API responses, closing a real gap where a reverse proxy or CDN in front of the app (e.g. Cloudflare) could cache and misdirect an authenticated response - caught via a live report, confirmed by clearing the Cloudflare cache. Fixed the footer's version number not updating after a live login (it only checked once, at page load). Also a code-quality pass: removed a dead import, fixed a naming inconsistency, and consolidated two cases of duplicated logic into shared helpers.
 

@@ -44,7 +44,7 @@ def _load_or_create_secret_key() -> str:
 
 SECRET_KEY = _load_or_create_secret_key()
 ALGORITHM = "HS256"
-TOKEN_EXPIRE_DAYS = 30
+TOKEN_EXPIRE_DAYS = 14
 
 # bcrypt only uses the first 72 bytes of input; longer passwords are truncated
 # up front so hashing never raises on unusually long (but valid) passwords.
