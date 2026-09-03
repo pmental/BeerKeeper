@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 
@@ -34,7 +34,7 @@ def browse_cellars(db: Session = Depends(get_db)):
 
 @router.get("/recent", response_model=list[schemas.RecentConsumedOut])
 def recent_activity(
-    limit: int = 25,
+    limit: int = Query(default=25, ge=1, le=100),
     db: Session = Depends(get_db),
     current_user: models.User | None = Depends(get_optional_user),
 ):

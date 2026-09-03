@@ -14,8 +14,10 @@ audit trail.
 - Changing or resetting a password immediately invalidates any other
   token already issued for that account, so a leaked token stops working
   the moment the account is secured - not just when it naturally expires
-  (tokens last 30 days).
-- Login, registration, and forgot-password are rate-limited per IP.
+  (tokens last 14 days).
+- Login, registration, and forgot-password are rate-limited per IP;
+  forgot-password is also rate-limited per submitted email address, so
+  spreading requests across many IPs can't be used to spam one inbox.
 - OIDC account linking only auto-links to an existing local account when
   the provider marks the email `email_verified` - an unverified email
   claim can't be used to take over someone else's account.

@@ -106,7 +106,7 @@ const Pages = (() => {
       pickedNote.textContent = "";
       search(input.value.trim());
     });
-    document.addEventListener("click", (e) => {
+    root.addEventListener("click", (e) => {
       if (!list.contains(e.target) && e.target !== input) list.style.display = "none";
     });
 
@@ -367,7 +367,7 @@ const Pages = (() => {
       hiddenId.value = "";
       search(input.value.trim());
     });
-    document.addEventListener("click", (e) => {
+    root.addEventListener("click", (e) => {
       if (!list.contains(e.target) && e.target !== input) list.style.display = "none";
     });
     list.addEventListener("click", (e) => {
@@ -399,7 +399,7 @@ const Pages = (() => {
     input.addEventListener("focus", () => {
       if (!input.disabled) render(input.value);
     });
-    document.addEventListener("click", (e) => {
+    root.addEventListener("click", (e) => {
       if (!list.contains(e.target) && e.target !== input) list.style.display = "none";
     });
     list.addEventListener("click", (e) => {

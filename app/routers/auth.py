@@ -13,7 +13,7 @@ from app.auth import create_access_token, hash_password, verify_password
 from app.database import get_db
 from app.deps import get_current_user
 from app.email import is_smtp_enabled, send_password_reset_email, send_welcome_email
-from app.rate_limit import rate_limit
+from app.rate_limit import rate_limit, rate_limit_by_key
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -139,6 +139,11 @@ def forgot_password(
     payload: schemas.ForgotPasswordIn, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
 ):
     rate_limit(request, "forgot-password", max_attempts=5, window_seconds=600)
+    # Per-IP alone can't stop someone spreading requests across many IPs
+    # at one target's inbox; this is keyed by the submitted email itself,
+    # applied before checking whether it actually matches an account, so
+    # it can't become a second way to tell which emails are registered.
+    rate_limit_by_key("forgot-password-email", payload.email, max_attempts=5, window_seconds=600)
     _require_password_auth()
     if not is_smtp_enabled(db):
         raise HTTPException(
