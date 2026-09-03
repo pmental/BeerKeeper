@@ -19,7 +19,7 @@ CDN calls. No third-party accounts, analytics, or API keys required.
 - [Pre-populated breweries](#pre-populated-breweries)
 - [Upgrading an existing deployment](#upgrading-an-existing-deployment)
 - [Backup and restore](#backup-and-restore)
-- [CSV format](#csv-format)
+- [Beer cellar CSV format](#beer-cellar-csv-format)
 - [Architecture](#architecture)
 - [Screenshots](#screenshots)
 - [License](#license)
@@ -220,9 +220,9 @@ volume with your backup, and start it again. Each user can also
 self-serve a partial backup of just their own cellar any time from
 **Account → Cellar data → Download CSV**.
 
-## CSV format
+## Beer cellar CSV format
 
-Export produces (and import expects) these columns:
+A cellar export produces (and cellar import expects) these columns:
 
 ```
 brewery, beer, style, abv, location, custom_location, quantity, size_oz,

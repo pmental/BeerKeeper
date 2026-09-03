@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- The cellar page's summary text now reads "X unique, Y total" instead of "X beers · Y on hand".
+- Compact cellar view is now genuinely more compact: Style and ABV are hidden, and batch notes are tucked behind a small hover icon (U+1F5C8, same gold color as the drink-by-soon "!") instead of a full extra line.
+
 - **0.0.60** — Locked down every API endpoint that didn't need to be public (version info, beer styles, brewery/beer search, single-beer lookup) - nothing in the app's own UI ever used them without a login. Added explicit `Cache-Control: no-store` to all API responses, closing a real gap where a reverse proxy or CDN in front of the app (e.g. Cloudflare) could cache and misdirect an authenticated response - caught via a live report, confirmed by clearing the Cloudflare cache. Fixed the footer's version number not updating after a live login (it only checked once, at page load). Also a code-quality pass: removed a dead import, fixed a naming inconsistency, and consolidated two cases of duplicated logic into shared helpers.
 
 - **0.0.50** — Brewery catalog grew from ~215 to 10,500+ via a bulk Open Brewery DB import, with several rounds of duplicate cleanup and country disambiguation for name collisions. Added "Beers" and "Beer Styles" admin panels, an optional external-link field for beers, cellar-page search-by-name, and a hamburger menu for narrow screens. Reorganized the Account page, moving CSV import/export into its own "Cellar data" section. Fixed a bug where a just-used beer/brewery could be missing from its own search results, and a case-insensitive search/duplicate-detection gap for accented characters. Updated all dependencies (including replacing `python-jose` with `PyJWT`) and did a performance pass: faster brewery seeding, fixed an N+1 admin query, gzip + long-lived asset caching, a smaller DB connection pool.
