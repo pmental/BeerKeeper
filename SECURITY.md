@@ -54,6 +54,13 @@ audit trail.
 - Full-instance backup restores are validated (integrity-checked, schema
   sanity-checked) before being accepted, and only ever applied at the
   next clean startup - never against a live, in-use database.
+- The SMTP password is encrypted at rest (a key derived from
+  `CELLAR_SECRET_KEY`), so a leaked backup or a copy of just the
+  database file doesn't expose it in plain text. This doesn't protect
+  against a fully compromised running server, since the key lives
+  alongside the encrypted data there too - for that level of isolation,
+  set it via `CELLAR_SMTP_PASSWORD` instead of the admin panel, which
+  never touches the database at all.
 - No CORS headers are sent, so no other origin can read this app's API
   responses from a browser.
 - All API responses set `Cache-Control: no-store`, so a reverse proxy or

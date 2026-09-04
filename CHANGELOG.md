@@ -1,5 +1,7 @@
 # Changelog
 
+- The SMTP password is now encrypted at rest instead of stored in plain text, using a key derived from `CELLAR_SECRET_KEY` - closes a real gap where a downloaded backup exposed it in the clear even though the admin API itself never did. Existing installs get their stored password encrypted automatically on first boot after upgrading; no action needed.
+
 - **0.0.64** — Two performance fixes from a self-review: the public Browse directory's per-user query loop replaced with a single aggregate query, and a missing index added on `beers.brewery_id`. Also extended the cellar search field to match brewery name (not just beer name), with a simplified "Search cellar…" placeholder.
 
 - **0.0.63** — Three fixes from continued external review: capped previously-unbounded free-text fields (style/location at 120 chars, notes/descriptions at 4,000, SMTP settings at 255) after confirming SQLite doesn't actually enforce the lengths the model already declared; URL-encoded dynamic error text in OIDC's error-redirect paths, which could previously garble the URL; and switched OIDC's `email_verified` check from `bool(...)` to a strict `is True` comparison, since `bool("false")` is `True` in Python - a non-conformant provider sending that claim as a string instead of a real boolean could have caused an unverified email to be treated as verified.

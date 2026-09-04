@@ -12,6 +12,7 @@ from app import backup, config, models, schemas
 from app.auth import hash_password
 from app.database import get_db, ilike_unicode
 from app.deps import require_admin
+from app.crypto import encrypt_secret
 from app.email import resolve_smtp_settings, send_test_email, send_welcome_email
 from app.routers.beers import _get_or_create_brewery
 from app.uploads import read_upload_limited
@@ -89,6 +90,8 @@ def patch_settings(
         # editing something else must NOT wipe an already-stored one).
         if isinstance(value, str) and value == "":
             value = None
+        if field == "smtp_password" and value:
+            value = encrypt_secret(value)
         setattr(settings, field, value)
     db.commit()
     db.refresh(settings)

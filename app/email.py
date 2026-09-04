@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from email.message import EmailMessage
 
 from app import config
+from app.crypto import InvalidToken, decrypt_secret, encrypt_secret
 
 logger = logging.getLogger("beerkeeper.email")
 
@@ -50,7 +51,18 @@ def resolve_smtp_settings(db=None) -> ResolvedSmtp:
         port = _first(row and row.smtp_port, config.SMTP_PORT)
         security = _first(row and row.smtp_security, config.SMTP_SECURITY)
         username = _first(row and row.smtp_username, config.SMTP_USERNAME) or ""
-        password = _first(row and row.smtp_password, config.SMTP_PASSWORD) or ""
+        db_password = row.smtp_password if row else None
+        if db_password:
+            try:
+                db_password = decrypt_secret(db_password)
+            except InvalidToken:
+                # Shouldn't happen past the startup migration, but fail
+                # gracefully rather than send ciphertext-shaped garbage
+                # as a password - fall back to the env var, if any, same
+                # as if nothing were stored here at all.
+                logger.error("Stored SMTP password could not be decrypted - falling back to CELLAR_SMTP_PASSWORD, if set.")
+                db_password = None
+        password = _first(db_password, config.SMTP_PASSWORD) or ""
         from_email = _first(row and row.smtp_from_email, config.SMTP_FROM_EMAIL)
         from_name = _first(row and row.smtp_from_name, config.SMTP_FROM_NAME) or config.APP_NAME
         skip_verify = row.smtp_skip_cert_verify if row and row.smtp_skip_cert_verify is not None else None
@@ -166,3 +178,22 @@ def send_test_email(to_email: str) -> None:
         f"This is a test message from {config.APP_NAME}'s admin panel - no action needed.\n"
     )
     send_email(to_email, subject, body)
+
+
+def encrypt_existing_smtp_password_if_needed(db) -> None:
+    """One-time startup migration: encrypts an smtp_password left over
+    from before at-rest encryption was added. Safe to call on every
+    boot - a no-op once the stored value is already valid ciphertext for
+    the current key, which is the normal case after the first run."""
+    from app import models
+
+    row = db.query(models.InstanceSettings).filter(models.InstanceSettings.id == 1).first()
+    if not row or not row.smtp_password:
+        return
+    try:
+        decrypt_secret(row.smtp_password)
+        return  # already encrypted - nothing to do
+    except InvalidToken:
+        pass
+    row.smtp_password = encrypt_secret(row.smtp_password)
+    db.commit()
