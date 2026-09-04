@@ -32,7 +32,11 @@ PASSWORD_AUTH_ENABLED = _bool_env("CELLAR_PASSWORD_AUTH_ENABLED", True)
 APP_NAME = "BeerKeeper"
 # Bump this with every set of changes: 0.0.1, 0.0.2, ... until told to
 # bump the minor/major version instead.
+<<<<<<< HEAD
 APP_VERSION = "0.0.64"
+=======
+APP_VERSION = "0.0.63"
+>>>>>>> 6f823f07956400636cd6feea940c2127861f5b3e
 
 OIDC_ENABLED = _bool_env("CELLAR_OIDC_ENABLED", False)
 OIDC_ISSUER = _ensure_scheme(os.environ.get("CELLAR_OIDC_ISSUER", ""), "CELLAR_OIDC_ISSUER")
