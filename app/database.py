@@ -159,6 +159,13 @@ def run_migrations():
                 if name not in settings_cols:
                     conn.execute(text(f"ALTER TABLE instance_settings ADD COLUMN {name} {sql_type}"))
 
+        # beers.brewery_id was missing an index despite being a foreign
+        # key filtered on directly (the "does this beer already exist for
+        # this brewery" check, on every beer creation and CSV import row)
+        # - name matches what a fresh install's create_all() generates
+        # for this column, so both paths converge on the same index.
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_beers_brewery_id ON beers (brewery_id)"))
+
 
 def get_db():
     db = SessionLocal()

@@ -1235,7 +1235,7 @@ const Pages = (() => {
       <div class="page-head">
         <h1>My cellar <span class="subtle" style="font-size:14px; font-weight:400;" id="cellar-total"></span></h1>
         <div style="display:flex; gap:8px;">
-          <input class="input" id="cellar-search" placeholder="Search by beer name&hellip;" autocomplete="off" style="width:200px" />
+          <input class="input" id="cellar-search" placeholder="Search cellar&hellip;" autocomplete="off" style="width:200px" />
           ${ctx.account.trading_enabled ? `<button class="btn btn-ghost" id="add-wanted">+ Add to wanted list</button>` : ""}
           <button class="btn btn-primary" id="add-bottle">+ Add a bottle</button>
         </div>
@@ -1332,9 +1332,13 @@ const Pages = (() => {
         return;
       }
       const q = searchText.trim().toLowerCase();
-      const filtered = q ? allEntries.filter((e) => e.beer.name.toLowerCase().includes(q)) : allEntries;
+      const filtered = q
+        ? allEntries.filter(
+            (e) => e.beer.name.toLowerCase().includes(q) || e.beer.brewery.name.toLowerCase().includes(q)
+          )
+        : allEntries;
       if (!filtered.length) {
-        container.innerHTML = `<div class="panel empty-note">No beers match "${escapeHtml(searchText.trim())}".</div>`;
+        container.innerHTML = `<div class="panel empty-note">Nothing matches "${escapeHtml(searchText.trim())}".</div>`;
         if (totalEl) totalEl.textContent = "";
         return;
       }

@@ -13,18 +13,21 @@ router = APIRouter(prefix="/api/public", tags=["public"])
 @router.get("/cellars", response_model=list[schemas.PublicUserOut])
 def browse_cellars(db: Session = Depends(get_db)):
     users = db.query(models.User).filter(models.User.cellar_public.is_(True)).all()
+    # One aggregate query for every public user's count, instead of one
+    # query per user - same fix as the admin Beers panel's usage counts.
+    counts = dict(
+        db.query(models.CellarEntry.user_id, func.coalesce(func.sum(models.CellarEntry.quantity), 0))
+        .filter(models.CellarEntry.user_id.in_([u.id for u in users]))
+        .group_by(models.CellarEntry.user_id)
+        .all()
+    )
     out = []
     for u in users:
-        count = (
-            db.query(func.coalesce(func.sum(models.CellarEntry.quantity), 0))
-            .filter(models.CellarEntry.user_id == u.id)
-            .scalar()
-        )
         out.append(
             schemas.PublicUserOut(
                 username=u.username,
                 display_name=u.display_name,
-                cellar_count=count,
+                cellar_count=counts.get(u.id, 0),
                 trading_enabled=u.trading_enabled,
             )
         )
