@@ -29,7 +29,11 @@ def _user_from_token(token: str | None, db: Session) -> models.User | None:
     # existed before the account was secured, and shouldn't keep working.
     if user.token_valid_after:
         issued_at = payload.get("iat")
-        if not issued_at or dt.datetime.utcfromtimestamp(issued_at) < user.token_valid_after:
+        # fromtimestamp(..., tz=utc) then stripping tzinfo, not the
+        # deprecated utcfromtimestamp() - same naive-but-UTC convention
+        # as every DateTime column in this app (see models.utcnow()).
+        issued_dt = dt.datetime.fromtimestamp(issued_at, tz=dt.timezone.utc).replace(tzinfo=None) if issued_at else None
+        if not issued_dt or issued_dt < user.token_valid_after:
             return None
     return user
 

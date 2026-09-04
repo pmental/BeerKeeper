@@ -13,6 +13,7 @@ from app.auth import hash_password
 from app.database import get_db, ilike_unicode
 from app.deps import require_admin
 from app.crypto import encrypt_secret
+from app.csv_utils import csv_safe
 from app.email import resolve_smtp_settings, send_test_email, send_welcome_email
 from app.routers.beers import _get_or_create_brewery
 from app.uploads import read_upload_limited
@@ -183,7 +184,7 @@ def reset_password(
     # Also invalidate any of their existing sessions - a plausible reason
     # an admin is resetting someone else's password is a suspected
     # compromise, and leaving old tokens valid would defeat the point.
-    user.token_valid_after = dt.datetime.utcnow()
+    user.token_valid_after = models.utcnow()
     db.commit()
     return {"ok": True}
 
@@ -349,7 +350,7 @@ def export_breweries_admin(db: Session = Depends(get_db), _admin: models.User = 
     writer = csv.DictWriter(buf, fieldnames=["name", "website"])
     writer.writeheader()
     for b in breweries:
-        writer.writerow({"name": b.name, "website": b.website or ""})
+        writer.writerow({"name": csv_safe(b.name), "website": csv_safe(b.website or "")})
     buf.seek(0)
     filename = f"breweries-{dt.date.today().isoformat()}.csv"
     return StreamingResponse(
@@ -554,11 +555,11 @@ def export_beers_admin(db: Session = Depends(get_db), _admin: models.User = Depe
     for b in beers:
         writer.writerow(
             {
-                "name": b.name,
-                "brewery": b.brewery.name,
-                "style": b.style or "",
+                "name": csv_safe(b.name),
+                "brewery": csv_safe(b.brewery.name),
+                "style": csv_safe(b.style or ""),
                 "abv": b.abv if b.abv is not None else "",
-                "reference_url": b.reference_url or "",
+                "reference_url": csv_safe(b.reference_url or ""),
             }
         )
     buf.seek(0)

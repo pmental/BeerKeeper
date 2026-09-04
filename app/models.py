@@ -18,7 +18,12 @@ from app.database import Base
 
 
 def utcnow():
-    return dt.datetime.utcnow()
+    # Every DateTime column in this app is naive (no tzinfo) and means
+    # UTC by convention - datetime.utcnow() used to be the natural way
+    # to get that, but it's deprecated as of Python 3.12. This gets the
+    # same naive-but-UTC value through the non-deprecated path: an aware
+    # UTC datetime, with the tzinfo then stripped back off.
+    return dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
 
 
 class User(Base):
@@ -62,6 +67,9 @@ class User(Base):
     entries = relationship("CellarEntry", back_populates="user", cascade="all, delete-orphan")
     logs = relationship("ConsumptionLog", back_populates="user", cascade="all, delete-orphan")
     wanted = relationship("WantedEntry", back_populates="user", cascade="all, delete-orphan")
+    password_reset_tokens = relationship(
+        "PasswordResetToken", back_populates="user", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (UniqueConstraint("oidc_issuer", "oidc_subject", name="uq_users_oidc_issuer_subject"),)
 
@@ -216,4 +224,4 @@ class PasswordResetToken(Base):
     used = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=utcnow, nullable=False)
 
-    user = relationship("User")
+    user = relationship("User", back_populates="password_reset_tokens")

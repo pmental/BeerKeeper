@@ -1460,6 +1460,7 @@ const Pages = (() => {
           <p class="field-hint" style="margin-top:-4px">
             Columns: <code>brewery, beer, style, abv, location, custom_location, quantity, size_oz, size_ml, bottle_date, best_before, batch_notes, trade_status</code>.
             Export includes both size columns; import prefers whichever matches your unit setting above, falling back to the other if it's blank.
+            A <a href="https://cellar.beer" target="_blank" rel="noopener noreferrer">cellar.beer</a> export also works - it's detected automatically.
           </p>
           <div class="csv-drop">
             <input type="file" accept=".csv" id="import-file" />

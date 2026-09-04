@@ -50,7 +50,7 @@ def _create_reset_token(db: Session, user: models.User) -> str:
         models.PasswordResetToken(
             user_id=user.id,
             token_hash=_hash_token(raw_token),
-            expires_at=dt.datetime.utcnow() + RESET_TOKEN_LIFETIME,
+            expires_at=models.utcnow() + RESET_TOKEN_LIFETIME,
         )
     )
     db.commit()
@@ -100,6 +100,14 @@ def register(
 def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     rate_limit(request, "login", max_attempts=10, window_seconds=300)
     _require_password_auth()
+    if len(form_data.password) > 200:
+        # OAuth2PasswordRequestForm has no length constraint of its own
+        # (unlike PasswordStr, used by every password-setting path), so
+        # an oversized guess would otherwise reach verify_password()
+        # before being rejected. No legitimate password could ever be
+        # this long - PasswordStr caps every one at 200 chars when set -
+        # so reject up front rather than let it flow further in.
+        raise HTTPException(status_code=401, detail="Incorrect username or password.")
     user = db.query(models.User).filter(models.User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Incorrect username or password.")
@@ -127,7 +135,7 @@ def change_password(
     # request - that one gets a freshly issued, still-valid token below.
     # Both use the exact same timestamp (see create_access_token's note on
     # why) so the new token can never be older than its own cutoff.
-    now = dt.datetime.utcnow().replace(microsecond=0)
+    now = models.utcnow().replace(microsecond=0)
     current_user.token_valid_after = now
     db.commit()
     token = create_access_token(current_user.id, current_user.username, issued_at=now)
@@ -163,7 +171,7 @@ def reset_password(payload: schemas.ResetPasswordIn, db: Session = Depends(get_d
     _require_password_auth()
     token_hash = _hash_token(payload.token)
     reset = db.query(models.PasswordResetToken).filter(models.PasswordResetToken.token_hash == token_hash).first()
-    if not reset or reset.used or reset.expires_at < dt.datetime.utcnow():
+    if not reset or reset.used or reset.expires_at < models.utcnow():
         raise HTTPException(status_code=400, detail="This reset link is invalid or has expired. Request a new one.")
 
     user = db.query(models.User).filter(models.User.id == reset.user_id).first()
@@ -171,7 +179,7 @@ def reset_password(payload: schemas.ResetPasswordIn, db: Session = Depends(get_d
         raise HTTPException(status_code=400, detail="This reset link is invalid or has expired. Request a new one.")
 
     user.password_hash = hash_password(payload.new_password)
-    now = dt.datetime.utcnow().replace(microsecond=0)
+    now = models.utcnow().replace(microsecond=0)
     user.token_valid_after = now
     reset.used = True
     db.commit()

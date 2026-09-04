@@ -1,12 +1,14 @@
 import csv
 import datetime as dt
 import io
+import re
 
 from fastapi import APIRouter, Depends, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 
 from app import models
+from app.csv_utils import csv_safe
 from app.database import get_db, ilike_unicode
 from app.deps import get_current_user
 from app.routers.beers import _get_or_create_brewery
@@ -69,6 +71,93 @@ def _resolve_size_oz(row: dict, unit_system: str) -> float | None:
     return value / OZ_TO_ML if is_ml else value
 
 
+# --- cellar.beer import support -------------------------------------------
+#
+# cellar.beer (https://cellar.beer) exports a CSV with entirely different
+# column names, capitalization, and a few field formats of its own - none
+# of this reuses this app's own CSV_COLUMNS shape directly. Rather than a
+# separate importer, a cellar.beer file is detected by its distinctive
+# header row and each row is translated into this app's own row shape up
+# front, so the main import loop below never needs to know or care which
+# format the upload actually came from.
+
+_CELLARBEER_SIGNATURE_COLUMNS = {"Brewery", "Beer", "In Cellar"}
+
+_CELLARBEER_SIZE_PATTERN = re.compile(r"^\s*([\d.]+)\s*(ml|cl|l)\s*$", re.IGNORECASE)
+
+
+def _parse_cellarbeer_size_ml(value: str | None) -> tuple[str, str | None]:
+    """cellar.beer stores size as a string with a unit baked in ("750 ml",
+    "1.5 l"), not a bare number the way this app's own size_ml column
+    does. Returns (size_ml_as_string, warning_or_None)."""
+    value = (value or "").strip()
+    if not value:
+        return "", None
+    match = _CELLARBEER_SIZE_PATTERN.match(value)
+    if not match:
+        return "", f"Size '{value}' isn't a recognized format, left blank"
+    amount = float(match.group(1))
+    unit = match.group(2).lower()
+    ml = {"ml": amount, "cl": amount * 10, "l": amount * 1000}[unit]
+    return str(ml), None
+
+
+def _parse_cellarbeer_date(value: str | None) -> tuple[str, str | None]:
+    """cellar.beer sometimes exports a bare year ("2019") or year-month
+    ("2040-07") instead of a full date, where this app's own dates are
+    always complete. Anchoring to Jan 1 / the 1st of that month keeps the
+    year information rather than silently dropping the whole date - but
+    a guess is still a guess, so it's flagged with a warning rather than
+    imported silently. Returns (iso_date_or_blank, warning_or_None)."""
+    value = (value or "").strip()
+    if not value:
+        return "", None
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+        return value, None
+    if re.fullmatch(r"\d{4}-\d{2}", value):
+        return f"{value}-01", f"'{value}' had no day, imported as the 1st of the month"
+    if re.fullmatch(r"\d{4}", value):
+        return f"{value}-01-01", f"'{value}' had no month or day, imported as January 1st"
+    return "", f"'{value}' isn't a recognized date, left blank"
+
+
+def _normalize_cellarbeer_row(row: dict) -> tuple[dict, list[str]]:
+    """Translates one cellar.beer row into this app's own CSV_COLUMNS
+    shape. cellar.beer has no cellar/fridge concept at all - just one
+    free-text location - so every row imports into "cellar", with that
+    free-text value going into custom_location instead."""
+    warnings = []
+
+    size_ml, size_warning = _parse_cellarbeer_size_ml(row.get("Size"))
+    if size_warning:
+        warnings.append(size_warning)
+
+    bottle_date, bottle_warning = _parse_cellarbeer_date(row.get("Bottle Date"))
+    if bottle_warning:
+        warnings.append(f"Bottle Date {bottle_warning}")
+
+    best_before, best_before_warning = _parse_cellarbeer_date(row.get("Drink By"))
+    if best_before_warning:
+        warnings.append(f"Drink By {best_before_warning}")
+
+    normalized = {
+        "brewery": row.get("Brewery", ""),
+        "beer": row.get("Beer", ""),
+        "style": row.get("Style", ""),
+        "abv": "",
+        "location": "cellar",
+        "custom_location": row.get("Location", ""),
+        "quantity": row.get("In Cellar", ""),
+        "size_oz": "",
+        "size_ml": size_ml,
+        "bottle_date": bottle_date,
+        "best_before": best_before,
+        "batch_notes": row.get("Notes", ""),
+        "trade_status": "",
+    }
+    return normalized, warnings
+
+
 @router.get("/export")
 def export_cellar(
     db: Session = Depends(get_db),
@@ -86,18 +175,18 @@ def export_cellar(
     for e in entries:
         writer.writerow(
             {
-                "brewery": e.beer.brewery.name,
-                "beer": e.beer.name,
-                "style": e.beer.style or "",
+                "brewery": csv_safe(e.beer.brewery.name),
+                "beer": csv_safe(e.beer.name),
+                "style": csv_safe(e.beer.style or ""),
                 "abv": e.beer.abv if e.beer.abv is not None else "",
                 "location": e.location,
-                "custom_location": e.custom_location or "",
+                "custom_location": csv_safe(e.custom_location or ""),
                 "quantity": e.quantity,
                 "size_oz": e.size_oz if e.size_oz is not None else "",
                 "size_ml": round(e.size_oz * OZ_TO_ML) if e.size_oz is not None else "",
                 "bottle_date": e.bottle_date.isoformat() if e.bottle_date else "",
                 "best_before": e.best_before.isoformat() if e.best_before else "",
-                "batch_notes": (e.batch_notes or "").replace("\n", " "),
+                "batch_notes": csv_safe((e.batch_notes or "").replace("\n", " ")),
                 "trade_status": e.trade_status,
             }
         )
@@ -119,10 +208,22 @@ async def import_cellar(
     raw_bytes = await read_upload_limited(file, max_bytes=10 * 1024 * 1024)  # 10 MB - generous for any CSV
     raw = raw_bytes.decode("utf-8-sig")
     reader = csv.DictReader(io.StringIO(raw))
+    # A cellar.beer export uses distinctly different, Title-Case column
+    # names from this app's own format - a few of its most distinctive
+    # ones being present is a reliable enough signal to tell the two
+    # apart, so "Import CSV" can just handle either without the user
+    # needing to know or pick which format they have.
+    is_cellarbeer = _CELLARBEER_SIGNATURE_COLUMNS.issubset(set(reader.fieldnames or []))
     created, skipped = 0, 0
     errors = []
 
-    for i, row in enumerate(reader, start=2):  # row 1 is the header
+    for i, raw_row in enumerate(reader, start=2):  # row 1 is the header
+        if is_cellarbeer:
+            row, row_warnings = _normalize_cellarbeer_row(raw_row)
+            errors.extend(f"Row {i}: {w}" for w in row_warnings)
+        else:
+            row = raw_row
+
         brewery_name = (row.get("brewery") or "").strip()
         beer_name = (row.get("beer") or "").strip()
         if not brewery_name or not beer_name:

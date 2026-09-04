@@ -1,5 +1,8 @@
 # Changelog
 
+- "Import from CSV" now also accepts a [cellar.beer](https://cellar.beer) export, detected automatically from its column headers - no separate button needed. Handles that format's different size notation ("750 ml", "1.5 l"), its lack of a cellar/fridge distinction (imports as cellar, with its free-text location going into custom location), and partial dates (a bare year or year-month is anchored to Jan 1 / the 1st of that month, with a note in the import result rather than silently guessing).
+
+- **0.0.65** — Seven fixes from continued external review: guarded all three CSV exports against spreadsheet formula injection; fixed a bug where deleting a user with an outstanding password-reset token failed with a 500 (missing cascade-delete); updated `cryptography` for a moderate-severity CVE; capped the two remaining unbounded inputs (`new_brewery_name`, the login password); replaced the app's remaining deprecated `datetime.utcnow()`/`utcfromtimestamp()` usages; and the auto-generated secret-key file now gets explicit 0600 permissions instead of the process default.
 - The SMTP password is now encrypted at rest instead of stored in plain text, using a key derived from `CELLAR_SECRET_KEY` - closes a real gap where a downloaded backup exposed it in the clear even though the admin API itself never did. Existing installs get their stored password encrypted automatically on first boot after upgrading; no action needed.
 
 - **0.0.64** — Two performance fixes from a self-review: the public Browse directory's per-user query loop replaced with a single aggregate query, and a missing index added on `beers.brewery_id`. Also extended the cellar search field to match brewery name (not just beer name), with a simplified "Search cellar…" placeholder.

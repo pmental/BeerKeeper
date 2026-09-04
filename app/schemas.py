@@ -97,7 +97,7 @@ class AdminBreweryImportResult(BaseModel):
 class BeerIn(BaseModel):
     name: str = Field(min_length=1, max_length=255)
     brewery_id: Optional[int] = None
-    new_brewery_name: Optional[str] = None
+    new_brewery_name: Optional[str] = Field(default=None, max_length=255)
     style: Optional[str] = Field(default=None, max_length=120)
     abv: Optional[float] = Field(default=None, ge=0, le=100)
     description: Optional[str] = Field(default=None, max_length=4000)
