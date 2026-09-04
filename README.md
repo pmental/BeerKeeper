@@ -1,10 +1,6 @@
 # BeerKeeper
 
-<<<<<<< HEAD
 **Current version: 0.0.64** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
-=======
-**Current version: 0.0.63** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
->>>>>>> 6f823f07956400636cd6feea940c2127861f5b3e
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite

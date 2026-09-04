@@ -83,11 +83,7 @@ class Beer(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False, index=True)
-<<<<<<< HEAD
     brewery_id = Column(Integer, ForeignKey("breweries.id"), nullable=False, index=True)
-=======
-    brewery_id = Column(Integer, ForeignKey("breweries.id"), nullable=False)
->>>>>>> 6f823f07956400636cd6feea940c2127861f5b3e
     style = Column(String(120), nullable=True)
     abv = Column(Float, nullable=True)
     description = Column(Text, nullable=True)
