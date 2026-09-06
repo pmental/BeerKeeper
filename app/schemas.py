@@ -290,6 +290,12 @@ class AccountOut(BaseModel):
 
 
 class AccountPatch(BaseModel):
+    # Only ever honored in single-user desktop mode (see account.py) -
+    # there's no registration flow there to set a username up front, and
+    # nobody else's uniqueness to worry about colliding with. Ignored
+    # (and rejected) in the normal self-hosted app, where a username is
+    # fixed at registration.
+    username: Optional[str] = Field(default=None, min_length=3, max_length=32, pattern=r"^[a-zA-Z0-9_\-]+$")
     default_sort: Optional[str] = Field(default=None, pattern="^(beer|brewery|drinkby)$")
     unit_system: Optional[str] = Field(default=None, pattern="^(imperial|metric)$")
     show_fridge_column: Optional[bool] = None

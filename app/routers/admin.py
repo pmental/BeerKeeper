@@ -2,7 +2,7 @@ import csv
 import datetime as dt
 import io
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, UploadFile, File
 from fastapi.responses import Response, StreamingResponse
 from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
@@ -211,12 +211,21 @@ def delete_user(
 
 
 @router.get("/backup")
-def download_backup(_admin: models.User = Depends(require_admin)):
+def download_backup(
+    login_password: str | None = Query(default=None, max_length=200),
+    _admin: models.User = Depends(require_admin),
+):
     """A single-file snapshot of the entire instance - every user, cellar
     entry, beer, brewery, and beer style - not just one account's data
     (unlike Import/Export's CSV, which is per-user). Meant for moving a
-    whole instance to a new install."""
-    data = backup.create_backup_bytes()
+    whole instance to a new install.
+
+    login_password is single-user-desktop-mode-only: see
+    backup.create_backup_bytes for what it actually does. Rejected
+    outright anywhere else so it can't silently do nothing."""
+    if login_password and not config.SINGLE_USER_MODE:
+        raise HTTPException(status_code=400, detail="login_password is only meaningful in single-user mode.")
+    data = backup.create_backup_bytes(login_password=login_password or None)
     filename = f"beerkeeper-backup-{dt.date.today().isoformat()}.zip"
     return Response(
         content=data,

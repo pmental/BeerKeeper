@@ -1,7 +1,23 @@
 const App = (() => {
-  const state = { user: null, displayName: null, account: null, authConfig: { password_auth_enabled: true, oidc_enabled: false, oidc_button_label: "Continue with SSO" } };
+  const state = {
+    user: null,
+    displayName: null,
+    account: null,
+    singleUserMode: false,
+    authConfig: { password_auth_enabled: true, oidc_enabled: false, oidc_button_label: "Continue with SSO" },
+  };
 
   async function refreshAuthConfig() {
+    // /api/app-config is always mounted, regardless of mode - has to be
+    // checked first, since /api/auth/config (the multi-user endpoint)
+    // isn't mounted at all in single-user desktop mode.
+    try {
+      const { single_user_mode } = await Api.appConfig();
+      state.singleUserMode = !!single_user_mode;
+    } catch (e) {
+      state.singleUserMode = false;
+    }
+    if (state.singleUserMode) return;
     try {
       state.authConfig = await Api.authConfig();
     } catch (e) {
@@ -26,7 +42,10 @@ const App = (() => {
   }
 
   async function refreshUser() {
-    if (!Api.getToken()) {
+    // Single-user desktop mode has no login - every request is
+    // automatically the one local user (see app/deps.py) - so there's no
+    // token to gate on here, unlike the normal self-hosted app.
+    if (!state.singleUserMode && !Api.getToken()) {
       state.user = null;
       state.displayName = null;
       state.account = null;
@@ -57,13 +76,18 @@ const App = (() => {
     navLinks.classList.remove("open");
     if (navToggle) navToggle.setAttribute("aria-expanded", "false");
 
-    const links = [{ href: "#/", label: "Home" }, { href: "#/browse", label: "Browse" }];
-    if (state.user) {
+    // Single-user desktop mode has nobody to browse (no other cellars
+    // exist), nobody to log in as (there's only ever one user, already
+    // "logged in"), and nothing to log out of.
+    const links = state.singleUserMode
+      ? [{ href: "#/cellar", label: "My cellar" }, { href: "#/consumed", label: "History" }]
+      : [{ href: "#/", label: "Home" }, { href: "#/browse", label: "Browse" }];
+    if (!state.singleUserMode && state.user) {
       links.push({ href: "#/cellar", label: "My cellar" });
       links.push({ href: "#/consumed", label: "History" });
     }
     if (state.account && state.account.is_admin) {
-      links.push({ href: "#/admin", label: "Admin" });
+      links.push({ href: "#/admin", label: state.singleUserMode ? "Settings" : "Admin" });
     }
     navLinks.innerHTML = links
       .map(
@@ -71,6 +95,14 @@ const App = (() => {
           `<a href="${l.href}" class="${activeHash === l.href ? "active" : ""}">${l.label}</a>`
       )
       .join("");
+
+    if (state.singleUserMode) {
+      // No login/logout concept - just a quiet link to Settings/Account.
+      navRight.innerHTML = `<a class="user-chip" href="#/account" title="Account"><span class="user-chip-name">${UI.escapeHtml(
+        state.displayName || state.user || "Cellar"
+      )}</span></a>`;
+      return;
+    }
 
     if (state.user) {
       const initial = (state.displayName || state.user || "?").trim().charAt(0).toUpperCase();
@@ -109,21 +141,21 @@ const App = (() => {
   }
 
   const routes = [
-    { pattern: /^#\/?$/, page: Pages.home },
-    { pattern: /^#\/login$/, page: Pages.login },
-    { pattern: /^#\/register$/, page: Pages.register },
-    { pattern: /^#\/forgot-password$/, page: Pages.forgotPassword },
-    { pattern: /^#\/reset-password$/, page: Pages.resetPassword },
+    { pattern: /^#\/?$/, page: (main, ctx, query) => (ctx.singleUserMode ? (location.hash = "#/cellar") : Pages.home(main, ctx, query)) },
+    { pattern: /^#\/login$/, page: (main, ctx) => (ctx.singleUserMode ? (location.hash = "#/cellar") : Pages.login(main, ctx)) },
+    { pattern: /^#\/register$/, page: (main, ctx) => (ctx.singleUserMode ? (location.hash = "#/cellar") : Pages.register(main, ctx)) },
+    { pattern: /^#\/forgot-password$/, page: (main, ctx) => (ctx.singleUserMode ? (location.hash = "#/cellar") : Pages.forgotPassword(main, ctx)) },
+    { pattern: /^#\/reset-password$/, page: (main, ctx, query) => (ctx.singleUserMode ? (location.hash = "#/cellar") : Pages.resetPassword(main, ctx, query)) },
     { pattern: /^#\/cellar$/, page: Pages.cellar },
     { pattern: /^#\/account$/, page: Pages.account },
     { pattern: /^#\/admin$/, page: Pages.admin },
-    { pattern: /^#\/browse$/, page: Pages.browse },
+    { pattern: /^#\/browse$/, page: (main, ctx) => (ctx.singleUserMode ? (location.hash = "#/cellar") : Pages.browse(main, ctx)) },
     { pattern: /^#\/consumed$/, page: Pages.consumed },
     // Import/export moved into the account page - keep the old link
     // working for anyone with it bookmarked, rather than a dead route.
     { pattern: /^#\/import-export$/, page: () => { location.hash = "#/account"; } },
-    { pattern: /^#\/u\/([^/]+)\/trades$/, page: Pages.publicTrades, param: true },
-    { pattern: /^#\/u\/([^/]+)$/, page: Pages.publicCellar, param: true },
+    { pattern: /^#\/u\/([^/]+)\/trades$/, page: (main, username, ctx) => (ctx.singleUserMode ? (location.hash = "#/cellar") : Pages.publicTrades(main, username, ctx)), param: true },
+    { pattern: /^#\/u\/([^/]+)$/, page: (main, username, ctx) => (ctx.singleUserMode ? (location.hash = "#/cellar") : Pages.publicCellar(main, username, ctx)), param: true },
   ];
 
   const ctx = {
@@ -138,6 +170,9 @@ const App = (() => {
     },
     get authConfig() {
       return state.authConfig;
+    },
+    get singleUserMode() {
+      return state.singleUserMode;
     },
     refreshUser,
   };

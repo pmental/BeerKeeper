@@ -14,7 +14,7 @@ from app.backup import apply_pending_restore_if_any
 from app.brewery_seed import seed_breweries_if_needed
 from app.beer_styles import migrate_beer_styles_if_needed
 from app.email import encrypt_existing_smtp_password_if_needed
-from app.admin_bootstrap import ensure_instance_settings, ensure_admin_exists
+from app.admin_bootstrap import ensure_instance_settings, ensure_admin_exists, ensure_local_user_exists
 from app.routers import auth as auth_router
 from app.routers import beers, cellar, consumption, account, public, import_export, oidc, beer_styles, wanted, admin
 
@@ -33,8 +33,11 @@ try:
     seed_breweries_if_needed(_seed_db)
     migrate_beer_styles_if_needed(_seed_db)
     ensure_instance_settings(_seed_db)
-    ensure_admin_exists(_seed_db)
-    encrypt_existing_smtp_password_if_needed(_seed_db)
+    if config.SINGLE_USER_MODE:
+        ensure_local_user_exists(_seed_db)
+    else:
+        ensure_admin_exists(_seed_db)
+        encrypt_existing_smtp_password_if_needed(_seed_db)
 finally:
     _seed_db.close()
 
@@ -43,13 +46,15 @@ app = FastAPI(title=config.APP_NAME, version=config.APP_VERSION)
 # Only used to hold the short-lived state/nonce for the OIDC handshake (a
 # few seconds, during the redirect to and back from the identity provider).
 # It is unrelated to the app's own login sessions, which are JWT bearer
-# tokens sent in the Authorization header, not cookies.
-app.add_middleware(
-    SessionMiddleware,
-    secret_key=auth.SECRET_KEY,
-    same_site="lax",
-    https_only=config.BASE_URL.startswith("https://"),
-)
+# tokens sent in the Authorization header, not cookies. Single-user mode
+# has no OIDC (no login at all), so it's skipped entirely there.
+if not config.SINGLE_USER_MODE:
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=auth.SECRET_KEY,
+        same_site="lax",
+        https_only=config.BASE_URL.startswith("https://"),
+    )
 
 # Compresses response bodies (the JS/CSS bundle, JSON API responses) when
 # the client supports it - pure transfer-size/speed win, no behavior
@@ -111,14 +116,21 @@ async def security_headers(request, call_next):
     return response
 
 
-app.include_router(auth_router.router)
-app.include_router(oidc.router)
+# auth, oidc, and public are all login/sharing/multi-user surfaces with no
+# equivalent in single-user desktop mode - there's nobody to log in as
+# besides the one local user (auto-attached to every request, see
+# deps.py), nobody else to share a cellar or trade list with, and no SSO
+# provider to redirect to. Leaving them unmounted rather than merely
+# unused keeps that true at the routing level too, not just in the UI.
+if not config.SINGLE_USER_MODE:
+    app.include_router(auth_router.router)
+    app.include_router(oidc.router)
+    app.include_router(public.router)
 app.include_router(beers.router)
 app.include_router(beers.brewery_router)
 app.include_router(cellar.router)
 app.include_router(consumption.router)
 app.include_router(account.router)
-app.include_router(public.router)
 app.include_router(import_export.router)
 app.include_router(beer_styles.router)
 app.include_router(wanted.router)
@@ -133,6 +145,15 @@ def health():
 @app.get("/api/version")
 def version(_user: models.User = Depends(get_current_user)):
     return {"name": config.APP_NAME, "version": config.APP_VERSION}
+
+
+@app.get("/api/app-config")
+def app_config():
+    """Always mounted, unauthenticated, and mode-independent on purpose -
+    the frontend needs to know whether it's talking to single-user desktop
+    mode or the normal self-hosted app *before* it can know whether
+    /api/auth/config (unmounted in single-user mode) even exists to ask."""
+    return {"single_user_mode": config.SINGLE_USER_MODE}
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
 

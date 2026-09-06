@@ -1398,7 +1398,7 @@ const Pages = (() => {
   }
 
   async function account(root, ctx) {
-    if (!ctx.user) {
+    if (!ctx.singleUserMode && !ctx.user) {
       location.hash = "#/login";
       return;
     }
@@ -1409,6 +1409,15 @@ const Pages = (() => {
       <div class="panel" style="margin-bottom:20px">
         <h3>Signed in as ${escapeHtml(a.display_name || a.username)}</h3>
         <p class="subtle">${escapeHtml(a.username)} &middot; ${escapeHtml(a.email)}</p>
+        ${
+          ctx.singleUserMode
+            ? `<div class="field" style="margin-top:14px; max-width:320px">
+                <label>Username</label>
+                <input class="input" id="username-input" value="${escapeHtml(a.username)}" minlength="3" maxlength="32" pattern="[a-zA-Z0-9_\\-]+" />
+                <p class="field-hint">Only matters if you ever restore a backup of this cellar into the self-hosted, multi-user version of BeerKeeper - that's what you'd log in with there.</p>
+              </div>`
+            : ""
+        }
       </div>
 
       <div class="panel" style="margin-bottom:20px">
@@ -1433,7 +1442,7 @@ const Pages = (() => {
       </div>
 
       ${
-        a.trading_enabled
+        a.trading_enabled && !ctx.singleUserMode
           ? `<div class="panel" style="margin-bottom:20px">
               <h3>Your trade list</h3>
               <p class="subtle">Shareable with anyone, no account or login needed - independent of whether your full cellar is public.</p>
@@ -1446,17 +1455,23 @@ const Pages = (() => {
           : ""
       }
 
-      <div class="panel" style="margin-bottom:20px">
-        <h3>Privacy</h3>
-        <div class="settings-grid">
-          ${toggleRow("cellar_public", "Make my cellar public", "Others can find you via Browse cellars and view your bottles.", a.cellar_public)}
-          ${toggleRow("notes_public", "Show my tasting notes publicly", "Only applies if your cellar is public.", a.notes_public)}
-          ${toggleRow("drinkby_public", "Show drink-by dates publicly", "Only applies if your cellar is public.", a.drinkby_public)}
-        </div>
-      </div>
+      ${
+        ctx.singleUserMode
+          ? ""
+          : `<div class="panel" style="margin-bottom:20px">
+              <h3>Privacy</h3>
+              <div class="settings-grid">
+                ${toggleRow("cellar_public", "Make my cellar public", "Others can find you via Browse cellars and view your bottles.", a.cellar_public)}
+                ${toggleRow("notes_public", "Show my tasting notes publicly", "Only applies if your cellar is public.", a.notes_public)}
+                ${toggleRow("drinkby_public", "Show drink-by dates publicly", "Only applies if your cellar is public.", a.drinkby_public)}
+              </div>
+            </div>`
+      }
 
       ${
-        !ctx.authConfig.password_auth_enabled
+        ctx.singleUserMode
+          ? ""
+          : !ctx.authConfig.password_auth_enabled
           ? `<div class="panel" style="margin-bottom:20px">
               <h3>Password sign-in</h3>
               <p class="subtle">Password-based sign-in is disabled on this instance. Manage your login through your SSO provider instead.</p>
@@ -1497,6 +1512,23 @@ const Pages = (() => {
         </div>
       </div>
     `;
+
+    const usernameInput = root.querySelector("#username-input");
+    if (usernameInput) {
+      usernameInput.addEventListener("change", async () => {
+        const value = usernameInput.value.trim();
+        const previous = ctx.account.username;
+        if (value === previous) return;
+        try {
+          const updated = await Api.patchAccount({ username: value });
+          Object.assign(ctx.account, updated);
+          toast("Saved.");
+        } catch (e) {
+          toast(e.message, "error");
+          usernameInput.value = previous;
+        }
+      });
+    }
 
     root.querySelectorAll("[data-toggle]").forEach((input) => {
       input.addEventListener("change", async () => {
@@ -2367,7 +2399,7 @@ const Pages = (() => {
   }
 
   async function admin(root, ctx) {
-    if (!ctx.user) {
+    if (!ctx.singleUserMode && !ctx.user) {
       location.hash = "#/login";
       return;
     }
@@ -2377,16 +2409,20 @@ const Pages = (() => {
     }
 
     root.innerHTML = `
-      <div class="page-head"><h1>Admin</h1></div>
-      <div class="panel" style="margin-bottom:20px" id="settings-panel">${spinnerHtml()}</div>
-      <div class="panel" style="margin-bottom:20px" id="smtp-panel">${spinnerHtml()}</div>
-      <div class="panel" style="margin-bottom:20px" id="users-panel">
-        <h3>Users</h3>
-        <div class="form-actions" style="margin-top:10px; justify-content:flex-start;">
-          <button class="btn btn-primary btn-sm" id="add-user-btn">+ Add user</button>
-        </div>
-        <div id="users-list" style="margin-top:14px">${spinnerHtml()}</div>
-      </div>
+      <div class="page-head"><h1>${ctx.singleUserMode ? "Settings" : "Admin"}</h1></div>
+      ${ctx.singleUserMode ? "" : `<div class="panel" style="margin-bottom:20px" id="settings-panel">${spinnerHtml()}</div>`}
+      ${ctx.singleUserMode ? "" : `<div class="panel" style="margin-bottom:20px" id="smtp-panel">${spinnerHtml()}</div>`}
+      ${
+        ctx.singleUserMode
+          ? ""
+          : `<div class="panel" style="margin-bottom:20px" id="users-panel">
+              <h3>Users</h3>
+              <div class="form-actions" style="margin-top:10px; justify-content:flex-start;">
+                <button class="btn btn-primary btn-sm" id="add-user-btn">+ Add user</button>
+              </div>
+              <div id="users-list" style="margin-top:14px">${spinnerHtml()}</div>
+            </div>`
+      }
       <div class="panel" style="margin-bottom:20px" id="breweries-panel">${spinnerHtml()}</div>
       <div class="panel" style="margin-bottom:20px" id="beers-panel">${spinnerHtml()}</div>
       <div class="panel" style="margin-bottom:20px" id="beer-styles-panel">${spinnerHtml()}</div>
@@ -2932,6 +2968,20 @@ const Pages = (() => {
                </div>`
             : ""
         }
+        ${
+          ctx.singleUserMode
+            ? `<div class="field" style="margin-top:14px; max-width:360px">
+                <label>Login password for this backup (optional)</label>
+                <input class="input" type="password" id="backup-login-password" placeholder="Leave blank for none" />
+                <p class="field-hint">
+                  This does <strong>not</strong> encrypt the backup file - anyone who opens it can still read
+                  your cellar data directly. It only creates a working login for your account, so that if you
+                  ever restore this backup into the self-hosted, multi-user version of BeerKeeper, you can sign
+                  in with your username and this password, instead of needing email-based password recovery.
+                </p>
+              </div>`
+            : ""
+        }
         <div class="form-actions" style="margin-top:14px">
           <button class="btn btn-primary" id="download-backup-btn">Download full backup</button>
         </div>
@@ -2954,7 +3004,8 @@ const Pages = (() => {
         const btn = e.currentTarget;
         btn.disabled = true;
         try {
-          const { blob, filename } = await Api.adminDownloadBackup();
+          const pwInput = panel.querySelector("#backup-login-password");
+          const { blob, filename } = await Api.adminDownloadBackup(pwInput ? pwInput.value : null);
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
@@ -3010,9 +3061,11 @@ const Pages = (() => {
       });
     }
 
-    await loadSettings();
-    loadSmtpPanel();
-    loadUsers();
+    if (!ctx.singleUserMode) {
+      await loadSettings();
+      loadSmtpPanel();
+      loadUsers();
+    }
     loadBreweriesPanel();
     loadBeersPanel();
     loadBeerStylesPanel();

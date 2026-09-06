@@ -16,15 +16,33 @@ ZIP_DB_ENTRY = "cellar.db"
 _EXPECTED_TABLES = {"users", "beers", "breweries", "cellar_entries", "consumption_logs"}
 
 
-def create_backup_bytes() -> bytes:
+def create_backup_bytes(login_password: str | None = None) -> bytes:
     """A single zip with a consistent, point-in-time snapshot of the live
     database - every account, cellar, brewery, beer, and beer style, not
     just your own - using SQLite's own backup API, not just reading the
-    file, which could catch it mid-write in this app's WAL mode."""
+    file, which could catch it mid-write in this app's WAL mode.
+
+    login_password (single-user desktop mode only): if given, it's hashed
+    and written into *this exported copy's* single user row - never into
+    the live database on disk - so that if this specific backup is later
+    restored into the self-hosted, multi-user app, it comes with a working
+    login instead of the unusable placeholder password the desktop app
+    normally carries. Leaving it out (or restoring an older backup that
+    predates this feature) just means that account has no working
+    password yet on the self-hosted side - use its admin panel, or the
+    forgot-password flow if email is configured, to set one."""
     source = sqlite3.connect(DB_PATH)
     dest = sqlite3.connect(":memory:")
     try:
         source.backup(dest)
+        if login_password:
+            from app.auth import hash_password  # local import: avoid a hard dependency for self-hosted-only backups
+
+            dest.execute(
+                "UPDATE users SET password_hash = ? WHERE id = (SELECT MIN(id) FROM users)",
+                (hash_password(login_password),),
+            )
+            dest.commit()
         db_bytes = dest.serialize()
     finally:
         source.close()

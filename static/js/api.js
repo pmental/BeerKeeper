@@ -57,8 +57,12 @@ const Api = (() => {
       request("POST", "/api/auth/register", { body: { username, email, password }, auth: false }),
     login: (username, password) =>
       request("POST", "/api/auth/login", { body: { username, password }, form: true, auth: false }),
-    me: () => request("GET", "/api/auth/me"),
+    // /api/account (not /api/auth/me) deliberately - same response shape,
+    // but always mounted, whereas the auth router isn't in single-user
+    // desktop mode. See app/main.py.
+    me: () => request("GET", "/api/account"),
     authConfig: () => request("GET", "/api/auth/config", { auth: false }),
+    appConfig: () => request("GET", "/api/app-config", { auth: false }),
     version: () => request("GET", "/api/version"),
     changePassword: (current_password, new_password) =>
       request("POST", "/api/auth/change-password", { body: { current_password, new_password } }),
@@ -116,9 +120,10 @@ const Api = (() => {
     adminPatchSettings: (payload) => request("PATCH", "/api/admin/settings", { body: payload }),
     adminSendTestEmail: (toEmail) => request("POST", "/api/admin/settings/smtp/test", { body: { to_email: toEmail } }),
 
-    async adminDownloadBackup() {
+    async adminDownloadBackup(loginPassword) {
       const token = getToken();
-      const res = await fetch("/api/admin/backup", {
+      const qs = loginPassword ? "?login_password=" + encodeURIComponent(loginPassword) : "";
+      const res = await fetch("/api/admin/backup" + qs, {
         headers: token ? { Authorization: "Bearer " + token } : {},
       });
       if (!res.ok) {

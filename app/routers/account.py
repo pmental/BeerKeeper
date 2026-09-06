@@ -2,7 +2,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app import models, schemas
+from app import config, models, schemas
 from app.auth import verify_password
 from app.database import get_db
 from app.deps import get_current_user
@@ -26,6 +26,12 @@ def update_account(
     data = payload.model_dump(exclude_unset=True)
     current_password = data.pop("current_password", None)
 
+    if "username" in data:
+        if not config.SINGLE_USER_MODE:
+            raise HTTPException(status_code=403, detail="Username can't be changed on this instance.")
+        if not data["username"]:
+            data.pop("username")
+
     old_email = current_user.email
     changing_email = "email" in data and data["email"] != old_email
     if changing_email:
@@ -42,7 +48,8 @@ def update_account(
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=400, detail="That email is already in use.")
+        field = "username" if "username" in data else "email"
+        raise HTTPException(status_code=400, detail=f"That {field} is already in use.")
     db.refresh(current_user)
 
     if changing_email and is_smtp_enabled(db):

@@ -1,6 +1,9 @@
+import secrets
+
 from sqlalchemy.orm import Session
 
 from app import config, models
+from app.auth import hash_password
 
 
 def ensure_instance_settings(db: Session) -> None:
@@ -27,6 +30,34 @@ def promote_earliest_if_no_admin(db: Session) -> None:
     if earliest:
         earliest.is_admin = True
         db.commit()
+
+
+def ensure_local_user_exists(db: Session) -> None:
+    """Single-user desktop mode only: guarantees exactly one local user
+    (id=1) exists to act as. Its password is a random value nobody knows
+    and nothing ever checks - deps.get_current_user bypasses login
+    entirely in this mode - so it can never be used to sign in anywhere.
+    A real, working password only ever gets attached to this account
+    inside a specific exported backup file, at the person's request, if
+    they choose to set one (see app/backup.py's login_password option) -
+    it's never written back to this live database."""
+    if db.query(models.User).filter(models.User.id == 1).first():
+        return
+    db.add(
+        models.User(
+            id=1,
+            username="cellar",
+            email="local@beerkeeper.app",
+            password_hash=hash_password(secrets.token_urlsafe(32)),
+            is_admin=True,
+            cellar_public=False,
+            notes_public=False,
+            drinkby_public=False,
+            trading_enabled=False,
+            messaging_enabled=False,
+        )
+    )
+    db.commit()
 
 
 def ensure_admin_exists(db: Session) -> None:

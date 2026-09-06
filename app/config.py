@@ -27,6 +27,14 @@ def _ensure_scheme(raw: str, var_name: str) -> str:
     return raw
 
 
+# Single-user desktop mode: strips auth/OIDC/email/public-sharing entirely
+# and serves exactly one implicit local user (id=1, created on first boot -
+# see admin_bootstrap.ensure_local_user_exists). Off by default so this
+# same codebase behaves exactly like the normal self-hosted, multi-user
+# app unless explicitly opted into - see app/main.py and app/deps.py for
+# every place this actually changes behavior.
+SINGLE_USER_MODE = _bool_env("CELLAR_SINGLE_USER_MODE", False)
+
 PASSWORD_AUTH_ENABLED = _bool_env("CELLAR_PASSWORD_AUTH_ENABLED", True)
 # For demo/showcase instances: lets an admin disable self-service password
 # changes (change-password, forgot-password, reset-password) without
