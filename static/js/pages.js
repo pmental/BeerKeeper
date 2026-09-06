@@ -2606,9 +2606,12 @@ const Pages = (() => {
       }
     }
 
-    root.querySelector("#add-user-btn").addEventListener("click", () => {
-      openAddUserModal(loadUsers, !!(currentSettings && currentSettings.smtp_enabled));
-    });
+    const addUserBtn = root.querySelector("#add-user-btn");
+    if (addUserBtn) {
+      addUserBtn.addEventListener("click", () => {
+        openAddUserModal(loadUsers, !!(currentSettings && currentSettings.smtp_enabled));
+      });
+    }
 
     // Wires a debounced, race-safe "type to search" list into an admin
     // panel - shared by the Breweries, Beers, and Beer Styles panels
