@@ -54,6 +54,7 @@ class ResetPasswordIn(BaseModel):
 
 class AuthConfigOut(BaseModel):
     password_auth_enabled: bool
+    password_change_enabled: bool
     oidc_enabled: bool
     oidc_button_label: str
     registration_enabled: bool

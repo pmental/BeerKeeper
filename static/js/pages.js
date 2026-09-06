@@ -857,7 +857,7 @@ const Pages = (() => {
 
     const notesIconHtml =
       compact && entry.batch_notes
-        ? `<span class="notes-icon" title="${escapeHtml(entry.batch_notes)}">&#128456;</span>`
+        ? `<span class="notes-icon" role="button" tabindex="0" aria-label="Show batch notes" title="${escapeHtml(entry.batch_notes)}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="14" x2="16" y2="14"/></svg></span>`
         : "";
 
     return `
@@ -881,7 +881,11 @@ const Pages = (() => {
           ${isWantedOnly ? "" : tally(entry.quantity)}
         </div>
         ${actions}
-        ${!compact && entry.batch_notes ? `<div class="entry-notes">${escapeHtml(entry.batch_notes)}</div>` : ""}
+        ${
+          entry.batch_notes
+            ? `<div class="entry-notes"${compact ? ' style="display:none"' : ""}>${escapeHtml(entry.batch_notes)}</div>`
+            : ""
+        }
       </div>
     `;
   }
@@ -891,6 +895,21 @@ const Pages = (() => {
       const id = Number(card.dataset.entryId);
       const entry = entries.find((e) => e.id === id);
       if (!entry) return;
+
+      const notesIcon = card.querySelector(".notes-icon");
+      if (notesIcon) {
+        const toggleNotes = () => {
+          const notesDiv = card.querySelector(".entry-notes");
+          if (notesDiv) notesDiv.style.display = notesDiv.style.display === "none" ? "" : "none";
+        };
+        notesIcon.addEventListener("click", toggleNotes);
+        notesIcon.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleNotes();
+          }
+        });
+      }
 
       const addBtn = card.querySelector('[data-act="add"]');
       if (addBtn)
@@ -1058,7 +1077,7 @@ const Pages = (() => {
         <div class="field">
           <label>Password</label>
           <input class="input" type="password" name="password" required />
-          ${cfg.smtp_enabled ? `<div class="field-hint"><a href="#/forgot-password">Forgot password?</a></div>` : ""}
+          ${cfg.smtp_enabled && cfg.password_change_enabled ? `<div class="field-hint"><a href="#/forgot-password">Forgot password?</a></div>` : ""}
         </div>
       `,
       extraHtml: ssoBlockHtml(cfg, { withDivider: true }),
@@ -1120,7 +1139,7 @@ const Pages = (() => {
   }
 
   function forgotPassword(root, ctx) {
-    if (!ctx.authConfig.password_auth_enabled || !ctx.authConfig.smtp_enabled) {
+    if (!ctx.authConfig.password_auth_enabled || !ctx.authConfig.smtp_enabled || !ctx.authConfig.password_change_enabled) {
       location.hash = "#/login";
       return;
     }
@@ -1159,6 +1178,10 @@ const Pages = (() => {
   }
 
   function resetPassword(root, ctx, query) {
+    if (!ctx.authConfig.password_change_enabled) {
+      location.hash = "#/login";
+      return;
+    }
     const token = query && query.get("token");
     if (!token) {
       root.innerHTML = `
@@ -1433,8 +1456,17 @@ const Pages = (() => {
       </div>
 
       ${
-        ctx.authConfig.password_auth_enabled
+        !ctx.authConfig.password_auth_enabled
           ? `<div class="panel" style="margin-bottom:20px">
+              <h3>Password sign-in</h3>
+              <p class="subtle">Password-based sign-in is disabled on this instance. Manage your login through your SSO provider instead.</p>
+            </div>`
+          : !ctx.authConfig.password_change_enabled
+          ? `<div class="panel" style="margin-bottom:20px">
+              <h3>Change password</h3>
+              <p class="subtle">Password changes are disabled on this instance.</p>
+            </div>`
+          : `<div class="panel" style="margin-bottom:20px">
               <h3>Change password</h3>
               <form data-pw-form>
                 <div class="field"><label>Current password</label><input class="input" type="password" name="current_password" required /></div>
@@ -1442,10 +1474,6 @@ const Pages = (() => {
                 <div class="form-error" data-pw-error style="display:none"></div>
                 <button type="submit" class="btn btn-ghost">Update password</button>
               </form>
-            </div>`
-          : `<div class="panel" style="margin-bottom:20px">
-              <h3>Password sign-in</h3>
-              <p class="subtle">Password-based sign-in is disabled on this instance. Manage your login through your SSO provider instead.</p>
             </div>`
       }
 

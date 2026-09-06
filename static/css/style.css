@@ -1,7 +1,7 @@
 @import url("fonts.css");
 
 /* ============ Design tokens ============
-   Grounded in an actual cellar: low light, amber glow through glass,
+   Grounded in an actual cellar: low light, golden glow through glass,
    chalk labels on dark shelving, a hop-green accent for "fresh/in fridge".
    Deliberately not the cream+terracotta or black+acid-green defaults.
 
@@ -16,10 +16,10 @@
   --bg-elevated-2: #2c2117;
   --border: rgba(237, 230, 214, 0.1);
 
-  --accent: #e2971a;
-  --accent-bright: #f5b544;
-  --accent-deep: #9c5e14;
-  --accent-wash: rgba(226, 151, 26, 0.14);
+  --accent: #e1ad0e;
+  --accent-bright: #f3c63f;
+  --accent-deep: #957209;
+  --accent-wash: rgba(225, 173, 14, 0.14);
   --text-on-accent: #16110c;
 
   --text: #ede6d6;
@@ -48,15 +48,15 @@
 }
 
 :root[data-theme="light"] {
-  --bg: #f5eee0;
+  --bg: #fdf7eb;
   --bg-elevated: #fffdf9;
   --bg-elevated-2: #ffffff;
   --border: rgba(36, 26, 16, 0.12);
 
-  --accent: #c17e12;
-  --accent-bright: #9c650d;
-  --accent-deep: #7a4e0a;
-  --accent-wash: rgba(193, 126, 18, 0.14);
+  --accent: #e1ad0e;
+  --accent-bright: #f3c63f;
+  --accent-deep: #957209;
+  --accent-wash: rgba(225, 173, 14, 0.14);
   --text-on-accent: #17120b;
 
   --text: #241a10;
@@ -688,13 +688,18 @@ textarea.input {
   margin-left: 4px;
 }
 .notes-icon {
-  /* Compact view only - batch notes are hidden behind a hover instead
-     of a full extra row, to keep compact cards genuinely compact. Same
-     color as .drinkby-alert, by request. */
+  /* Compact view only - batch notes are hidden behind a tap/click
+     instead of a full extra row, to keep compact cards genuinely
+     compact. Same color as .drinkby-alert, by request. An inline SVG,
+     not a Unicode character - some platforms don't have a glyph for
+     the character this used before, rendering as a blank tofu box. */
+  display: inline-flex;
+  align-items: center;
   color: var(--accent);
   margin-left: 6px;
-  cursor: help;
-  font-size: 13px;
+  padding: 4px;
+  margin-block: -4px;
+  cursor: pointer;
 }
 .beer-link:hover {
   /* Without this, the general a:hover rule (higher specificity than a

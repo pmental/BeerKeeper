@@ -1,4 +1,12 @@
 fastapi==0.141.1
+# Pinned directly, not left to whatever FastAPI's own loose constraint
+# (starlette>=0.46.0, no upper bound) happens to resolve at install time.
+# CVE-2026-48710 ("BadHost", an unauthenticated auth-bypass) affected every
+# Starlette version from 0.8.3 through 1.0.0, patched in 1.0.1 - a version
+# range FastAPI's own constraint permits. Without an explicit floor here,
+# whether a given install is safe depends entirely on the coincidence of
+# which Starlette release happened to be latest at pip-install time.
+starlette==1.6.0
 uvicorn[standard]==0.52.4
 sqlalchemy==2.0.52
 pydantic==2.13.5
@@ -9,4 +17,4 @@ email-validator==2.3.0
 authlib==1.8.0
 httpx==0.28.1
 itsdangerous==2.2.0
-cryptography==46.0.7
+cryptography==50.0.1

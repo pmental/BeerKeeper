@@ -25,6 +25,11 @@ def _require_password_auth():
         raise HTTPException(status_code=403, detail="Password-based authentication is disabled on this instance.")
 
 
+def _require_password_change_enabled():
+    if not config.PASSWORD_CHANGE_ENABLED:
+        raise HTTPException(status_code=403, detail="Password changes are disabled on this instance.")
+
+
 def _get_instance_settings(db: Session) -> models.InstanceSettings:
     settings = db.query(models.InstanceSettings).filter(models.InstanceSettings.id == 1).first()
     if not settings:
@@ -61,6 +66,7 @@ def _create_reset_token(db: Session, user: models.User) -> str:
 def auth_config(db: Session = Depends(get_db)):
     return schemas.AuthConfigOut(
         password_auth_enabled=config.PASSWORD_AUTH_ENABLED,
+        password_change_enabled=config.PASSWORD_CHANGE_ENABLED,
         oidc_enabled=config.OIDC_ENABLED,
         oidc_button_label=config.OIDC_BUTTON_LABEL,
         registration_enabled=_get_instance_settings(db).registration_enabled,
@@ -127,6 +133,7 @@ def change_password(
     db: Session = Depends(get_db),
 ):
     _require_password_auth()
+    _require_password_change_enabled()
     if not verify_password(payload.current_password, current_user.password_hash):
         raise HTTPException(status_code=400, detail="Current password is incorrect.")
     current_user.password_hash = hash_password(payload.new_password)
@@ -153,6 +160,7 @@ def forgot_password(
     # it can't become a second way to tell which emails are registered.
     rate_limit_by_key("forgot-password-email", payload.email, max_attempts=5, window_seconds=600)
     _require_password_auth()
+    _require_password_change_enabled()
     if not is_smtp_enabled(db):
         raise HTTPException(
             status_code=403, detail="Email isn't configured on this instance - ask an admin to reset your password."
@@ -169,6 +177,7 @@ def forgot_password(
 @router.post("/reset-password", response_model=schemas.TokenOut)
 def reset_password(payload: schemas.ResetPasswordIn, db: Session = Depends(get_db)):
     _require_password_auth()
+    _require_password_change_enabled()
     token_hash = _hash_token(payload.token)
     reset = db.query(models.PasswordResetToken).filter(models.PasswordResetToken.token_hash == token_hash).first()
     if not reset or reset.used or reset.expires_at < models.utcnow():

@@ -28,11 +28,18 @@ def _ensure_scheme(raw: str, var_name: str) -> str:
 
 
 PASSWORD_AUTH_ENABLED = _bool_env("CELLAR_PASSWORD_AUTH_ENABLED", True)
+# For demo/showcase instances: lets an admin disable self-service password
+# changes (change-password, forgot-password, reset-password) without
+# disabling login itself, so demo accounts keep working with known
+# credentials. Deliberately doesn't affect the admin's own "reset another
+# user's password" endpoint - that's an administrative action, not a
+# self-service one, and a demo's admin should still be able to use it.
+PASSWORD_CHANGE_ENABLED = _bool_env("CELLAR_PASSWORD_CHANGE_ENABLED", True)
 
 APP_NAME = "BeerKeeper"
 # Bump this with every set of changes: 0.0.1, 0.0.2, ... until told to
 # bump the minor/major version instead.
-APP_VERSION = "0.0.65"
+APP_VERSION = "0.0.74"
 
 OIDC_ENABLED = _bool_env("CELLAR_OIDC_ENABLED", False)
 OIDC_ISSUER = _ensure_scheme(os.environ.get("CELLAR_OIDC_ISSUER", ""), "CELLAR_OIDC_ISSUER")

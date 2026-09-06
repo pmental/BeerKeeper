@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.65** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.74** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -77,6 +77,11 @@ export CELLAR_DATA_DIR=./data
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
+(The Docker image installs from `requirements-lock.txt` instead, a fully
+pinned snapshot of the whole dependency tree, transitive packages
+included, for reproducible builds - see that file's own header for how to
+regenerate it after changing `requirements.txt`.)
+
 Setting `CELLAR_SECRET_KEY` explicitly (as above) is recommended but not
 required — if it's unset, a random key is generated and saved to
 `CELLAR_DATA_DIR` on first boot instead. The Docker Compose path enforces
@@ -94,6 +99,7 @@ created automatically on first boot.
 | `CELLAR_DATA_DIR`    | `/data`          | Where the SQLite database file lives.                                 |
 | `CELLAR_PORT`        | `8000`           | Host port, used by `docker-compose.yml` only.                         |
 | `CELLAR_PASSWORD_AUTH_ENABLED` | `true` | Set `false` to disable username/password login and registration (hides the forms too). |
+| `CELLAR_PASSWORD_CHANGE_ENABLED` | `true` | Set `false` to disable self-service password changes (change/forgot/reset), while login stays working - useful for a demo instance with known credentials. Doesn't affect an admin resetting another user's password. |
 | `CELLAR_OIDC_ENABLED` | `false`         | Set `true` to enable SSO. Requires the four `CELLAR_OIDC_*` vars below plus `CELLAR_BASE_URL`. |
 | `CELLAR_OIDC_ISSUER` | *(none)*         | Your OIDC provider's issuer URL (discovery is fetched from `<issuer>/.well-known/openid-configuration`). |
 | `CELLAR_OIDC_CLIENT_ID` / `CELLAR_OIDC_CLIENT_SECRET` | *(none)* | From your provider's application/client registration. |

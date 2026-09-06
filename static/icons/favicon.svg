@@ -13,6 +13,10 @@
     </linearGradient>
   </defs>
 
+  <!-- background: matches the app's accent color, square to fill the
+       whole canvas edge to edge -->
+  <rect x="80" y="115" width="520" height="520" fill="#e1ad0e"/>
+
   <!-- glass + beer body: nonic-style silhouette -->
   <path d="M 200 150 C 185 165 178 195 195 230 L 185 260 C 150 320 155 420 190 480 L 195 620 L 485 620 L 490 480 C 525 420 530 320 495 260 L 485 230 C 502 195 495 165 480 150 C 460 130 220 130 200 150 Z"
         fill="url(#beerbody)" stroke="#8a5a25" stroke-width="3"/>
@@ -20,7 +24,7 @@
   <!-- foam cap: flattened, stays close to the glass rim's own width -->
   <path d="M 195 230 C 180 200 182 165 205 148 C 235 128 445 128 475 148 C 498 165 500 200 485 230
            C 470 245 440 255 400 258 C 370 260 320 262 280 258 C 245 255 210 245 195 230 Z"
-        fill="url(#foam)"/>
+        fill="url(#foam)" stroke="#8a5a25" stroke-width="18"/>
 
   <!-- foam bubble texture -->
   <circle cx="240" cy="165" r="7" fill="#c98f4d" opacity="0.5"/>
