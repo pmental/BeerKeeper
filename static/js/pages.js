@@ -1228,7 +1228,7 @@ const Pages = (() => {
   }
 
   async function cellar(root, ctx) {
-    if (!ctx.user) {
+    if (!ctx.singleUserMode && !ctx.user) {
       location.hash = "#/login";
       return;
     }
@@ -1283,7 +1283,7 @@ const Pages = (() => {
           <button data-val="compact" class="${viewMode === "compact" ? "active" : ""}">Compact</button>
         </div>
         <div class="spacer"></div>
-        ${ctx.account.trading_enabled ? `<a class="btn btn-ghost btn-sm" href="#/u/${encodeURIComponent(ctx.user)}/trades">Trade list</a>` : ""}
+        ${!ctx.singleUserMode && ctx.account.trading_enabled ? `<a class="btn btn-ghost btn-sm" href="#/u/${encodeURIComponent(ctx.user)}/trades">Trade list</a>` : ""}
       </div>
       <div id="entries">${spinnerHtml()}</div>
     `;
@@ -2171,7 +2171,7 @@ const Pages = (() => {
   }
 
   async function consumed(root, ctx) {
-    if (!ctx.user) {
+    if (!ctx.singleUserMode && !ctx.user) {
       location.hash = "#/login";
       return;
     }

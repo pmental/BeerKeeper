@@ -223,7 +223,12 @@ const App = (() => {
 
   async function init() {
     Theme.init();
-    await Promise.all([refreshUser(), refreshAuthConfig()]);
+    // refreshUser() needs to know singleUserMode before it runs (it
+    // decides whether to fetch the account with no token at all) - so
+    // this can't be a Promise.all, or refreshUser() reads the stale
+    // pre-fetch default and skips fetching the account entirely.
+    await refreshAuthConfig();
+    await refreshUser();
     router();
     window.addEventListener("hashchange", router);
 
