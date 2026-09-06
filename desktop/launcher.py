@@ -70,7 +70,19 @@ def main() -> None:
     from app.main import app  # imported only now, after env vars above are set
 
     port = _free_port()
-    config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning")
+    config = uvicorn.Config(
+        app,
+        host="127.0.0.1",
+        port=port,
+        log_level="warning",
+        # Explicit, not "auto": this app has no websocket routes and
+        # doesn't need uvloop's extra throughput for a single local user,
+        # so there's no reason to bundle uvloop/httptools/websockets into
+        # the packaged build at all - see desktop/beerkeeper.spec's
+        # excludes list, which this pairs with.
+        loop="asyncio",
+        http="h11",
+    )
     server = uvicorn.Server(config)
 
     server_thread = threading.Thread(target=server.run, daemon=True)

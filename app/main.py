@@ -16,7 +16,7 @@ from app.beer_styles import migrate_beer_styles_if_needed
 from app.email import encrypt_existing_smtp_password_if_needed
 from app.admin_bootstrap import ensure_instance_settings, ensure_admin_exists, ensure_local_user_exists
 from app.routers import auth as auth_router
-from app.routers import beers, cellar, consumption, account, public, import_export, oidc, beer_styles, wanted, admin
+from app.routers import beers, cellar, consumption, account, public, import_export, beer_styles, wanted, admin
 
 # Must run before create_all/engine touches the database file at all - a
 # staged restore (see app/backup.py) replaces that file outright, and
@@ -120,9 +120,15 @@ async def security_headers(request, call_next):
 # equivalent in single-user desktop mode - there's nobody to log in as
 # besides the one local user (auto-attached to every request, see
 # deps.py), nobody else to share a cellar or trade list with, and no SSO
-# provider to redirect to. Leaving them unmounted rather than merely
-# unused keeps that true at the routing level too, not just in the UI.
+# provider to redirect to. oidc is imported here, deferred rather than at
+# the top of the file with everything else, specifically so a desktop
+# build never pulls authlib/httpx and their dependency chain in at all -
+# a real, meaningful chunk of the packaged app's size for a feature it
+# can never use. Leaving auth/public unmounted (rather than merely
+# unused) keeps that true at the routing level too, not just in the UI.
 if not config.SINGLE_USER_MODE:
+    from app.routers import oidc
+
     app.include_router(auth_router.router)
     app.include_router(oidc.router)
     app.include_router(public.router)

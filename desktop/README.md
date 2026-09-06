@@ -87,8 +87,28 @@ Save-As dialog via pywebview's own file-dialog API and a tiny JS hook
 instead of relying on the browser's default download handling. Worth
 knowing about now rather than assuming it'll just work.
 
-## Files in this folder
+## About the app's size
 
-- `launcher.py` - the actual desktop entry point (see its own comments)
+A packaged onedir build lands somewhere in the neighborhood of 50-60MB.
+That's normal for this kind of app, not a sign of something wrong -
+it's a full Python interpreter plus SQLAlchemy, cryptography, and the
+WebView2/.NET bridge that lets the window render, and none of those
+compress much further. A few things were already trimmed out
+specifically for the desktop build, since they're genuinely unused in
+single-user mode: the OIDC/SSO login path (`authlib`, `httpx`, and their
+own dependency chains) is no longer even imported when
+`CELLAR_SINGLE_USER_MODE` is set (see the comment in `app/main.py`), and
+`uvicorn`'s hot-reload/websocket extras (`uvloop`, `httptools`,
+`websockets`, `watchfiles`) are excluded from the bundle in
+`beerkeeper.spec` and pinned off explicitly in `launcher.py`, since this
+app has no websocket routes and a packaged build never hot-reloads.
+
+If your build comes out noticeably larger than that, the most likely
+cause is unrelated packages leaking in from a Python environment that
+has more than just this repo's two requirements files installed in it -
+build from a clean virtualenv with only `requirements.txt` and
+`desktop\requirements-desktop.txt`, nothing else, to avoid that.
+
+## Files in this folder- `launcher.py` - the actual desktop entry point (see its own comments)
 - `requirements-desktop.txt` - pywebview, platformdirs, pyinstaller
 - `beerkeeper.spec` - the PyInstaller build spec
