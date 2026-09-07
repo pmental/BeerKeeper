@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.74** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.75** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -31,7 +31,7 @@ CDN calls. No third-party accounts, analytics, or API keys required.
   date, searchable by beer name, in imperial or metric units (metric by
   default)
 - Autocomplete for beer, brewery, and style, backed by a shared database
-  that grows as bottles are added, plus 10,400+ pre-populated breweries —
+  that grows as bottles are added, plus 10,000+ pre-populated breweries —
   see "Pre-populated breweries" below
 - Optional trading labels and a shareable wanted list — see "Trading and
   wanted lists" below
@@ -44,31 +44,38 @@ CDN calls. No third-party accounts, analytics, or API keys required.
 
 ## Quick start (Docker)
 
-1. Copy the env template and fill in a secret key:
+1. Download [`docker-compose.yml`](docker-compose.yml) and
+   [`.env.example`](.env.example) into an empty folder:
 
    ```bash
-   cp .env.example .env
+   curl -O https://raw.githubusercontent.com/pmental/BeerKeeper/main/docker-compose.yml
+   curl -o .env https://raw.githubusercontent.com/pmental/BeerKeeper/main/.env.example
+   ```
+
+2. Generate a secret key and paste it into `.env`:
+
+   ```bash
    python3 -c "import secrets; print(secrets.token_hex(32))"
    # paste the output as CELLAR_SECRET_KEY= in .env
    ```
 
-2. Build and run:
+3. Run it:
 
    ```bash
-   docker compose up -d --build
+   docker compose up -d
    ```
 
-3. Open `http://localhost:8000` (or whatever `CELLAR_PORT` you set) and
+4. Open `http://localhost:8000` (or whatever `CELLAR_PORT` you set) and
    create an account.
 
 Your data lives in the `cellar-data` Docker volume (a SQLite file at
-`/data/cellar.db` inside the container), so it survives rebuilds and
+`/data/cellar.db` inside the container), so it survives upgrades and
 restarts. Put a reverse proxy (Caddy, Nginx, Traefik) in front for a real
 domain and HTTPS.
 
 ## Running without Docker
 
-Requires Python 3.11+.
+Python 3.14.7+ recommended.
 
 ```bash
 pip install -r requirements.txt
@@ -186,7 +193,7 @@ typing something not on the list is always fine.
 
 ## Pre-populated breweries
 
-The database starts with 10,400+ real, currently-operating breweries — a hand-picked starting set (Swedish craft breweries, major American and Belgian names, cider makers and meaderies, and a spread across the rest of Europe), plus a bulk import from [Open Brewery DB](https://www.openbrewerydb.org/) covering the US and 20+ other countries.
+The database starts with 10,000+ real, currently-operating breweries — a hand-picked starting set (Swedish craft breweries, major American and Belgian names, cider makers and meaderies, and a spread across the rest of Europe), plus a bulk import from [Open Brewery DB](https://www.openbrewerydb.org/) covering the US and 20+ other countries.
 
 Seeded once, then managed from the admin page's "Breweries" panel —
 rename, delete (once nothing references it), add, or bulk import/export
@@ -195,9 +202,19 @@ Source list for the initial seed: `app/breweries_default.txt`.
 
 ## Upgrading an existing deployment
 
-Pull the new code and rebuild/restart — `docker compose up -d --build`
-(or the non-Docker equivalent). New database columns/tables are added
-automatically on startup; existing data is untouched.
+Pull the latest published image and restart:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+New database columns/tables are added automatically on startup; existing
+data is untouched.
+
+If you'd rather build from source than use the published image, replace
+`image:` in `docker-compose.yml` with `build: .` and use
+`docker compose up -d --build`.
 
 **Deploy from the same folder you originally used** — Docker Compose
 derives its data volume name from the directory you run it in unless

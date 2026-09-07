@@ -70,29 +70,14 @@ audit trail.
 
 ## Dependencies
 
-- `requirements.txt` pins this app's own direct dependencies, but a
-  pinned direct dependency doesn't pin what *it* depends on - FastAPI's
-  own constraint on Starlette, for example, is `starlette>=0.46.0` with
-  no upper bound, a range that includes versions vulnerable to
-  CVE-2026-48710 ("BadHost"), an unauthenticated auth bypass. Starlette
-  is pinned directly here for that reason, rather than left to whatever
-  FastAPI happens to allow.
+- `requirements.txt` pins direct dependencies, but not what they in
+  turn depend on - FastAPI's own Starlette constraint, for example,
+  has no upper bound and permits versions vulnerable to CVE-2026-48710
+  ("BadHost"), an unauthenticated auth bypass. Starlette is pinned
+  directly here for that reason.
 - `requirements-lock.txt` pins the complete resolved dependency tree,
   transitive packages included, and is what the Docker build actually
-  installs from - a build is reproducible instead of depending on
-  whichever versions happen to be latest on the day it's built.
-- `cryptography` is kept current with upstream security releases -
-  most recently updated to 50.0.1, fixing CVE-2026-69248 and
-  CVE-2026-69249 (a certificate-chain wildcard-constraint bypass and a
-  chain-validation denial-of-service), both affecting every version
-  from 46.0.7 through 48.0.0.
-- The Docker image's base is `python:3.14-slim`, the currently
-  actively-maintained release line - most CVEs a scanner flags in a
-  Python base image are Debian/glibc-level OS package issues rather
-  than the interpreter itself, and are fixed by rebuilding against the
-  official image's periodic security rebuilds rather than by changing
-  Python version, but staying on the current line keeps it furthest
-  from end-of-life either way.
+  installs from, for reproducible builds.
 
 ## Reporting an issue
 

@@ -1,69 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="80 115 520 520">
-  <defs>
-    <linearGradient id="beerbody" x1="0" y1="0" x2="1" y2="0.3">
-      <stop offset="0%" stop-color="#2a1508"/>
-      <stop offset="12%" stop-color="#0a0604"/>
-      <stop offset="55%" stop-color="#050302"/>
-      <stop offset="88%" stop-color="#0a0604"/>
-      <stop offset="100%" stop-color="#2a1508"/>
-    </linearGradient>
-    <linearGradient id="foam" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0%" stop-color="#c98f4d"/>
-      <stop offset="100%" stop-color="#e8c398"/>
-    </linearGradient>
-  </defs>
-
-  <!-- background: matches the app's accent color, square to fill the
-       whole canvas edge to edge -->
-  <rect x="80" y="115" width="520" height="520" fill="#e1ad0e"/>
-
-  <!-- glass + beer body: nonic-style silhouette -->
-  <path d="M 200 150 C 185 165 178 195 195 230 L 185 260 C 150 320 155 420 190 480 L 195 620 L 485 620 L 490 480 C 525 420 530 320 495 260 L 485 230 C 502 195 495 165 480 150 C 460 130 220 130 200 150 Z"
-        fill="url(#beerbody)" stroke="#8a5a25" stroke-width="3"/>
-
-  <!-- foam cap: flattened, stays close to the glass rim's own width -->
-  <path d="M 195 230 C 180 200 182 165 205 148 C 235 128 445 128 475 148 C 498 165 500 200 485 230
-           C 470 245 440 255 400 258 C 370 260 320 262 280 258 C 245 255 210 245 195 230 Z"
-        fill="url(#foam)" stroke="#8a5a25" stroke-width="18"/>
-
-  <!-- foam bubble texture -->
-  <circle cx="240" cy="165" r="7" fill="#c98f4d" opacity="0.5"/>
-  <circle cx="290" cy="150" r="8" fill="#c98f4d" opacity="0.5"/>
-  <circle cx="340" cy="145" r="7" fill="#c98f4d" opacity="0.5"/>
-  <circle cx="395" cy="148" r="6" fill="#c98f4d" opacity="0.5"/>
-  <circle cx="440" cy="160" r="7" fill="#c98f4d" opacity="0.5"/>
-  <circle cx="265" cy="190" r="6" fill="#c98f4d" opacity="0.45"/>
-  <circle cx="320" cy="180" r="7" fill="#c98f4d" opacity="0.45"/>
-  <circle cx="375" cy="185" r="6" fill="#c98f4d" opacity="0.45"/>
-  <circle cx="420" cy="195" r="6" fill="#c98f4d" opacity="0.45"/>
-  <circle cx="230" cy="215" r="5" fill="#c98f4d" opacity="0.4"/>
-  <circle cx="330" cy="222" r="6" fill="#c98f4d" opacity="0.4"/>
-  <circle cx="400" cy="218" r="5" fill="#c98f4d" opacity="0.4"/>
-  <circle cx="300" cy="140" r="6" fill="#f6dcb8" opacity="0.75"/>
-  <circle cx="360" cy="136" r="5" fill="#f6dcb8" opacity="0.7"/>
-  <circle cx="245" cy="155" r="4" fill="#f6dcb8" opacity="0.65"/>
-
-  <!-- glass rim line where foam meets the visible beer -->
-  <rect x="195" y="230" width="290" height="28" fill="#c9974f" opacity="0.9"/>
-
-  <!-- glass shine -->
-  <rect x="205" y="235" width="26" height="360" fill="#ffffff" opacity="0.06"/>
-  <rect x="445" y="235" width="22" height="360" fill="#ffffff" opacity="0.05"/>
-
-  <!-- condensation droplets -->
-  <g fill="#3a2a18" opacity="0.5">
-    <circle cx="230" cy="310" r="7"/><circle cx="215" cy="360" r="5"/><circle cx="255" cy="400" r="9"/>
-    <circle cx="200" cy="430" r="6"/><circle cx="270" cy="460" r="5"/><circle cx="225" cy="500" r="8"/>
-    <circle cx="260" cy="540" r="6"/><circle cx="210" cy="570" r="5"/><circle cx="300" cy="330" r="6"/>
-    <circle cx="330" cy="380" r="5"/><circle cx="310" cy="440" r="7"/><circle cx="350" cy="490" r="5"/>
-    <circle cx="320" cy="530" r="6"/><circle cx="360" cy="560" r="5"/><circle cx="420" cy="320" r="6"/>
-    <circle cx="450" cy="370" r="8"/><circle cx="405" cy="410" r="5"/><circle cx="460" cy="440" r="6"/>
-    <circle cx="430" cy="480" r="5"/><circle cx="470" cy="520" r="7"/><circle cx="440" cy="560" r="5"/>
-    <circle cx="380" cy="340" r="5"/><circle cx="390" cy="590" r="6"/><circle cx="250" cy="600" r="5"/>
-  </g>
-  <g fill="#e8c398" opacity="0.6">
-    <circle cx="228" cy="308" r="2"/><circle cx="253" cy="398" r="2.5"/><circle cx="223" cy="498" r="2"/>
-    <circle cx="308" cy="438" r="2"/><circle cx="448" cy="368" r="2.5"/><circle cx="468" cy="518" r="2"/>
-    <circle cx="328" cy="378" r="1.5"/><circle cx="403" cy="408" r="1.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- BeerKeeper monogram. The "BK" is the app's own display face
+       (Fraunces Black), converted to outlines rather than left as <text>
+       so it renders identically everywhere - an SVG favicon that depends
+       on a font is at the mercy of whether the viewer happens to have
+       it. Colours mirror the wordmark in the header: cream "Beer", gold
+       "Keeper", on the dark-theme background. -->
+  <rect width="512" height="512" fill="#16110c"/>
+  <g transform="translate(53.296,341.144) scale(0.121634)">
+    <path fill="#f2e8d5" d="M1510 -335Q1510 -185 1380.5 -92.5Q1251 0 980 0H172Q129 0 108.5 -18.0Q88 -36 88 -66Q88 -119 139 -139L178 -153Q204 -163 216.5 -178.0Q229 -193 229 -218V-1182Q229 -1207 216.5 -1222.0Q204 -1237 178 -1247L139 -1261Q88 -1281 88 -1334Q88 -1365 108.5 -1382.5Q129 -1400 172 -1400H803Q999 -1400 1139.0 -1348.0Q1279 -1296 1354.5 -1203.0Q1430 -1110 1430 -985Q1430 -884 1369.5 -806.5Q1309 -729 1194.0 -685.0Q1079 -641 915 -641L961 -682Q1124 -682 1247.5 -638.5Q1371 -595 1440.5 -516.5Q1510 -438 1510 -335ZM822 -586H567V-694H774Q848 -694 897.5 -722.0Q947 -750 971.5 -809.0Q996 -868 996 -958Q996 -1056 963.0 -1126.0Q930 -1196 868.0 -1234.5Q806 -1273 720 -1273H691V-244Q691 -184 725.0 -155.5Q759 -127 821 -127H873Q929 -127 969.5 -153.0Q1010 -179 1032.5 -229.0Q1055 -279 1055 -350Q1055 -461 993.0 -523.5Q931 -586 822 -586Z"/>
+    <path fill="#e1ad0e" d="M2106 -574 2609 -1047Q2664 -1099 2682.0 -1138.5Q2700 -1178 2688.0 -1206.0Q2676 -1234 2639 -1250L2610 -1263Q2585 -1275 2572.5 -1291.5Q2560 -1308 2560 -1334Q2560 -1365 2580.5 -1382.5Q2601 -1400 2644 -1400H3087Q3130 -1400 3150.5 -1382.5Q3171 -1365 3171 -1334Q3171 -1307 3155.5 -1292.5Q3140 -1278 3097 -1259Q3083 -1253 3067.0 -1243.5Q3051 -1234 3023.5 -1212.0Q2996 -1190 2948.5 -1147.5Q2901 -1105 2822 -1034L2166 -443ZM2301 -698 2657 -994 3116 -223Q3140 -183 3158.5 -167.0Q3177 -151 3196 -145Q3223 -131 3234.0 -111.0Q3245 -91 3245 -66Q3245 -36 3224.5 -18.0Q3204 0 3161 0H2595Q2552 0 2531.5 -18.0Q2511 -36 2511 -67Q2511 -93 2523.0 -110.5Q2535 -128 2553 -135L2580 -145Q2598 -152 2597.5 -170.5Q2597 -189 2573 -230ZM2237 -218Q2237 -193 2246.5 -178.0Q2256 -163 2278 -153L2307 -139Q2337 -124 2347.5 -108.0Q2358 -92 2358 -66Q2358 -36 2337.5 -18.0Q2317 0 2274 0H1717Q1674 0 1653.5 -18.0Q1633 -36 1633 -66Q1633 -119 1684 -139L1723 -153Q1749 -162 1761.5 -177.5Q1774 -193 1774 -218V-1182Q1774 -1207 1761.5 -1222.5Q1749 -1238 1723 -1247L1684 -1261Q1633 -1281 1633 -1334Q1633 -1365 1653.5 -1382.5Q1674 -1400 1717 -1400H2293Q2336 -1400 2356.5 -1382.5Q2377 -1365 2377 -1334Q2377 -1281 2326 -1261L2288 -1247Q2263 -1238 2250.0 -1222.5Q2237 -1207 2237 -1182Z"/>
   </g>
 </svg>

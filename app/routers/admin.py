@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app import backup, config, models, schemas
 from app.auth import hash_password
-from app.database import get_db, ilike_unicode
+from app.database import get_db, ilike_unicode, search_unicode
 from app.deps import require_admin
 from app.crypto import encrypt_secret
 from app.csv_utils import csv_safe
@@ -266,7 +266,7 @@ def list_breweries_admin(
         .group_by(models.Brewery.id)
     )
     if q:
-        query = query.filter(ilike_unicode(models.Brewery.name, f"%{q}%"))
+        query = query.filter(search_unicode(models.Brewery.name, f"%{q}%"))
     rows = query.order_by(models.Brewery.name).limit(200).all()
     return [_serialize_brewery(b, count) for b, count in rows]
 
@@ -441,7 +441,7 @@ def list_beers_admin(
     query = db.query(models.Beer).options(joinedload(models.Beer.brewery))
     if q:
         query = query.join(models.Brewery).filter(
-            or_(ilike_unicode(models.Beer.name, f"%{q}%"), ilike_unicode(models.Brewery.name, f"%{q}%"))
+            or_(search_unicode(models.Beer.name, f"%{q}%"), search_unicode(models.Brewery.name, f"%{q}%"))
         )
     beers = query.order_by(models.Beer.name).limit(200).all()
     usage_counts = _beer_usage_counts(db, [b.id for b in beers])
@@ -623,7 +623,7 @@ def list_beer_styles_admin(
 ):
     query = db.query(models.BeerStyle)
     if q:
-        query = query.filter(ilike_unicode(models.BeerStyle.name, f"%{q}%"))
+        query = query.filter(search_unicode(models.BeerStyle.name, f"%{q}%"))
     # Alphabetical here, unlike the public autocomplete's preserved
     # category order (see beer_styles.py) - finding a specific style to
     # edit or delete matters more here than browsing by category.

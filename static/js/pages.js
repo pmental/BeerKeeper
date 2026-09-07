@@ -602,7 +602,39 @@ const Pages = (() => {
                 };
                 if (!payload.beer.brewery_id && !payload.beer.new_brewery_name) throw new Error("Enter a brewery name.");
               }
-              await Api.addEntry(payload);
+              // Optimistic add: close the modal and hand the caller a
+              // provisional entry plus the in-flight request, rather than
+              // blocking here until the server answers. Filling in this
+              // form takes long enough that a phone's radio and idle
+              // connection often go cold, so this one request can cost
+              // seconds of handshake before any data moves - which used
+              // to freeze the modal for the whole wait. The caller shows
+              // the provisional entry immediately and reconciles (or
+              // rolls it back) when the request settles.
+              const provisional = {
+                id: nextPendingId--,
+                _pending: true,
+                quantity: payload.quantity,
+                location: payload.location,
+                custom_location: payload.custom_location,
+                size_oz: payload.size_oz,
+                bottle_date: payload.bottle_date,
+                best_before: payload.best_before,
+                batch_notes: payload.batch_notes,
+                trade_status: payload.trade_status,
+                beer: {
+                  id: payload.beer_id ?? null,
+                  name: fd.get("beer_search")?.trim() || "",
+                  style: fd.get("style")?.trim() || null,
+                  abv: fd.get("abv") ? Number(fd.get("abv")) : null,
+                  reference_url: fd.get("reference_url")?.trim() || null,
+                  brewery: { name: fd.get("new_brewery_name")?.trim() || "" },
+                },
+              };
+              close();
+              toast("Added to your cellar.");
+              onSaved({ pending: provisional, promise: Api.addEntry(payload) });
+              return;
             }
             close();
             toast(entry ? "Bottle updated." : "Added to your cellar.");
@@ -825,6 +857,10 @@ const Pages = (() => {
     return "";
   }
 
+  // Ids for optimistically-inserted entries awaiting confirmation.
+  // Negative so they can never collide with a real server-assigned id.
+  let nextPendingId = -1;
+
   function entryCardHtml(entry, account, { editable, compact = false }) {
     const metaBits = [];
     if (!compact && entry.beer.style) metaBits.push(escapeHtml(entry.beer.style));
@@ -835,7 +871,13 @@ const Pages = (() => {
 
     const isWantedOnly = entry.quantity === 0 && entry.trade_status === "iso";
 
-    const actions = editable
+    // An optimistically-inserted entry the server hasn't confirmed yet.
+    // Shown right away so adding a bottle feels instant on a slow phone
+    // connection, but with no actions - it has no real id yet, so +1 /
+    // Drink / Edit / Del would have nothing to act on.
+    const isPending = entry._pending === true;
+
+    const actions = editable && !isPending
       ? `<div class="entry-actions">
            <div class="row">
              <button class="btn btn-icon" data-act="add" title="Add one to stock">&plus;1</button>
@@ -861,7 +903,7 @@ const Pages = (() => {
         : "";
 
     return `
-      <div class="entry-card" data-entry-id="${entry.id}">
+      <div class="entry-card${isPending ? " entry-pending" : ""}" data-entry-id="${entry.id}">
         <div class="entry-main">
           <h3>${
       entry.beer.reference_url
@@ -871,7 +913,7 @@ const Pages = (() => {
       isDrinkBySoon(entry.best_before)
         ? `<span class="drinkby-alert" title="Drink by ${escapeHtml(fmtDate(entry.best_before))}">!</span>`
         : ""
-    }${notesIconHtml}</h3>
+    }${notesIconHtml}${isPending ? `<span class="pending-note">Saving&hellip;</span>` : ""}</h3>
           <div class="entry-meta">
             <span>${escapeHtml(entry.beer.brewery.name)}</span>
             ${metaBits.map((m) => `<span class="dot">&middot;</span><span>${m}</span>`).join("")}
@@ -1375,7 +1417,29 @@ const Pages = (() => {
       }
     }
 
-    async function load() {
+    async function load(opts) {
+      // Optimistic add: show the provisional entry straight away, then
+      // swap in the real one once the server confirms it - or take it
+      // back out if the request failed, so the list never keeps a bottle
+      // that didn't actually save.
+      if (opts && opts.pending && opts.promise) {
+        allEntries = [opts.pending, ...allEntries];
+        renderEntries();
+        let saved;
+        try {
+          saved = await opts.promise;
+        } catch (e) {
+          allEntries = allEntries.filter((x) => x.id !== opts.pending.id);
+          renderEntries();
+          toast(`Couldn't save that bottle: ${e.message}`, "error");
+          return;
+        }
+        const i = allEntries.findIndex((x) => x.id === opts.pending.id);
+        if (i !== -1) allEntries[i] = saved;
+        renderEntries();
+        return;
+      }
+
       const container = root.querySelector("#entries");
       container.innerHTML = spinnerHtml();
       try {

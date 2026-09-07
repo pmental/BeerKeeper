@@ -665,6 +665,21 @@ textarea.input {
   gap: 10px;
 }
 
+/* An entry shown before the server has confirmed it - deliberately
+   muted, so an optimistically-added bottle reads as "not settled yet"
+   rather than being indistinguishable from a saved one. */
+.entry-pending {
+  opacity: 0.6;
+}
+
+.pending-note {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--text-dim);
+}
+
 .entry-card {
   background: var(--bg-elevated);
   border: 1px solid var(--border);

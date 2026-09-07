@@ -3,7 +3,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app import models, schemas
-from app.database import get_db, ilike_unicode
+from app.database import get_db, ilike_unicode, search_unicode
 from app.deps import get_current_user
 from app.url_utils import sanitize_url
 
@@ -93,7 +93,7 @@ def search_breweries(
 ):
     query = db.query(models.Brewery)
     if q:
-        query = query.filter(ilike_unicode(models.Brewery.name, f"%{q}%"))
+        query = query.filter(search_unicode(models.Brewery.name, f"%{q}%"))
 
     recency = _user_brewery_recency(db, current_user.id)
     return _search_with_recency(query, models.Brewery, recency)
@@ -177,7 +177,7 @@ def search_beers(
         query = query.filter(models.Beer.brewery_id == brewery_id)
     if q:
         query = query.join(models.Brewery).filter(
-            or_(ilike_unicode(models.Beer.name, f"%{q}%"), ilike_unicode(models.Brewery.name, f"%{q}%"))
+            or_(search_unicode(models.Beer.name, f"%{q}%"), search_unicode(models.Brewery.name, f"%{q}%"))
         )
 
     recency = _user_beer_recency(db, current_user.id)
