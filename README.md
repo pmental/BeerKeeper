@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.75** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.76** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -121,10 +121,6 @@ created automatically on first boot.
 | `CELLAR_SMTP_FROM_NAME` | `BeerKeeper` | Display name on outgoing mail. |
 | `CELLAR_SMTP_SKIP_CERT_VERIFY` | `false` | Only for a self-signed internal relay — weakens that connection specifically. |
 
-If `CELLAR_PASSWORD_AUTH_ENABLED=false` and OIDC isn't properly configured,
-the app logs a startup warning and the login page shows a plain
-"sign-in unavailable" message rather than a broken form.
-
 ## OIDC / SSO
 
 Set `CELLAR_OIDC_ENABLED=true` plus `CELLAR_OIDC_ISSUER`,
@@ -171,7 +167,6 @@ Configure via the admin page's "Email (SMTP)" panel, or `CELLAR_SMTP_*`
 env vars (see `.env.example`) — env vars act as the default, the admin
 panel overrides per field. Requires `CELLAR_BASE_URL` to be set. Supports
 STARTTLS (default), implicit SSL, or no encryption, with optional auth.
-Uses Python's built-in `smtplib` — no extra dependency.
 
 ## Trading and wanted lists
 

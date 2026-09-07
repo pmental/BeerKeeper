@@ -12,7 +12,7 @@ from app.database import Base, engine, run_migrations, SessionLocal
 from app import models  # noqa: F401  (ensures models are registered before create_all)
 from app.backup import apply_pending_restore_if_any
 from app.brewery_seed import seed_breweries_if_needed
-from app.beer_styles import migrate_beer_styles_if_needed
+from app.beer_styles import migrate_beer_styles_if_needed, seed_beer_styles_if_needed
 from app.email import encrypt_existing_smtp_password_if_needed
 from app.admin_bootstrap import ensure_instance_settings, ensure_admin_exists
 from app.routers import auth as auth_router
@@ -32,6 +32,7 @@ _seed_db = SessionLocal()
 try:
     seed_breweries_if_needed(_seed_db)
     migrate_beer_styles_if_needed(_seed_db)
+    seed_beer_styles_if_needed(_seed_db)
     ensure_instance_settings(_seed_db)
     ensure_admin_exists(_seed_db)
     encrypt_existing_smtp_password_if_needed(_seed_db)

@@ -1,5 +1,6 @@
 # Changelog
 
+- **0.0.76** — Beer styles added to the bundled list in a new release now reach existing installs too, instead of only fresh ones - each style is recorded once it's been offered, so a style you've deleted isn't recreated on the next boot. Added two mead styles, Melomel and Metheglin.
 - **0.0.75** — Search boxes are now accent-insensitive: typing "bieres" finds "Bières de Chimay", "malmo" finds "Malmö". Duplicate-name checks stay accent-sensitive on purpose. Adding a bottle no longer waits on the server - the modal closes right away and the bottle appears immediately, greyed out until confirmed, then rolled back if the save fails. New favicon: a "BK" monogram in the app's own display font. Deduplicated the default brewery list, 10,455 entries down to 10,232, mostly pub chains that had one entry per venue; only affects fresh installs.
 
 - **0.0.74** — Updated `cryptography` to 50.0.1 (fixed two important-severity CVEs) and the Docker base image from Python 3.12 to 3.14.
