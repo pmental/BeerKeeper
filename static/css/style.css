@@ -213,8 +213,13 @@ button, input, select, textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--text);
-  font-size: 18px;
+  /* The glyph is an inline SVG using stroke="currentColor", not a Unicode
+     character, so it actually takes this colour. U+2630 (the obvious
+     choice) gets substituted from a colour emoji font on some platforms -
+     Opera Mobile among them - and a colour font carries its own palette,
+     so CSS `color` is silently ignored and the icon renders in whatever
+     the font decided. Same trap as the compact-view notes icon. */
+  color: var(--accent);
   line-height: 1;
   cursor: pointer;
 }
@@ -240,6 +245,13 @@ button, input, select, textarea {
   }
   .nav-toggle {
     display: flex;
+    /* Sits beside the brand, with this auto margin absorbing the slack so
+       the theme picker and account controls stay clustered on the right.
+       Without it the topbar's space-between spreads all four children
+       evenly and both the toggle and the theme picker end up stranded
+       mid-header. */
+    margin-right: auto;
+    margin-left: 6px;
   }
   .topbar {
     padding: 10px 14px;
