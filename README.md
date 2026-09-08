@@ -4,8 +4,8 @@
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
-database file, and a plain-JS frontend with no build step and no external
-CDN calls. No third-party accounts, analytics, or API keys required.
+database file, and a plain-JS frontend. No third-party accounts,
+analytics, or API keys required.
 
 - [Features](#features)
 - [Quick start (Docker)](#quick-start-docker)
@@ -136,9 +136,8 @@ need a scheme (`https://`/`http://`) — if omitted, the app assumes
 
 ## Admin
 
-The first person to ever register (or log in via OIDC, if that's your
-only auth method) automatically becomes an admin. Admins get an "Admin"
-link in the nav (`#/admin`) for:
+The first person to register (or log in via OIDC) automatically becomes
+an admin. Admins get an "Admin" link in the nav (`#/admin`) for:
 
 - Resetting any user's password directly
 - Creating or deleting accounts, promoting/demoting other admins
