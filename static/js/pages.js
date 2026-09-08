@@ -2228,7 +2228,11 @@ const Pages = (() => {
                 : escapeHtml(log.beer.name)
             }</strong> <span class="subtle">&mdash; ${escapeHtml(
             log.beer.brewery.name
-          )}</span> <span class="meta">${fmtDate(log.consumed_on)} &middot; &times;${log.quantity}</span></div>
+          )}</span> <span class="meta">${fmtDate(log.consumed_on)}${
+            log.quantity > 1 ? ` &middot; &times;${log.quantity}` : ""
+          }${
+            log.best_before ? ` &middot; (Drink by ${escapeHtml(fmtDate(log.best_before))})` : ""
+          }</span></div>
             ${log.rating ? `<div>${starsReadonly(log.rating)}</div>` : ""}
             ${log.note ? `<div class="subtle">${escapeHtml(log.note)}</div>` : ""}
           </div>`

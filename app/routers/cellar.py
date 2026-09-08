@@ -171,6 +171,7 @@ def drink_entry(
         consumed_on=payload.consumed_on or dt.date.today(),
         note=payload.note,
         rating=payload.rating,
+        best_before=entry.best_before,
     )
     db.add(log)
     entry.quantity -= payload.quantity

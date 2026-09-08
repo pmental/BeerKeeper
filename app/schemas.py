@@ -227,6 +227,7 @@ class ConsumptionLogOut(BaseModel):
     consumed_on: dt.date
     note: Optional[str] = None
     rating: Optional[float] = None
+    best_before: Optional[dt.date] = None
     beer: BeerOut
 
     class Config:

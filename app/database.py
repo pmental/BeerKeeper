@@ -206,6 +206,11 @@ def run_migrations():
                 if name not in settings_cols:
                     conn.execute(text(f"ALTER TABLE instance_settings ADD COLUMN {name} {sql_type}"))
 
+        if "consumption_logs" in inspector.get_table_names():
+            log_cols = {c["name"] for c in inspector.get_columns("consumption_logs")}
+            if "best_before" not in log_cols:
+                conn.execute(text("ALTER TABLE consumption_logs ADD COLUMN best_before DATE"))
+
         # beers.brewery_id was missing an index despite being a foreign
         # key filtered on directly (the "does this beer already exist for
         # this brewery" check, on every beer creation and CSV import row)

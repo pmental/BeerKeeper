@@ -161,6 +161,12 @@ class ConsumptionLog(Base):
     consumed_on = Column(Date, default=dt.date.today, nullable=False)
     note = Column(Text, nullable=True)
     rating = Column(Float, nullable=True)  # 0-5, half-star increments
+    # Copied off the cellar entry when the bottle is drunk, rather than
+    # looked up later: best_before lives on CellarEntry, and that row is
+    # often gone by the time you read the history (drinking the last
+    # bottle can delete it). Null for logs added by hand, and for
+    # anything drunk before this column existed.
+    best_before = Column(Date, nullable=True)
 
     created_at = Column(DateTime, default=utcnow, nullable=False)
 
