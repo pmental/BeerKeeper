@@ -668,6 +668,13 @@ textarea.input {
   background: var(--accent-wash);
   color: var(--accent-bright);
 }
+/* Light theme only - #f3c63f (this app's --accent-bright, shared with
+   dark theme) reads too washed-out against the light background on
+   these specifically; a darker gold holds up better without touching
+   the shared variable and its other 12 uses. */
+[data-theme="light"] .seg button.active {
+  color: #9c8132;
+}
 
 /* ============ Cellar entries (signature: bottle tally) ============ */
 
@@ -732,6 +739,12 @@ textarea.input {
   /* Without this, the general a:hover rule (higher specificity than a
      plain element selector) wins and underlines it anyway. */
   text-decoration: none;
+}
+/* Light theme only - beer links otherwise inherit the generic `a` rule's
+   color (--accent-bright). Deliberately --accent rather than a literal
+   value, so this tracks it if the accent color ever changes again. */
+[data-theme="light"] .beer-link {
+  color: var(--accent);
 }
 .entry-meta {
   font-size: 13px;
