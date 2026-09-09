@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.78** — see [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.78.** See [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -26,20 +26,20 @@ analytics, or API keys required.
 
 ## Features
 
-- Track bottles in your cellar and/or fridge — quantity, size, bottle
-  date, drink-by date, notes — sortable by beer, brewery, or drink-by
+- Track bottles in your cellar and/or fridge (quantity, size, bottle
+  date, drink-by date, notes), sortable by beer, brewery, or drink-by
   date, searchable by beer name, in imperial or metric units (metric by
   default)
 - Autocomplete for beer, brewery, and style, backed by a shared database
-  that grows as bottles are added, plus 10,000+ pre-populated breweries —
-  see "Pre-populated breweries" below
-- Optional trading labels and a shareable wanted list — see "Trading and
+  that grows as bottles are added, plus 10,000+ pre-populated breweries.
+  See "Pre-populated breweries" below
+- Optional trading labels and a shareable wanted list. See "Trading and
   wanted lists" below
 - Public cellar profiles with configurable privacy, a browse directory,
   and a recent-activity feed
 - Password login and/or OIDC/SSO, with an admin page for managing users
-  and instance settings — see "OIDC / SSO" and "Admin" below
-- Optional SMTP email for password resets and welcome emails — see
+  and instance settings. See "OIDC / SSO" and "Admin" below
+- Optional SMTP email for password resets and welcome emails. See
   "Email (SMTP)" below
 
 ## Quick start (Docker)
@@ -90,19 +90,19 @@ included, for reproducible builds - see that file's own header for how to
 regenerate it after changing `requirements.txt`.)
 
 Setting `CELLAR_SECRET_KEY` explicitly (as above) is recommended but not
-required — if it's unset, a random key is generated and saved to
+required: if it's unset, a random key is generated and saved to
 `CELLAR_DATA_DIR` on first boot instead. The Docker Compose path enforces
 setting it explicitly; running this way does not, so it's worth doing
 deliberately.
 
-The SQLite database and static assets need no separate setup — tables are
+The SQLite database and static assets need no separate setup: tables are
 created automatically on first boot.
 
 ## Configuration
 
 | Variable            | Default          | Notes                                                                 |
 |----------------------|------------------|------------------------------------------------------------------------|
-| `CELLAR_SECRET_KEY`  | *(auto-generated)* | Signs login sessions. If unset, a random key is generated and saved to your data directory on first boot — works, but losing that directory invalidates every login. **Set this explicitly in production.** |
+| `CELLAR_SECRET_KEY`  | *(auto-generated)* | Signs login sessions. If unset, a random key is generated and saved to your data directory on first boot, which works but loses every login if that directory is lost. **Set this explicitly in production.** |
 | `CELLAR_DATA_DIR`    | `/data`          | Where the SQLite database file lives.                                 |
 | `CELLAR_PORT`        | `8000`           | Host port, used by `docker-compose.yml` only.                         |
 | `CELLAR_PASSWORD_AUTH_ENABLED` | `true` | Set `false` to disable username/password login and registration (hides the forms too). |
@@ -119,7 +119,7 @@ created automatically on first boot.
 | `CELLAR_SMTP_SECURITY` | `starttls`   | `starttls`, `ssl` (implicit TLS), or `none`. |
 | `CELLAR_SMTP_USERNAME` / `CELLAR_SMTP_PASSWORD` | *(none)* | Leave blank if your relay doesn't require auth. |
 | `CELLAR_SMTP_FROM_NAME` | `BeerKeeper` | Display name on outgoing mail. |
-| `CELLAR_SMTP_SKIP_CERT_VERIFY` | `false` | Only for a self-signed internal relay — weakens that connection specifically. |
+| `CELLAR_SMTP_SKIP_CERT_VERIFY` | `false` | Only for a self-signed internal relay (weakens that connection specifically). |
 
 ## OIDC / SSO
 
@@ -131,7 +131,7 @@ page. Works alongside password login, or set
 
 Register `<CELLAR_BASE_URL>/api/auth/oidc/callback` as an allowed
 redirect URI with your provider. `CELLAR_OIDC_ISSUER` and `CELLAR_BASE_URL`
-need a scheme (`https://`/`http://`) — if omitted, the app assumes
+need a scheme (`https://`/`http://`): if omitted, the app assumes
 `https://` and logs a warning.
 
 ## Admin
@@ -152,18 +152,18 @@ an admin. Admins get an "Admin" link in the nav (`#/admin`) for:
 - Adding, renaming, or deleting beer styles in the shared suggestion
   list - see "Beer styles" below
 - Downloading a full backup of the whole instance (every account, not
-  just your own) as a single zip file, and restoring one — validated on
-  upload, applied at the next restart rather than live
+  just your own) as a single zip file, and restoring one (validated on
+  upload, applied at the next restart rather than live)
 
 You can't remove the last admin or delete your own account from this
 page. If a deployment ever ends up with zero admins, set
-`CELLAR_ADMIN_USERNAMES` to a comma-separated list and restart — each one
+`CELLAR_ADMIN_USERNAMES` to a comma-separated list and restart: each one
 is granted admin on every boot, as a recovery lever.
 
 ## Email (SMTP)
 
 Configure via the admin page's "Email (SMTP)" panel, or `CELLAR_SMTP_*`
-env vars (see `.env.example`) — env vars act as the default, the admin
+env vars (see `.env.example`); env vars act as the default, the admin
 panel overrides per field. Requires `CELLAR_BASE_URL` to be set. Supports
 STARTTLS (default), implicit SSL, or no encryption, with optional auth.
 
@@ -172,14 +172,14 @@ STARTTLS (default), implicit SSL, or no encryption, with optional auth.
 Turn on **Enable trading labels** (Account → Cellar preferences) to mark
 bottles **For Trade** or **In Search Of**, and to track beers you don't
 own yet on a **wanted list**. Once enabled, `#/u/<username>/trades` is a
-public, no-login page listing both — independent of your general cellar
+public, no-login page listing both, independent of your general cellar
 privacy setting, so you can keep your cellar private while still sharing
 just this list. Get the shareable link from Account or from the trade
 page itself.
 
 ## Beer styles
 
-The Style field suggests from a list as you type — a hand-picked default
+The Style field suggests from a list as you type: a hand-picked default
 set of ~105 styles, seeded into the database once on first boot. Managed
 from the admin page's "Beer Styles" panel from that point on: add,
 rename, or delete freely. Like the brewery list, it's just suggestions;
@@ -187,9 +187,9 @@ typing something not on the list is always fine.
 
 ## Pre-populated breweries
 
-The database starts with 10,000+ real, currently-operating breweries — a hand-picked starting set (Swedish craft breweries, major American and Belgian names, cider makers and meaderies, and a spread across the rest of Europe), plus a bulk import from [Open Brewery DB](https://www.openbrewerydb.org/) covering the US and 20+ other countries.
+The database starts with 10,000+ real, currently-operating breweries: a hand-picked starting set (Swedish craft breweries, major American and Belgian names, cider makers and meaderies, and a spread across the rest of Europe), plus a bulk import from [Open Brewery DB](https://www.openbrewerydb.org/) covering the US and 20+ other countries.
 
-Seeded once, then managed from the admin page's "Breweries" panel —
+Seeded once, then managed from the admin page's "Breweries" panel:
 rename, delete (once nothing references it), add, or bulk import/export
 as CSV.
 Source list for the initial seed: `app/breweries_default.txt`.
@@ -210,7 +210,7 @@ If you'd rather build from source than use the published image, replace
 `image:` in `docker-compose.yml` with `build: .` and use
 `docker compose up -d --build`.
 
-**Deploy from the same folder you originally used** — Docker Compose
+**Deploy from the same folder you originally used.** Docker Compose
 derives its data volume name from the directory you run it in unless
 pinned explicitly. If a fresh extract into a differently named folder
 points at an empty volume, run `docker volume ls` to find your real one
@@ -219,8 +219,8 @@ folder or update `volumes:` in `docker-compose.yml` to match.
 
 ## Backup and restore
 
-Easiest: the admin page's "Backup and restore" panel — downloads a single
-zip file with a snapshot of the whole database (validated on upload,
+Easiest: the admin page's "Backup and restore" panel, which downloads a
+single zip file with a snapshot of the whole database (validated on upload,
 restore applied on the next restart, not live).
 
 For a manual copy, everything lives in one file in your data
@@ -261,7 +261,7 @@ if one matches, otherwise creates it.
 - **Backend**: FastAPI + SQLAlchemy + SQLite (`app/`), JWT auth (plus
   optional OIDC via Authlib), one process serves both the JSON API
   (`/api/...`) and the static frontend.
-- **Frontend**: no framework, no build step — plain HTML/CSS/JS in
+- **Frontend**: no framework or build step, just plain HTML/CSS/JS in
   `static/`, hash-routed single-page app (`static/js/app.js` is the router,
   `pages.js` renders each screen, `api.js` wraps `fetch`, `theme.js` handles
   dark/light/system theme switching).
@@ -272,4 +272,4 @@ if one matches, otherwise creates it.
 
 ## License
 
-MIT — do whatever you'd like with it.
+MIT. Do whatever you'd like with it.
