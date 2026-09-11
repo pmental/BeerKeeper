@@ -1461,6 +1461,150 @@ const Pages = (() => {
     load();
   }
 
+  // --- Push notifications -------------------------------------------
+  //
+  // Nothing in here runs on page load. The service worker is registered
+  // and permission is requested only inside the toggle's change handler,
+  // so a user who never touches it never sees a permission prompt and
+  // never has a worker registered at all. Opting back out unregisters it
+  // again, leaving the browser as it was.
+
+  function pushSupported() {
+    return (
+      "serviceWorker" in navigator &&
+      "PushManager" in window &&
+      "Notification" in window &&
+      window.isSecureContext
+    );
+  }
+
+  function urlB64ToUint8Array(base64) {
+    // The VAPID key arrives base64url without padding; subscribe() wants
+    // raw bytes.
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const raw = atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
+    return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+  }
+
+  async function wirePushToggle(root) {
+    const row = root.querySelector("[data-push-row]");
+    const toggle = root.querySelector("[data-push-toggle]");
+    const help = root.querySelector("[data-push-help]");
+    if (!row || !toggle) return;
+
+    if (!pushSupported()) {
+      // Leave the row hidden rather than showing a control that can't
+      // work. Most often this is plain http on a LAN address, which
+      // isn't a secure context.
+      return;
+    }
+    row.style.display = "";
+
+    // getRegistration() only looks; it never registers anything.
+    let reg = await navigator.serviceWorker.getRegistration("/");
+    let sub = reg ? await reg.pushManager.getSubscription() : null;
+
+    // A local subscription isn't proof of anything on its own - the
+    // server row can have been pruned as expired, or cleared from
+    // another device. Ask whether this exact endpoint is still known,
+    // and if it isn't, tear the stale local one down so the toggle
+    // isn't claiming reminders that would never arrive.
+    if (sub) {
+      try {
+        const status = await Api.pushStatus(sub.endpoint);
+        if (!status.this_device) {
+          try {
+            await sub.unsubscribe();
+          } catch (e) {
+            /* best effort */
+          }
+          if (reg) await reg.unregister();
+          sub = null;
+          reg = null;
+        }
+      } catch (e) {
+        /* offline or similar - leave what's there alone */
+      }
+    }
+    toggle.checked = !!sub;
+
+    if (Notification.permission === "denied") {
+      toggle.disabled = true;
+      help.textContent =
+        "Blocked in your browser settings for this site. Allow notifications there first.";
+      return;
+    }
+
+    toggle.addEventListener("change", async () => {
+      if (toggle.checked) {
+        // Treated as a transaction: if any step fails, undo the ones
+        // that already succeeded. Otherwise a failed save leaves the
+        // browser subscribed while the server knows nothing, and the
+        // toggle would come back up switched on next time, promising
+        // reminders that could never arrive.
+        let newReg = null;
+        let newSub = null;
+        try {
+          const permission = await Notification.requestPermission();
+          if (permission !== "granted") {
+            toggle.checked = false;
+            help.textContent =
+              permission === "denied"
+                ? "Blocked in your browser settings for this site."
+                : "Permission wasn't granted, so nothing was enabled.";
+            return;
+          }
+          newReg = await navigator.serviceWorker.register("/sw.js");
+          await navigator.serviceWorker.ready;
+          const { key } = await Api.pushKey();
+          newSub = await newReg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlB64ToUint8Array(key),
+          });
+          await Api.pushSubscribe(newSub.toJSON(), navigator.userAgent.slice(0, 255));
+          reg = newReg;
+          sub = newSub;
+          toast("Reminders on for this device.");
+        } catch (e) {
+          if (newSub) {
+            try {
+              await newSub.unsubscribe();
+            } catch (err) {
+              /* best effort */
+            }
+          }
+          if (newReg) {
+            try {
+              await newReg.unregister();
+            } catch (err) {
+              /* best effort */
+            }
+          }
+          toggle.checked = false;
+          toast(e.message || "Couldn't enable notifications.", "error");
+        }
+      } else {
+        try {
+          if (sub) {
+            await Api.pushUnsubscribe(sub.endpoint);
+            await sub.unsubscribe();
+            sub = null;
+          }
+          // Tear the worker down too, so opting out leaves nothing
+          // registered rather than a dormant worker.
+          if (reg) {
+            await reg.unregister();
+            reg = null;
+          }
+          toast("Reminders off for this device.");
+        } catch (e) {
+          toggle.checked = true;
+          toast(e.message || "Couldn't turn notifications off.", "error");
+        }
+      }
+    });
+  }
+
   async function account(root, ctx) {
     if (!ctx.user) {
       location.hash = "#/login";
@@ -1493,6 +1637,35 @@ const Pages = (() => {
           ${toggleRow("show_fridge_column", "Track a separate fridge", "Turn off if you only track one shelf.", a.show_fridge_column)}
           ${toggleRow("show_location_column", "Track custom shelf / location", "Adds a free-text location field to each bottle.", a.show_location_column)}
           ${toggleRow("trading_enabled", "Enable trading labels", "Mark bottles as For Trade or In Search Of, and track beers you don't have yet on a wanted list.", a.trading_enabled)}
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:20px">
+        <h3>Drink-by reminders</h3>
+        <p class="subtle" style="margin-top:-4px">
+          Get told when bottles are approaching their drink-by date. Off unless you turn it on.
+        </p>
+        ${toggleRow("notify_drinkby_email", "Email me", "Sent to your account email address. Needs SMTP configured on this instance.", a.notify_drinkby_email)}
+        <div class="field" data-push-row style="display:none">
+          <div class="toggle-row">
+            <div>
+              <div class="label">Enable push notifications (this browser only).</div>
+              <div class="desc" data-push-help></div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-push-toggle />
+              <span class="track"></span>
+              <span class="thumb"></span>
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Warn me this far ahead</label>
+          <select class="input" data-days-select style="max-width:220px">
+            ${[7, 14, 30, 60, 90, 180]
+              .map((d) => `<option value="${d}"${a.notify_days_ahead === d ? " selected" : ""}>${d} days</option>`)
+              .join("")}
+          </select>
         </div>
       </div>
 
@@ -1585,6 +1758,22 @@ const Pages = (() => {
         }
       });
     });
+
+    const daysSelect = root.querySelector("[data-days-select]");
+    if (daysSelect)
+      daysSelect.addEventListener("change", async () => {
+        const previous = ctx.account.notify_days_ahead;
+        try {
+          const updated = await Api.patchAccount({ notify_days_ahead: Number(daysSelect.value) });
+          Object.assign(ctx.account, updated);
+          toast("Saved.");
+        } catch (e) {
+          toast(e.message, "error");
+          daysSelect.value = String(previous);
+        }
+      });
+
+    wirePushToggle(root);
 
     root.querySelectorAll("[data-select]").forEach((select) => {
       select.addEventListener("change", async () => {

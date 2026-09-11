@@ -79,6 +79,20 @@ const Api = (() => {
     },
     beerStyles: () => request("GET", "/api/beer-styles"),
 
+    pushKey: () => request("GET", "/api/push/key"),
+    pushStatus: (endpoint) =>
+      request("GET", "/api/push/status" + (endpoint ? `?endpoint=${encodeURIComponent(endpoint)}` : "")),
+    pushSubscribe: (sub, userAgent) =>
+      request("POST", "/api/push/subscribe", {
+        body: {
+          endpoint: sub.endpoint,
+          keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth },
+          user_agent: userAgent,
+        },
+      }),
+    pushUnsubscribe: (endpoint) =>
+      request("POST", "/api/push/unsubscribe", { body: { endpoint } }),
+
     listCellar: (sort, location, direction) => {
       const params = new URLSearchParams();
       if (sort) params.set("sort", sort);

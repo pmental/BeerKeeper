@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.78.** See [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.79.** See [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -120,6 +120,7 @@ created automatically on first boot.
 | `CELLAR_SMTP_USERNAME` / `CELLAR_SMTP_PASSWORD` | *(none)* | Leave blank if your relay doesn't require auth. |
 | `CELLAR_SMTP_FROM_NAME` | `BeerKeeper` | Display name on outgoing mail. |
 | `CELLAR_SMTP_SKIP_CERT_VERIFY` | `false` | Only for a self-signed internal relay (weakens that connection specifically). |
+| `CELLAR_VAPID_SUBJECT` | `mailto:admin@localhost` | Contact address sent to push services with each notification. Only relevant if anyone enables browser push. |
 
 ## OIDC / SSO
 

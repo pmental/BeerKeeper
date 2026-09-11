@@ -206,6 +206,20 @@ def run_migrations():
                 if name not in settings_cols:
                     conn.execute(text(f"ALTER TABLE instance_settings ADD COLUMN {name} {sql_type}"))
 
+        if "notify_drinkby_email" not in existing_cols:
+            conn.execute(
+                text("ALTER TABLE users ADD COLUMN notify_drinkby_email BOOLEAN DEFAULT 0 NOT NULL")
+            )
+        if "notify_days_ahead" not in existing_cols:
+            conn.execute(
+                text("ALTER TABLE users ADD COLUMN notify_days_ahead INTEGER DEFAULT 30 NOT NULL")
+            )
+
+        if "cellar_entries" in inspector.get_table_names():
+            entry_cols = {c["name"] for c in inspector.get_columns("cellar_entries")}
+            if "drinkby_notified_at" not in entry_cols:
+                conn.execute(text("ALTER TABLE cellar_entries ADD COLUMN drinkby_notified_at DATETIME"))
+
         if "consumption_logs" in inspector.get_table_names():
             log_cols = {c["name"] for c in inspector.get_columns("consumption_logs")}
             if "best_before" not in log_cols:
