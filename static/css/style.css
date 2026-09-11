@@ -456,6 +456,18 @@ footer.site-footer a {
   letter-spacing: 0.04em;
   margin-bottom: 6px;
 }
+/* Opts a specific label out of the uppercase treatment above, matching
+   .toggle-row .label's styling exactly (font-size, color, weight) rather
+   than just dropping the transform - built for short phrases like
+   "Default sort order", the uppercase style reads as shouting once
+   applied to a full sentence. */
+.field label.label-sentence-case {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+}
 .field-hint {
   font-size: 12px;
   color: var(--text-faint);

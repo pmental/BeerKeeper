@@ -80,7 +80,7 @@ const Pages = (() => {
       try {
         const results = await Api.searchBeers(q);
         if (!results.length) {
-          list.innerHTML = `<div class="suggest-item">No matches &mdash; a new beer will be created</div>`;
+          list.innerHTML = `<div class="suggest-item">No matches: a new beer will be created</div>`;
         } else {
           list.innerHTML = results
             .map(
@@ -653,7 +653,7 @@ const Pages = (() => {
   function openDrinkModal(entry, onDone) {
     const html = `
       <button class="modal-close" data-close>&times;</button>
-      <h2>Drink &mdash; ${escapeHtml(entry.beer.name)}</h2>
+      <h2>Drink: ${escapeHtml(entry.beer.name)}</h2>
       <p class="subtle">${escapeHtml(entry.beer.brewery.name)}${entry.beer.style ? " &middot; " + escapeHtml(entry.beer.style) : ""}</p>
       <form data-drink-form>
         <div class="field-row">
@@ -1016,7 +1016,7 @@ const Pages = (() => {
     root.innerHTML = `
       <div class="hero">
         <h1>Keep count of what's <span class="glow">aging in the dark</span>.</h1>
-        <p class="lede">A self-hosted tracker for your cellar and fridge &mdash; bottles, batches, tasting notes, and who's willing to trade.</p>
+        <p class="lede">A self-hosted tracker for your cellar and fridge: bottles, batches, tasting notes, and who's willing to trade.</p>
         <div class="hero-actions" id="hero-actions"></div>
       </div>
       <div class="section-label">Recently uncorked</div>
@@ -1034,7 +1034,7 @@ const Pages = (() => {
       const recent = await Api.recentActivity();
       const feed = root.querySelector("#feed");
       if (!recent.length) {
-        feed.innerHTML = `<div class="empty-note">Nothing logged yet &mdash; be the first to crack one open.</div>`;
+        feed.innerHTML = `<div class="empty-note">Nothing logged yet. Be the first to crack one open.</div>`;
       } else {
         feed.innerHTML = recent
           .map(
@@ -1660,7 +1660,7 @@ const Pages = (() => {
           </div>
         </div>
         <div class="field">
-          <label>Warn me this far ahead</label>
+          <label class="label-sentence-case">Notify when X days to drink-by date:</label>
           <select class="input" data-days-select style="max-width:220px">
             ${[7, 14, 30, 60, 90, 180]
               .map((d) => `<option value="${d}"${a.notify_days_ahead === d ? " selected" : ""}>${d} days</option>`)
@@ -1959,7 +1959,7 @@ const Pages = (() => {
             ? `<div class="feed-list">${data.tasting_notes
                 .map(
                   (n) => `<div class="feed-row" style="display:block">
-                    <div><span class="what"><strong>${escapeHtml(n.beer_name)}</strong> &mdash; ${escapeHtml(
+                    <div><span class="what"><strong>${escapeHtml(n.beer_name)}</strong> &middot; ${escapeHtml(
                     n.brewery_name
                   )}</span> <span class="meta">${fmtDate(n.consumed_on)}</span></div>
                     ${n.rating ? `<div>${starsReadonly(n.rating)}</div>` : ""}
@@ -2322,7 +2322,7 @@ const Pages = (() => {
   function openEditLogModal(log, onDone) {
     const html = `
       <button class="modal-close" data-close>&times;</button>
-      <h2>Edit &mdash; ${escapeHtml(log.beer.name)}</h2>
+      <h2>Edit: ${escapeHtml(log.beer.name)}</h2>
       <p class="subtle">${escapeHtml(log.beer.brewery.name)}</p>
       <form data-edit-log-form>
         <div class="field-row">
@@ -2415,7 +2415,7 @@ const Pages = (() => {
               log.beer.reference_url
                 ? `<a href="${escapeHtml(log.beer.reference_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(log.beer.name)}</a>`
                 : escapeHtml(log.beer.name)
-            }</strong> <span class="subtle">&mdash; ${escapeHtml(
+            }</strong> <span class="subtle">&middot; ${escapeHtml(
             log.beer.brewery.name
           )}</span> <span class="meta">${fmtDate(log.consumed_on)}${
             log.quantity > 1 ? ` &middot; &times;${log.quantity}` : ""
@@ -2668,8 +2668,8 @@ const Pages = (() => {
           </div>
           <div class="field-hint" style="margin-top:10px">
             Password login: ${currentSettings.password_auth_enabled ? "enabled" : "disabled"} &middot;
-            OIDC/SSO: ${currentSettings.oidc_enabled ? "enabled" : "disabled"}
-            &mdash; both are set via environment variables and need a restart to change. Email is configured below.
+            OIDC/SSO: ${currentSettings.oidc_enabled ? "enabled" : "disabled"}.
+            Both are set via environment variables and need a restart to change. Email is configured below.
           </div>
         `;
         panel.querySelector('[data-toggle="registration_enabled"]').addEventListener("change", async (e) => {
