@@ -217,6 +217,7 @@ class DrinkIn(BaseModel):
 
 class MoveIn(BaseModel):
     location: str = Field(pattern="^(cellar|fridge)$")
+    quantity: int = Field(default=1, ge=1)
 
 
 # ---------- Consumption log ----------
@@ -227,6 +228,7 @@ class ConsumptionLogOut(BaseModel):
     consumed_on: dt.date
     note: Optional[str] = None
     rating: Optional[float] = None
+    best_before: Optional[dt.date] = None
     beer: BeerOut
 
     class Config:
@@ -284,6 +286,8 @@ class AccountOut(BaseModel):
     cellar_public: bool
     notes_public: bool
     drinkby_public: bool
+    notify_drinkby_email: bool
+    notify_days_ahead: int
 
     class Config:
         from_attributes = True
@@ -305,6 +309,8 @@ class AccountPatch(BaseModel):
     cellar_public: Optional[bool] = None
     notes_public: Optional[bool] = None
     drinkby_public: Optional[bool] = None
+    notify_drinkby_email: Optional[bool] = None
+    notify_days_ahead: Optional[int] = Field(default=None, ge=1, le=365)
     email: Optional[EmailStr] = None
     # Required (and checked) only when email is being changed - a stolen
     # token shouldn't be enough on its own to redirect an account's

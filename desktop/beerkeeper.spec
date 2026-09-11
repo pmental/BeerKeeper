@@ -58,6 +58,14 @@ a = Analysis(
         "httptools",
         "websockets",
         "watchfiles",
+        # Deliberately NOT excluded: pywebpush (and its requests/py-vapid
+        # chain), even though web push may well not work inside a
+        # WebView2 window. app/notifications.py imports app/push.py at
+        # startup for the drink-by sweep loop, so excluding it would
+        # crash the app on boot rather than merely disabling a feature.
+        # The frontend already degrades gracefully on its own - see
+        # pushSupported() in static/js/pages.js, which hides the toggle
+        # entirely when the Push API isn't there.
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,

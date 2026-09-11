@@ -602,7 +602,39 @@ const Pages = (() => {
                 };
                 if (!payload.beer.brewery_id && !payload.beer.new_brewery_name) throw new Error("Enter a brewery name.");
               }
-              await Api.addEntry(payload);
+              // Optimistic add: close the modal and hand the caller a
+              // provisional entry plus the in-flight request, rather than
+              // blocking here until the server answers. Filling in this
+              // form takes long enough that a phone's radio and idle
+              // connection often go cold, so this one request can cost
+              // seconds of handshake before any data moves - which used
+              // to freeze the modal for the whole wait. The caller shows
+              // the provisional entry immediately and reconciles (or
+              // rolls it back) when the request settles.
+              const provisional = {
+                id: nextPendingId--,
+                _pending: true,
+                quantity: payload.quantity,
+                location: payload.location,
+                custom_location: payload.custom_location,
+                size_oz: payload.size_oz,
+                bottle_date: payload.bottle_date,
+                best_before: payload.best_before,
+                batch_notes: payload.batch_notes,
+                trade_status: payload.trade_status,
+                beer: {
+                  id: payload.beer_id ?? null,
+                  name: fd.get("beer_search")?.trim() || "",
+                  style: fd.get("style")?.trim() || null,
+                  abv: fd.get("abv") ? Number(fd.get("abv")) : null,
+                  reference_url: fd.get("reference_url")?.trim() || null,
+                  brewery: { name: fd.get("new_brewery_name")?.trim() || "" },
+                },
+              };
+              close();
+              toast("Added to your cellar.");
+              onSaved({ pending: provisional, promise: Api.addEntry(payload) });
+              return;
             }
             close();
             toast(entry ? "Bottle updated." : "Added to your cellar.");
@@ -825,6 +857,10 @@ const Pages = (() => {
     return "";
   }
 
+  // Ids for optimistically-inserted entries awaiting confirmation.
+  // Negative so they can never collide with a real server-assigned id.
+  let nextPendingId = -1;
+
   function entryCardHtml(entry, account, { editable, compact = false }) {
     const metaBits = [];
     if (!compact && entry.beer.style) metaBits.push(escapeHtml(entry.beer.style));
@@ -835,7 +871,13 @@ const Pages = (() => {
 
     const isWantedOnly = entry.quantity === 0 && entry.trade_status === "iso";
 
-    const actions = editable
+    // An optimistically-inserted entry the server hasn't confirmed yet.
+    // Shown right away so adding a bottle feels instant on a slow phone
+    // connection, but with no actions - it has no real id yet, so +1 /
+    // Drink / Edit / Del would have nothing to act on.
+    const isPending = entry._pending === true;
+
+    const actions = editable && !isPending
       ? `<div class="entry-actions">
            <div class="row">
              <button class="btn btn-icon" data-act="add" title="Add one to stock">&plus;1</button>
@@ -861,7 +903,7 @@ const Pages = (() => {
         : "";
 
     return `
-      <div class="entry-card" data-entry-id="${entry.id}">
+      <div class="entry-card${isPending ? " entry-pending" : ""}" data-entry-id="${entry.id}">
         <div class="entry-main">
           <h3>${
       entry.beer.reference_url
@@ -871,7 +913,7 @@ const Pages = (() => {
       isDrinkBySoon(entry.best_before)
         ? `<span class="drinkby-alert" title="Drink by ${escapeHtml(fmtDate(entry.best_before))}">!</span>`
         : ""
-    }${notesIconHtml}</h3>
+    }${notesIconHtml}${isPending ? `<span class="pending-note">Saving&hellip;</span>` : ""}</h3>
           <div class="entry-meta">
             <span>${escapeHtml(entry.beer.brewery.name)}</span>
             ${metaBits.map((m) => `<span class="dot">&middot;</span><span>${m}</span>`).join("")}
@@ -1375,7 +1417,29 @@ const Pages = (() => {
       }
     }
 
-    async function load() {
+    async function load(opts) {
+      // Optimistic add: show the provisional entry straight away, then
+      // swap in the real one once the server confirms it - or take it
+      // back out if the request failed, so the list never keeps a bottle
+      // that didn't actually save.
+      if (opts && opts.pending && opts.promise) {
+        allEntries = [opts.pending, ...allEntries];
+        renderEntries();
+        let saved;
+        try {
+          saved = await opts.promise;
+        } catch (e) {
+          allEntries = allEntries.filter((x) => x.id !== opts.pending.id);
+          renderEntries();
+          toast(`Couldn't save that bottle: ${e.message}`, "error");
+          return;
+        }
+        const i = allEntries.findIndex((x) => x.id === opts.pending.id);
+        if (i !== -1) allEntries[i] = saved;
+        renderEntries();
+        return;
+      }
+
       const container = root.querySelector("#entries");
       container.innerHTML = spinnerHtml();
       try {
@@ -1395,6 +1459,150 @@ const Pages = (() => {
     });
 
     load();
+  }
+
+  // --- Push notifications -------------------------------------------
+  //
+  // Nothing in here runs on page load. The service worker is registered
+  // and permission is requested only inside the toggle's change handler,
+  // so a user who never touches it never sees a permission prompt and
+  // never has a worker registered at all. Opting back out unregisters it
+  // again, leaving the browser as it was.
+
+  function pushSupported() {
+    return (
+      "serviceWorker" in navigator &&
+      "PushManager" in window &&
+      "Notification" in window &&
+      window.isSecureContext
+    );
+  }
+
+  function urlB64ToUint8Array(base64) {
+    // The VAPID key arrives base64url without padding; subscribe() wants
+    // raw bytes.
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const raw = atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
+    return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+  }
+
+  async function wirePushToggle(root) {
+    const row = root.querySelector("[data-push-row]");
+    const toggle = root.querySelector("[data-push-toggle]");
+    const help = root.querySelector("[data-push-help]");
+    if (!row || !toggle) return;
+
+    if (!pushSupported()) {
+      // Leave the row hidden rather than showing a control that can't
+      // work. Most often this is plain http on a LAN address, which
+      // isn't a secure context.
+      return;
+    }
+    row.style.display = "";
+
+    // getRegistration() only looks; it never registers anything.
+    let reg = await navigator.serviceWorker.getRegistration("/");
+    let sub = reg ? await reg.pushManager.getSubscription() : null;
+
+    // A local subscription isn't proof of anything on its own - the
+    // server row can have been pruned as expired, or cleared from
+    // another device. Ask whether this exact endpoint is still known,
+    // and if it isn't, tear the stale local one down so the toggle
+    // isn't claiming reminders that would never arrive.
+    if (sub) {
+      try {
+        const status = await Api.pushStatus(sub.endpoint);
+        if (!status.this_device) {
+          try {
+            await sub.unsubscribe();
+          } catch (e) {
+            /* best effort */
+          }
+          if (reg) await reg.unregister();
+          sub = null;
+          reg = null;
+        }
+      } catch (e) {
+        /* offline or similar - leave what's there alone */
+      }
+    }
+    toggle.checked = !!sub;
+
+    if (Notification.permission === "denied") {
+      toggle.disabled = true;
+      help.textContent =
+        "Blocked in your browser settings for this site. Allow notifications there first.";
+      return;
+    }
+
+    toggle.addEventListener("change", async () => {
+      if (toggle.checked) {
+        // Treated as a transaction: if any step fails, undo the ones
+        // that already succeeded. Otherwise a failed save leaves the
+        // browser subscribed while the server knows nothing, and the
+        // toggle would come back up switched on next time, promising
+        // reminders that could never arrive.
+        let newReg = null;
+        let newSub = null;
+        try {
+          const permission = await Notification.requestPermission();
+          if (permission !== "granted") {
+            toggle.checked = false;
+            help.textContent =
+              permission === "denied"
+                ? "Blocked in your browser settings for this site."
+                : "Permission wasn't granted, so nothing was enabled.";
+            return;
+          }
+          newReg = await navigator.serviceWorker.register("/sw.js");
+          await navigator.serviceWorker.ready;
+          const { key } = await Api.pushKey();
+          newSub = await newReg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlB64ToUint8Array(key),
+          });
+          await Api.pushSubscribe(newSub.toJSON(), navigator.userAgent.slice(0, 255));
+          reg = newReg;
+          sub = newSub;
+          toast("Reminders on for this device.");
+        } catch (e) {
+          if (newSub) {
+            try {
+              await newSub.unsubscribe();
+            } catch (err) {
+              /* best effort */
+            }
+          }
+          if (newReg) {
+            try {
+              await newReg.unregister();
+            } catch (err) {
+              /* best effort */
+            }
+          }
+          toggle.checked = false;
+          toast(e.message || "Couldn't enable notifications.", "error");
+        }
+      } else {
+        try {
+          if (sub) {
+            await Api.pushUnsubscribe(sub.endpoint);
+            await sub.unsubscribe();
+            sub = null;
+          }
+          // Tear the worker down too, so opting out leaves nothing
+          // registered rather than a dormant worker.
+          if (reg) {
+            await reg.unregister();
+            reg = null;
+          }
+          toast("Reminders off for this device.");
+        } catch (e) {
+          toggle.checked = true;
+          toast(e.message || "Couldn't turn notifications off.", "error");
+        }
+      }
+    });
   }
 
   async function account(root, ctx) {
@@ -1438,6 +1646,39 @@ const Pages = (() => {
           ${toggleRow("show_fridge_column", "Track a separate fridge", "Turn off if you only track one shelf.", a.show_fridge_column)}
           ${toggleRow("show_location_column", "Track custom shelf / location", "Adds a free-text location field to each bottle.", a.show_location_column)}
           ${toggleRow("trading_enabled", "Enable trading labels", "Mark bottles as For Trade or In Search Of, and track beers you don't have yet on a wanted list.", a.trading_enabled)}
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:20px">
+        <h3>Drink-by reminders</h3>
+        <p class="subtle" style="margin-top:-4px">
+          Get told when bottles are approaching their drink-by date. Off unless you turn it on.
+        </p>
+        ${
+          ctx.singleUserMode
+            ? ""
+            : toggleRow("notify_drinkby_email", "Email me", "Sent to your account email address. Needs SMTP configured on this instance.", a.notify_drinkby_email)
+        }
+        <div class="field" data-push-row style="display:none">
+          <div class="toggle-row">
+            <div>
+              <div class="label">Enable push notifications (this browser only).</div>
+              <div class="desc" data-push-help></div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" data-push-toggle />
+              <span class="track"></span>
+              <span class="thumb"></span>
+            </label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Warn me this far ahead</label>
+          <select class="input" data-days-select style="max-width:220px">
+            ${[7, 14, 30, 60, 90, 180]
+              .map((d) => `<option value="${d}"${a.notify_days_ahead === d ? " selected" : ""}>${d} days</option>`)
+              .join("")}
+          </select>
         </div>
       </div>
 
@@ -1553,6 +1794,22 @@ const Pages = (() => {
         }
       });
     });
+
+    const daysSelect = root.querySelector("[data-days-select]");
+    if (daysSelect)
+      daysSelect.addEventListener("change", async () => {
+        const previous = ctx.account.notify_days_ahead;
+        try {
+          const updated = await Api.patchAccount({ notify_days_ahead: Number(daysSelect.value) });
+          Object.assign(ctx.account, updated);
+          toast("Saved.");
+        } catch (e) {
+          toast(e.message, "error");
+          daysSelect.value = String(previous);
+        }
+      });
+
+    wirePushToggle(root);
 
     root.querySelectorAll("[data-select]").forEach((select) => {
       select.addEventListener("change", async () => {
@@ -2196,7 +2453,11 @@ const Pages = (() => {
                 : escapeHtml(log.beer.name)
             }</strong> <span class="subtle">&mdash; ${escapeHtml(
             log.beer.brewery.name
-          )}</span> <span class="meta">${fmtDate(log.consumed_on)} &middot; &times;${log.quantity}</span></div>
+          )}</span> <span class="meta">${fmtDate(log.consumed_on)}${
+            log.quantity > 1 ? ` &middot; &times;${log.quantity}` : ""
+          }${
+            log.best_before ? ` &middot; (Drink by ${escapeHtml(fmtDate(log.best_before))})` : ""
+          }</span></div>
             ${log.rating ? `<div>${starsReadonly(log.rating)}</div>` : ""}
             ${log.note ? `<div class="subtle">${escapeHtml(log.note)}</div>` : ""}
           </div>`

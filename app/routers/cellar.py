@@ -137,6 +137,33 @@ def delete_entry(
     return {"ok": True}
 
 
+def _find_mergeable_entry(db: Session, entry: models.CellarEntry, location: str):
+    """An existing entry in `location` that this one can fold into.
+
+    Matches on everything that distinguishes one batch from another, not
+    just the beer: two bottles of the same beer with different bottling
+    dates or batch notes are genuinely different things and shouldn't be
+    collapsed together. Without this, clicking the move button twice
+    would leave two separate one-bottle rows for the same beer.
+    """
+    return (
+        db.query(models.CellarEntry)
+        .filter(
+            models.CellarEntry.user_id == entry.user_id,
+            models.CellarEntry.id != entry.id,
+            models.CellarEntry.beer_id == entry.beer_id,
+            models.CellarEntry.location == location,
+            models.CellarEntry.custom_location == entry.custom_location,
+            models.CellarEntry.size_oz == entry.size_oz,
+            models.CellarEntry.bottle_date == entry.bottle_date,
+            models.CellarEntry.best_before == entry.best_before,
+            models.CellarEntry.batch_notes == entry.batch_notes,
+            models.CellarEntry.trade_status == entry.trade_status,
+        )
+        .first()
+    )
+
+
 @router.post("/{entry_id}/move", response_model=schemas.CellarEntryOut)
 def move_entry(
     entry_id: int,
@@ -144,11 +171,58 @@ def move_entry(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    """Move some of an entry's bottles to the other location.
+
+    Defaults to a single bottle, leaving any others where they are - the
+    button in the UI is per-entry, not per-bottle, and moving a whole
+    six-pack because you took one out for the fridge isn't what anyone
+    means by it. Returns the entry the bottles landed in.
+    """
     entry = _get_owned_entry(db, entry_id, current_user.id)
-    entry.location = payload.location
+
+    if payload.location == entry.location:
+        return entry
+
+    qty = payload.quantity
+    if qty > entry.quantity:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Only {entry.quantity} bottle{'' if entry.quantity == 1 else 's'} to move.",
+        )
+
+    target = _find_mergeable_entry(db, entry, payload.location)
+
+    if qty == entry.quantity:
+        # Moving the lot. Fold into a matching entry if one's already
+        # there, otherwise just relabel this one rather than churning rows.
+        if target:
+            target.quantity += qty
+            db.delete(entry)
+        else:
+            entry.location = payload.location
+            target = entry
+    else:
+        entry.quantity -= qty
+        if target:
+            target.quantity += qty
+        else:
+            target = models.CellarEntry(
+                user_id=entry.user_id,
+                beer_id=entry.beer_id,
+                location=payload.location,
+                custom_location=entry.custom_location,
+                quantity=qty,
+                size_oz=entry.size_oz,
+                bottle_date=entry.bottle_date,
+                best_before=entry.best_before,
+                batch_notes=entry.batch_notes,
+                trade_status=entry.trade_status,
+            )
+            db.add(target)
+
     db.commit()
-    db.refresh(entry)
-    return entry
+    db.refresh(target)
+    return target
 
 
 @router.post("/{entry_id}/drink", response_model=schemas.CellarEntryOut)
@@ -171,6 +245,7 @@ def drink_entry(
         consumed_on=payload.consumed_on or dt.date.today(),
         note=payload.note,
         rating=payload.rating,
+        best_before=entry.best_before,
     )
     db.add(log)
     entry.quantity -= payload.quantity

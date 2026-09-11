@@ -1,4 +1,6 @@
 import os
+import unicodedata
+
 from sqlalchemy import create_engine, event, func
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -45,6 +47,35 @@ def _set_sqlite_pragma(dbapi_connection, connection_record):
     # fixes this without needing a SQLite build with the ICU extension,
     # which most platforms don't ship.
     dbapi_connection.create_function("unicode_lower", 1, lambda s: s.lower() if s is not None else None)
+    dbapi_connection.create_function("unicode_fold", 1, _fold_for_search)
+
+
+# Letters that NFKD leaves alone because they aren't accented forms at all -
+# they're distinct letters in their own alphabets. Decomposition can't help
+# with these, so they need spelling out. Without this, folding looks like
+# it works while silently missing a lot of a beer list: "Weißbräu" and
+# "Nørrebro" would stay unfindable unless typed exactly.
+_FOLD_EXTRA = {
+    "ß": "ss", "ø": "o", "æ": "ae", "œ": "oe", "đ": "d", "ð": "d",
+    "þ": "th", "ł": "l", "ı": "i", "’": "'", "ʻ": "'",
+}
+
+
+def _fold_for_search(s):
+    """Lowercase and strip accents, for search matching only.
+
+    Lets someone type "Bieres" and find "Bières", or "Malmo" and find
+    "Malmö" - useful on a phone keyboard, and for a brewery list that's
+    full of names most people can't type exactly. Deliberately not used
+    for uniqueness checks: folding two names together for *searching* is
+    helpful, but treating them as the same name for *storage* would mean
+    "Malmö Brygghus" and "Malmo Brygghus" could never coexist, which is a
+    data decision rather than a convenience one.
+    """
+    if s is None:
+        return None
+    s = "".join(_FOLD_EXTRA.get(c, c) for c in s.lower())
+    return "".join(c for c in unicodedata.normalize("NFKD", s) if not unicodedata.combining(c))
 
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -59,6 +90,22 @@ def ilike_unicode(column, value):
     string (an exact case-insensitive match, e.g. a duplicate-name
     check) - LIKE handles both once the case-folding itself is correct."""
     return func.unicode_lower(column).like(func.unicode_lower(value))
+
+
+def search_unicode(column, value):
+    """Like ilike_unicode(), but also accent-insensitive - for the
+    autocomplete/search boxes only.
+
+    Kept as a separate helper rather than folded into ilike_unicode()
+    because that one also backs the exact-match uniqueness checks
+    (does this brewery already exist, does this rename collide), and
+    those should stay accent-sensitive: matching loosely is right when
+    someone is looking a name up, wrong when deciding whether two names
+    are the same record."""
+    # The pattern is folded here in Python rather than via func.unicode_fold()
+    # so SQLite only has to call back into Python for the column, once per
+    # row, instead of for both sides of the comparison.
+    return func.unicode_fold(column).like(_fold_for_search(value))
 
 
 def run_migrations():
@@ -158,6 +205,25 @@ def run_migrations():
             for name, sql_type in smtp_columns.items():
                 if name not in settings_cols:
                     conn.execute(text(f"ALTER TABLE instance_settings ADD COLUMN {name} {sql_type}"))
+
+        if "notify_drinkby_email" not in existing_cols:
+            conn.execute(
+                text("ALTER TABLE users ADD COLUMN notify_drinkby_email BOOLEAN DEFAULT 0 NOT NULL")
+            )
+        if "notify_days_ahead" not in existing_cols:
+            conn.execute(
+                text("ALTER TABLE users ADD COLUMN notify_days_ahead INTEGER DEFAULT 30 NOT NULL")
+            )
+
+        if "cellar_entries" in inspector.get_table_names():
+            entry_cols = {c["name"] for c in inspector.get_columns("cellar_entries")}
+            if "drinkby_notified_at" not in entry_cols:
+                conn.execute(text("ALTER TABLE cellar_entries ADD COLUMN drinkby_notified_at DATETIME"))
+
+        if "consumption_logs" in inspector.get_table_names():
+            log_cols = {c["name"] for c in inspector.get_columns("consumption_logs")}
+            if "best_before" not in log_cols:
+                conn.execute(text("ALTER TABLE consumption_logs ADD COLUMN best_before DATE"))
 
         # beers.brewery_id was missing an index despite being a foreign
         # key filtered on directly (the "does this beer already exist for

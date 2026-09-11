@@ -12,10 +12,11 @@ from app.database import Base, engine, run_migrations, SessionLocal
 from app import models  # noqa: F401  (ensures models are registered before create_all)
 from app.backup import apply_pending_restore_if_any
 from app.brewery_seed import seed_breweries_if_needed
-from app.beer_styles import migrate_beer_styles_if_needed
+from app.beer_styles import migrate_beer_styles_if_needed, seed_beer_styles_if_needed
 from app.email import encrypt_existing_smtp_password_if_needed
 from app.admin_bootstrap import ensure_instance_settings, ensure_admin_exists, ensure_local_user_exists
 from app.routers import auth as auth_router
+from app.routers import push as push_router
 from app.routers import beers, cellar, consumption, account, public, import_export, beer_styles, wanted, admin
 
 # Must run before create_all/engine touches the database file at all - a
@@ -32,6 +33,7 @@ _seed_db = SessionLocal()
 try:
     seed_breweries_if_needed(_seed_db)
     migrate_beer_styles_if_needed(_seed_db)
+    seed_beer_styles_if_needed(_seed_db)
     ensure_instance_settings(_seed_db)
     if config.SINGLE_USER_MODE:
         ensure_local_user_exists(_seed_db)
@@ -141,6 +143,7 @@ app.include_router(import_export.router)
 app.include_router(beer_styles.router)
 app.include_router(wanted.router)
 app.include_router(admin.router)
+app.include_router(push_router.router)
 
 
 @app.get("/api/health")
@@ -162,6 +165,36 @@ def app_config():
     return {"single_user_mode": config.SINGLE_USER_MODE}
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+
+@app.on_event("startup")
+async def _start_drinkby_sweep():
+    """Kick off the background drink-by reminder loop.
+
+    Started here rather than at import time so it attaches to the running
+    event loop. Sends nothing unless a user has actually opted in.
+    """
+    import asyncio
+
+    from app.notifications import sweep_loop
+
+    asyncio.create_task(sweep_loop())
+
+
+@app.get("/sw.js")
+def service_worker():
+    """Serve the push service worker from the site root.
+
+    A worker's scope is limited to the directory it's served from, so one
+    under /assets/ could only control /assets/ - useless for handling
+    notification clicks that navigate into the app. Registered before the
+    SPA catch-all, same as /favicon.ico, or it'd be handed index.html.
+    """
+    return FileResponse(
+        os.path.join(STATIC_DIR, "sw.js"),
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-cache"},
+    )
+
 
 app.mount("/assets", StaticFiles(directory=STATIC_DIR), name="assets")
 

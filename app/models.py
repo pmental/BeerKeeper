@@ -57,6 +57,12 @@ class User(Base):
     show_fridge_column = Column(Boolean, default=True, nullable=False)
     show_location_column = Column(Boolean, default=False, nullable=False)
     trading_enabled = Column(Boolean, default=False, nullable=False)
+    # Drink-by reminders. Email is an account-level preference; push is
+    # per device and so lives on PushSubscription instead. days_ahead is
+    # shared by both - it's about when a bottle counts as "due", not how
+    # you hear about it.
+    notify_drinkby_email = Column(Boolean, default=False, nullable=False)
+    notify_days_ahead = Column(Integer, default=30, nullable=False)
     messaging_enabled = Column(Boolean, default=True, nullable=False)
 
     # Visibility / privacy
@@ -69,6 +75,9 @@ class User(Base):
     wanted = relationship("WantedEntry", back_populates="user", cascade="all, delete-orphan")
     password_reset_tokens = relationship(
         "PasswordResetToken", back_populates="user", cascade="all, delete-orphan"
+    )
+    push_subscriptions = relationship(
+        "PushSubscription", back_populates="user", cascade="all, delete-orphan"
     )
 
     __table_args__ = (UniqueConstraint("oidc_issuer", "oidc_subject", name="uq_users_oidc_issuer_subject"),)
@@ -140,6 +149,10 @@ class CellarEntry(Base):
 
     trade_status = Column(String(8), default="none", nullable=False)  # 'none' | 'ft' | 'iso'
 
+    # Stamped when a drink-by reminder goes out, so the daily sweep
+    # doesn't tell you about the same bottle again tomorrow. Lives on the
+    # entry rather than a separate log table so it's cleaned up with it.
+    drinkby_notified_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=utcnow, nullable=False)
     updated_at = Column(DateTime, default=utcnow, onupdate=utcnow, nullable=False)
 
@@ -161,6 +174,12 @@ class ConsumptionLog(Base):
     consumed_on = Column(Date, default=dt.date.today, nullable=False)
     note = Column(Text, nullable=True)
     rating = Column(Float, nullable=True)  # 0-5, half-star increments
+    # Copied off the cellar entry when the bottle is drunk, rather than
+    # looked up later: best_before lives on CellarEntry, and that row is
+    # often gone by the time you read the history (drinking the last
+    # bottle can delete it). Null for logs added by hand, and for
+    # anything drunk before this column existed.
+    best_before = Column(Date, nullable=True)
 
     created_at = Column(DateTime, default=utcnow, nullable=False)
 
@@ -207,6 +226,34 @@ class InstanceSettings(Base):
     smtp_from_email = Column(String(255), nullable=True)
     smtp_from_name = Column(String(255), nullable=True)
     smtp_skip_cert_verify = Column(Boolean, nullable=True)
+
+
+class PushSubscription(Base):
+    """One browser's push endpoint. Per device, not per account: opting in
+    on a phone says nothing about a tablet, and each has its own endpoint
+    and encryption keys issued by that browser's push service.
+
+    Rows are disposable. Push services expire endpoints and answer 404 or
+    410 once they have, at which point the sweep drops the row - so a
+    stale subscription from a browser that's been reinstalled or had its
+    site data cleared cleans itself up rather than accumulating.
+    """
+
+    __tablename__ = "push_subscriptions"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    # The push service URL the browser handed us. Unique because
+    # re-subscribing the same browser should update the existing row
+    # rather than pile up duplicates.
+    endpoint = Column(Text, nullable=False, unique=True)
+    p256dh = Column(String(255), nullable=False)
+    auth = Column(String(255), nullable=False)
+    # Purely so the account page can label which device is which.
+    user_agent = Column(String(255), nullable=True)
+    created_at = Column(DateTime, default=utcnow, nullable=False)
+
+    user = relationship("User", back_populates="push_subscriptions")
 
 
 class PasswordResetToken(Base):

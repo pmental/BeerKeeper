@@ -11,42 +11,60 @@
 # instead of dependent on whatever the latest compatible versions happen
 # to be on the day it runs.
 #
+# The Docker image installs from THIS file, not requirements.txt. Adding a
+# dependency to requirements.txt without regenerating this one means the
+# image won't have it, and the app will fail to import at startup.
+#
 # Regenerate after changing requirements.txt:
 #   python3 -m venv /tmp/lockenv && /tmp/lockenv/bin/pip install -r requirements.txt
 #   /tmp/lockenv/bin/pip freeze > requirements-lock.txt
 #
+aiohappyeyeballs==2.7.1
+aiohttp==3.14.3
+aiosignal==1.4.0
 annotated-doc==0.0.5
 annotated-types==0.8.0
 anyio==4.15.1
+attrs==26.1.0
 Authlib==1.8.0
 bcrypt==5.0.0
 certifi==2026.7.22
 cffi==2.1.1
+charset-normalizer==3.5.1
 click==8.5.0
 cryptography==50.0.1
 dnspython==2.8.0
 email-validator==2.3.0
 fastapi==0.141.1
+frozenlist==1.8.0
 greenlet==3.5.5
 h11==0.16.0
+http-ece==1.2.1
 httpcore==1.0.9
 httptools==0.8.0
 httpx==0.28.1
 idna==3.19
 itsdangerous==2.2.0
 joserfc==1.7.5
+multidict==6.8.0
+propcache==0.5.2
+py-vapid==1.9.4
 pycparser==3.0
 pydantic==2.13.5
 pydantic_core==2.46.5
 PyJWT==2.13.0
 python-dotenv==1.2.3
 python-multipart==0.0.32
+pywebpush==2.5.0
 PyYAML==6.0.3
+requests==2.34.2
 SQLAlchemy==2.0.52
 starlette==1.6.0
 typing-inspection==0.4.4
 typing_extensions==4.16.0
+urllib3==2.7.0
 uvicorn==0.52.4
 uvloop==0.22.1
 watchfiles==1.2.0
 websockets==17.1
+yarl==1.24.5

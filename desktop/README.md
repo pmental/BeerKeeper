@@ -80,6 +80,17 @@ shell itself:
    reopen it, confirm the bottle's still there (proves the data
    directory is being found consistently across launches, not
    regenerated).
+6. **Drink-by reminders** - check what the Account page shows under
+   "Drink-by reminders". The email option is hidden in single-user mode
+   (there's no SMTP panel in the desktop app to configure), so you
+   should see the day-count selector and, *if* WebView2 supports the
+   Push API, a push toggle. If the toggle simply isn't there, that's
+   the frontend correctly detecting that push isn't available in this
+   window - not a bug, and nothing else on the page should be affected.
+   Worth knowing either way, since a desktop app arguably wants native
+   OS notifications (pywebview can do those directly) rather than web
+   push - a small follow-up if the web push route turns out to be a
+   dead end here.
 
 If (2) turns out awkward in practice (some WebView2 setups silently drop
 downloads instead of prompting), the fix is a small one - add a native

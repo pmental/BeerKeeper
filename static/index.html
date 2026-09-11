@@ -11,6 +11,14 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16.png?v=__APP_VERSION__" />
   <link rel="shortcut icon" href="/assets/icons/favicon.ico?v=__APP_VERSION__" />
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon.png?v=__APP_VERSION__" />
+  <link rel="manifest" href="/assets/manifest.json?v=__APP_VERSION__" />
+  <!-- iOS ignores the manifest's display mode and needs its own opt-in
+       for a home-screen launch without browser chrome. Harmless
+       elsewhere; every other platform reads display:standalone from the
+       manifest instead. -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="BeerKeeper" />
   <meta name="theme-color" content="#16110c" />
 </head>
 <body>
@@ -20,7 +28,7 @@
         <span>Beer<span class="glow">Keeper</span></span>
         <span class="tag">self-hosted</span>
       </a>
-      <button class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="nav-links">&#9776;</button>
+      <button class="nav-toggle" id="nav-toggle" aria-label="Menu" aria-expanded="false" aria-controls="nav-links"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
       <nav class="nav-links" id="nav-links"></nav>
       <div class="theme-picker">
         <label for="theme-select" class="sr-only">Theme</label>

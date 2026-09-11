@@ -123,7 +123,7 @@ Creature Comforts Brewing Co. | https://creaturecomfortsbeer.com
 WeldWerks Brewing Co. | https://weldwerksbrewing.com
 Fat Head's Brewery | https://fatheadsbeer.com
 Jester King Brewery | https://jesterkingbrewery.com
-Pizza Port Brewing Company | https://pizzaport.com
+Pizza Port Brewing Company | http://www.pizzaport.com
 Troegs Independent Brewing | https://www.troegs.com
 Sixpoint Brewery | https://sixpoint.com
 Revolution Brewing | https://revbrew.com
@@ -146,7 +146,6 @@ Golden Coast Mead
 1 of Us Brewing Company | https://www.1ofusbrewing.com
 10 Barrel Brewing Co | http://www.10barrel.com
 10 Barrel Brewing Co - Bend Pub
-10 Barrel Brewing Co - Boise | http://www.10barrel.com
 10 Barrel Brewing Co - Denver
 10 Torr Distilling and Brewing | http://www.10torr.com
 10-56 Brewing Company
@@ -201,7 +200,6 @@ Golden Coast Mead
 212 Brewing Company
 217 Brew Works
 21st Amendment Brewery | http://www.21st-Amendment.com
-21st Amendment Brewery Cafe | http://www.21st-amendment.com
 21st St Brewers Bar | http://www.21stbrew.com
 23 Brewing Company / Lizzie B's Cafe | http://www.23brewingcompany.com
 23rd Street Brewery | http://www.brew23.com
@@ -247,7 +245,6 @@ Golden Coast Mead
 450 North Brewing Company @ Simmons Winery | http://www.450northbrewing.com
 47 Hills Brewing Co | http://47hillsbrewingcompany.com
 49th State Brewing Co | https://www.49statebrewing.com/denali
-49th State Brewing Co - Anchorage | http://www.49statebrewing.com/
 4B's Brewery | http://www.4bsbrewery.com
 4J Brewing Company | https://4jbrewingcompany.com
 4kd Crick Brewery | http://Www.4kdcrickbrewery.com
@@ -476,11 +473,7 @@ Apex Aleworks Brew And BBQ Supplies | http://www.apexaleworks.com
 Apex Brewery | https://apexbrews.com
 Apocalypse Ale Works | http://www.apocalypsebrewworks.com
 Apocalypse Brew Works | http://www.apocalypsebrewworks.com
-Appalachian Brewing Co - Collegeville | http://www.abcbrew.com
-Appalachian Brewing Co - Gettysburg Gateway | http://www.abcbrew.com
-Appalachian Brewing Co - Harrisburg | http://www.abcbrew.com
-Appalachian Brewing Co - Lititz | http://www.abcbrew.com
-Appalachian Brewing Co - Mechanicsburg | http://www.abcbrew.com
+Appalachian Brewing Co | http://www.abcbrew.com
 Appalachian Mountain Brewery - Boone | http://www.appalachianmountainbrewery.com
 Appalachian Mountain Brewery - Portsmouth
 Apple Blossom Brewing Co | http://www.appleblossombrewing.com
@@ -623,7 +616,6 @@ Bad Dad Brewery | http://www.baddadbrewery.com
 Bad Habit Brewing Company | http://www.badhabitbeer.com
 Bad Joker Brewing Company | https://bad-joker-brewing-company.business.site
 Bad Martha Farmer's Brewery | http://www.badmarthabeer.com
-Bad Martha Farmer's Brewery - Falmouth | https://badmarthabeer.com
 Bad Shepherd Beer Company | http://www.blacksheepwv.com
 Bad Tom Smith Brewing | http://www.badtomsmithbrewing.com
 Bad Water Brewing | http://www.badwaterbrewing.com
@@ -640,7 +632,6 @@ Bag and Kettle, The | http://www.thebagandkettle.com
 Bagby Beer Company | http://www.bagbybeer.com
 Baileson Brewing Company, LLC | http://www.bailesonbrewing.com
 Bainbridge Brewing | http://www.bainbridgebeer.com
-Bainbridge Brewing Alehouse | http://www.bainbridgebeer.com
 Baker City Brewing Co | http://www.barleybrowns.com
 BAKFISH Brewing Company | http://www.bakfishbrewing.com
 Bald Man Brewing Company | http://www.BaldManBrewing.com
@@ -737,7 +728,6 @@ Base Camp Provisions | https://www.basecampfruita.com
 Basecamp Brewing | http://www.onelovebrewery.com
 Basement Brewers of Texas | http://www.basementbrewersoftexas.com
 Basic City Beer Co. | http://www.basiccitybeer.com
-Basic City Beer Co. (Southside RVA) | https://www.basiccitybeer.com/rva-map
 Basket Case Brewing Co | http://www.basketcasebeer.com
 Bastard Brothers Brewing Company | http://www.bastardbrothersbrewery.com
 Bastion Brewing Company | http://www.bastionbrewingcompany.com
@@ -781,8 +771,6 @@ Bear Bones Beer
 Bear Creek Brews | http://www.bearcreekbrews.com
 Bear Island Brewing Company | http://www.bearislandbrewing.com
 Bear Republic Brewing Co | http://www.bearrepublic.com
-Bear Republic Brewing Co - Production facility | http://www.bearrepublic.com
-Bear Republic Brewing Co Pub & Restaurant - Lakeside | http://bearrepublic.com
 Bear Roots Brewing Company | http://www.bearrootsbrewing.com
 Beara Brewing Co. | http://www.bearairishbrew.com
 Beard Engine Brewing Co
@@ -892,8 +880,6 @@ Big Bear Mountain Brewery | http://www.mountainbrewery.com
 Big Beaver Brewing Co | http://www.bigbeaverbrew.com
 Big Bend Brewing Co | http://www.bigbendbrewing.com
 Big Block Brewing | https://www.bigblockbrewery.com/sammamish-taproom
-Big Block Brewing - Carnation Taproom | https://www.bigblockbrewery.com/carnation-taproom
-Big Block Brewing - Redmond Taproom | https://www.bigblockbrewery.com/redmond-taproom
 Big Blue Brewing | http://www.bigbluebrewing.com
 Big Boiler Brewing | http://bigboilerbrewing.com
 Big Boss Brewing Co | http://www.bigbossbrewing.com
@@ -945,7 +931,6 @@ Big's BBQ Brewpub | http://www.bigsbbqmv.com
 Bigelow Brewing Company | http://www.bigelowbrewing.com
 Bike Dog Brewing Co
 Bike Rack Brewing Co | http://www.bikerackbrewing.com
-Bike Rack Brewing Co - 8th Street Market | http://www.bikerackbrewing.com
 Bike TrAle Brewing | http://www.BikeTrAleBrewing.com
 Biker Brew House | http://www.bikerbrewhouse.com
 Bilbo's Pizza and Brewery | http://www.bilbospizza.com
@@ -982,12 +967,7 @@ Bitter Sisters Brewing Company | http://www.bittersistersbrewery.com
 Bittersweet Brewing Company, LLC | http://www.bittersweetbrewing.com
 Bizarre Brewing | https://bizarrebrewing.com
 BJ's Brewhouse
-BJs Restaurant & Brewery - Boulder | http://www.bjsrestaurants.com
-BJs Restaurant & Brewery - Brea | http://www.bjsrestaurants.com
-BJs Restaurant & Brewery - Chandler | http://www.bjsrestaurants.com
-BJs Restaurant & Brewery - Reno | http://www.bjsbrewhouse.com
-BJs Restaurant & Brewery - West Covina | http://www.bjsrestaurants.com
-BJs Restauraunt & Brewhouse | https://www.bjsrestaurants.com/locations/wa/tacoma
+BJs Restaurant & Brewery | http://www.bjsrestaurants.com
 BKS Artisan Ales | http://www.bksartisanales.com
 Black Acre Brewing Co | http://www.blackacrebrewing.com
 Black Bear Brewery | http://www.blackbearmicrobrew.com
@@ -1045,7 +1025,6 @@ Blackhorse Pub and Brewery - Knoxville | http://www.theblackhorsepub.net
 Blacklist Artisan Ales | http://www.blacklistbeer.com
 BlackRock Brewers | http://www.brb.beer
 Blackrocks Brewery | http://www.blackrocksbrewery.com
-Blackrocks Brewery - Production Facility | http://www.blackrocksbrewery.com
 Blacksmith Brewing Co | http://www.blacksmithbrewing.com
 BlackStack Brewing | http://www.blackstackbrewing.com
 Blackstone Brewing Co | http://blackstonebrewery.com
@@ -1337,7 +1316,6 @@ Bridger Brewing Company | http://www.bridgerbrewing.com
 Brieux Carre Brewing Company | http://www.brieuxcarre.com
 Brigadoon Brewery & Brew School | http://www.brigadoonbrewery.com
 Bright Ideas Brewing | http://www.brightideasbrewing.com
-Bright Ideas Brewing - Westfield | https://www.brightideasbrewing.com/westfield
 Bright Light Brewing Company
 Bright Penny Brewing Company | http://www.brightpennybrewing.com
 Brim Kitchen and Brewery | http://www.brimbrewery.com
@@ -1521,7 +1499,6 @@ Cape Ann Brewing Co
 Cape Charles Brewing Company | http://www.capecharlesbrewing.com
 Cape Cod Beer | http://www.capecodbeer.com
 Cape May Brewing Company | http://www.capemaybrewery.com
-Cape May Brewing Company - Rio Grande | http://www.capemaybrewery.com
 Cape Vincent Brewing Co | http://www.capevincentbrewing.com
 Capital Brewery Co Inc | http://www.capitalbrewery.com
 Capitol City Brewing Co | http://www.capcitybrew.com
@@ -1548,8 +1525,6 @@ Carver Brewing Co | http://carverbrewing.com
 Cary Ale House | http://caryalehousebrewing.com
 Casa Agria Specialty Ales
 Cascade Brewing | http://www.cascadebrewing.com
-Cascade Brewing Barrel House | http://www.cascadebrewing.com
-Cascade Brewing Blending House | http://www.cascadebrewing.com
 Cascade Lakes Brewing Co | http://www.cascadelakes.com
 Casey Brewing and Blending | http://www.caseybrewing.com
 Castle Brewing Co | http://www.castlebrewingco.com
@@ -1703,7 +1678,6 @@ Clocktown Brewing Company | https://clocktownbrewingco.com
 Clockwerks Brewing | http://www.clockwerksbrewing.com
 Cloud 9 Brewery | http://www.cloud9brewery.com
 Cloudburst Brewing | http://www.cloudburstbrew.com
-Cloudburst Brewing on Shilshole | http://www.cloudburstbrew.com
 Clouds Brewing | http://www.cloudsbrewing.com
 Clover Road Brewing Company | https://www.cloverrdbrewing.com
 Cloverdale Ale Company's Ruth McGowan's Brewpub | http://www.ruthmcgowansbrewpub.com
@@ -1746,7 +1720,6 @@ Colorado Boy Pizzeria | http://www.coloradoboy.com
 Colorado Boy Pub & Brewery | http://www.coloradoboy.com
 Colorado Farm Brewery | http://www.cofarmbeer.com
 Colorado Mountain Brewery | http://www.cmbrew.com
-Colorado Mountain Brewery At the Roundhouse | http://www.cmbrew.com
 Colorado Plus | http://coloradoplus.net
 Columbia Craft Brewing Company | http://www.columbiacraft.com
 Columbia Kettle Works | http://www.columbiakettleworks.com
@@ -2025,7 +1998,6 @@ Delafield Brewhaus | http://www.delafield-brewhaus.com
 Deluxe Brewing Co | http://www.deluxebrewing.com
 Demented Brewing Co. | http://www.dementedbrewing.com
 Democracy Brewing | http://www.democracybrewing.com
-Democracy Brewing - East Boston | https://www.democracybrewing.com/locations/eastboston
 Dempsey's Restaurant And Brewery | http://www.dempseys.com
 Dempseys Brewery, Pub | http://www.dempseybrewpub.com
 Denali Brewing Company | http://www.denalibrewing.com
@@ -2043,7 +2015,6 @@ Depot Saloon | http://www.depotsaloon.com
 Depot Street Brewing Co | http://www.depotstreetbrewing.com
 Derive Brewing company | https://www.derivebeer.com/
 Descendants Brewing Company
-Deschutes Brewery & Public House | http://www.deschutesbrewery.com
 Desert Barn Brewing Co.
 Desert Eagle Brewing Company | http://www.deserteaglebrewing.com
 Desert Edge Brewery | http://www.desertedgebrewery.com
@@ -2158,7 +2129,6 @@ Dovetail Brewery | http://www.dovetailbrewery.com
 Down the Road Brewery | http://www.downtheroadbrewery.com
 Downey Brewing Company | http://www.downeybrewingcompany.com
 Downhill Brewing | https://www.downhillbrews.com/
-Downhill Brewing - Greenwood Village | https://www.downhillbrews.com/
 Downpour Brewing LLC | http://www.downpourbrewing.com
 Downtown Grill & Brewery / Woodruff Brewing | http://www.downtownbrewery.com
 Downtown Joes Brewery and Restaurant | http://www.downtownjoes.com
@@ -2275,7 +2245,6 @@ Ecusta Brewing Co - Drift Taproom
 Eddyline Brewing LLC | http://eddylinebrewery.com
 Eden Town Brewing Company | https://www.edentownbrewing.com/
 Edge Brewing Company | http://www.edgebrew.com
-Edge Brewing Company - Pub on 10th | http://www.edgebrew.com
 Edge Of The World Brewery | http://edgeoftheworld.bar
 Edgewater Brewery | http://www.kannahcreekbrewingco.com/edgewater-brewery
 Edmund's Oast Brewing Co | http://www.edmundsoast.com
@@ -2329,7 +2298,6 @@ Elm City Brewing Company | http://www.elmcitybrewing.com
 Elmhurst Brewing Company | http://www.elmhurstbrewing.com
 Eluvium Brewing Co. | http://www.eluviumbrewing.com
 Elysian Brewing Co | http://www.elysianbrewing.com
-Elysian Brewing Co - Elysian Fields | http://www.elysianbrewing.com
 Emmett's Brewing Co - Downers Grove | http://www.emmettsbrewingco.com
 Emmett's Brewing Co - Palatine | http://www.emmettsbrewingco.com
 Emmett's Brewing Co - West Dundee | http://www.emmettsbrewingco.com
@@ -2389,7 +2357,6 @@ Evil Czech Brewery
 Evil Genius Beer Co | http://www.evilgeniusbeer.com
 Evil Horse Brewing Company, LLC | http://evilhorsebrewing.com
 Evolution Craft Brewing Co | http://www.evolutioncraftbrewing.com
-Evolution Craft Brewing Co. & Public House | http://www.evolutioncraftbrewing.com/
 Ex Novo Brewing Co | http://www.exnovobrew.com
 Excel Brewing Co | http://www.excelbottling.com
 Excelsior Brewing Co | http://www.excelsiorbrew.com
@@ -2490,9 +2457,6 @@ FiftyFifty Brewing Co | http://www.fiftyfiftybrewing.com
 FiftyFifty Brewing Production Facility
 FigLeaf Brewing Company | http://www.figleafbrewing.com
 Figueroa Mountain Brewing | http://www.figmtnbrew.com
-Figueroa Mountain Brewing - Arroyo Grande | http://www.figmtnbrew.com
-Figueroa Mountain Brewing - Santa Barbara | http://www.figmtnbrew.com
-Figueroa Mountain Brewing - Westlake Village | http://www.figmtnbrew.com
 Figure Eight Brewing Co | http://www.figureeightbrewing.com
 Figurehead Brewing Company | http://www.figureheadbrewingcompany.com
 Fillmore 13 Brewery | http://www.fillmore13brewery.com
@@ -2544,7 +2508,6 @@ Flat Fish Brewing | http://www.flatfishbrewing.com
 Flat Tail Brewing Co | http://www.flattailcorvallis.com
 Flat Top Mountain Brewery | http://www.flattopbrew.com
 Flathead Lake Brewing Co | http://www.flatheadlakebrewing.com
-Flathead Lake Brewing Co - Production Only | http://www.flatheadlakebrewing.com
 Flatland Brewing Company | http://www.flatlandbrewingco.com
 Flatrock Brewery | http://www.flatrockbrewery.com
 Flesk Brewing | http://www.fleskbrewing.com
@@ -2552,7 +2515,6 @@ Fleur De Lis Brew Works | http://www.fleurdelisbrewworks.com
 Flight Deck Brewing | http://www.flightdeckbrewing.com
 Flix Brewhouse | http://www.flixbrewhouse.com
 Flix Brewhouse - Frisco/Little Elm
-Flix Brewhouse - Madison | https://www.flixbrewhouse.com
 Flood Zone Marketplace & Brewery | http://www.floodzonebrewery.com/
 Floodland Brewing | http://www.floodlandbrewing.com
 Floodstage Ale Works | http://www.floodstagealeworks.com
@@ -2594,7 +2556,6 @@ Foolproof Brewing Company | http://www.foolproofbrewing.com
 Fools Fire Brewing Company At Fermentation Lounge | http://www.foolsfire.com
 Foothill Hops Farm Brewery | http://www.foothillhops.com
 Foothills Brewing Co | http://www.foothillsbrewing.com
-Foothills Brewing Co Brewpub | http://www.foothillsbrewing.com
 For the Love of God Brewing | https://www.fortheloveofgodbrewing.com
 Forager Brewing Company | http://www.foragerbrewery.com
 Forbidden Peak Brewery | https://forbiddenpeak.com
@@ -2678,7 +2639,6 @@ Freebridge Brewing | http://www.freebridgebrewing.com
 Freedom's Edge Brewing | http://www.freedomsedgebrewing.com
 Freehouse Brewery | http://www.freehousebeer.com
 Freetail Brewing Co | http://www.freetailbrewing.com
-Freetail Brewing Co - Brewpub | http://www.freetailbrewing.com
 FreeWheel Brewing Co
 Freight Yard Brewing LLC | http://www.freightyardbrewing.com
 Fremont Brewing Co | http://www.fremontbrewing.com
@@ -2891,34 +2851,7 @@ Grand Teton Brewing Co | http://grandtetonbrewing.com
 Grande Mere Inn / Cranberry Bog Bar | http://www.grandemereinn.com
 Grandma's House | http://www.grandmasbeer.com
 Granger City Brewing Company | http://www.grangercitybrewingcompany.com
-Granite City Food & Brewery
-Granite City Food & Brewery (#1) | http://www.gcfb.net
-Granite City Food & Brewery (#10) | http://www.gcfb.net
-Granite City Food & Brewery (#11) | http://www.gcfb.net
-Granite City Food & Brewery (#12) | http://www.gcfb.net
-Granite City Food & Brewery (#13) | http://www.gcfb.net
-Granite City Food & Brewery (#16) | http://www.gcfb.net
-Granite City Food & Brewery (#17) | http://www.gcfb.net
-Granite City Food & Brewery (#19)
-Granite City Food & Brewery (#2) | http://www.gcfb.net
-Granite City Food & Brewery (#21) | http://www.gcfb.com
-Granite City Food & Brewery (#22) | http://www.gcfb.com
-Granite City Food & Brewery (#24) | http://www.gcfb.net
-Granite City Food & Brewery (#25) | http://www.gcfb.net
-Granite City Food & Brewery (#26) | http://www.gcfb.net
-Granite City Food & Brewery (#27) | http://www.gcfb.net
-Granite City Food & Brewery (#28) | http://www.gcfb.com
-Granite City Food & Brewery (#29) | http://www.gcfb.net
-Granite City Food & Brewery (#3) | http://www.gcfb.net
-Granite City Food & Brewery (#30) | http://www.gcfb.net
-Granite City Food & Brewery (#31) | http://www.gcfb.net
-Granite City Food & Brewery (#32) | http://www.gcfb.net
-Granite City Food & Brewery (#4) | http://www.gcfb.net
-Granite City Food & Brewery (#5) | http://www.gcfb.net
-Granite City Food & Brewery (#6) | http://www.gcfb.net
-Granite City Food & Brewery (#7) | http://www.gcfb.net
-Granite City Food & Brewery (#8) | http://www.gcfb.net
-Granite City Food & Wort House | http://www.gcfb.net
+Granite City Food & Brewery | http://www.gcfb.net
 Granite Coast Brewing | https://www.granitecoastbrewing.com
 Granite Falls Brewing Co. | http://www.GraniteFallsBrewing.com
 Granite Mountain Brewing | http://www.granitemountainbrewing.com
@@ -2941,7 +2874,6 @@ Great Awakening Brewing Company | https://greatawakeningbrewing.com
 Great Baraboo Brewing Co | http://www.greatbaraboo.com
 Great Barn Brewery | http://www.greatbarnbrewery.com
 Great Basin Brewing Co | http://www.greatbasinbrewingco.com
-Great Basin Brewing Co - Production Facility | http://www.greatbasinbrewingco.com
 Great Beer Co | http://www.greatbeerco.com
 Great Black Swamp Brewing Co | http://www.greatblackswampbrewing.com
 Great Burn Brewing | http://www.greatburnbrewing.com
@@ -2955,7 +2887,6 @@ Great Dane Pub and Brewing Co- Wausau | http://www.greatdanepub.com
 Great Divide Brewery & Roadhouse - Castle Rock | https://www.greatdividebreweryandroadhouse.com/
 Great Divide Brewery & Roadhouse - Lone Tree | https://www.greatdividebreweryandroadhouse.com/
 Great Divide Brewing Co | http://www.greatdivide.com
-Great Divide Brewing Co - RiNo Barrel Bar | http://greatdivide.com/
 Great Flats Brewing | http://www.greatflatsbrewing.com
 Great Flood Brewing | http://www.greatfloodbrewing.com
 Great Flood Brewing- Production Facility
@@ -3052,7 +2983,6 @@ Haines Brewing Co | http://www.hainesbrewing.com
 Hair of the Dog Brewing Co | http://www.hairofthedog.com
 Hairless Hare Brewery | http://www.hairlessharebrewery.com
 Halcyon Brewing | http://www.halcyonbrewingco.com
-Half Acre Beer Co | http://www.halfacrebeer.com
 Half Barrel Beer Project | http://www.halfbarrelproject.com
 Half Batch Brewing | http://halfbatchbrewing.com
 Half Brothers Brewing Company | http://www.halfbrothersbrewing.com
@@ -3358,7 +3288,6 @@ I & I Brewing | http://www.iandibrewing.com
 IBC Brewery & Tasting Room
 Icarus Brewing Company | http://www.icarusbrewing.com
 Ice Harbor Brewing Company | http://www.iceharbor.com
-Ice Harbor Brewing Company at the Marina | http://www.iceharbor.com
 Icewind Brewing | http://www.icewindbrewing.com
 Icicle Brewing Co | http://www.iciclebrewing.com
 Iconyc Brewing Company | http://www.iconycbrewing.com
@@ -3448,20 +3377,7 @@ Iron Furnace Brewing | https://www.ironfurnacebrewing.com/
 Iron Goat Brewing | http://www.irongoatbrewing.com
 Iron Hand Brewing | https://www.ironhandbrewing.com
 Iron Hart | http://www.3guysandabeerd.com
-Iron Hill Brewery & Restaurant (Ardmore) | http://www.ironhillbrewery.com
-Iron Hill Brewery & Restaurant - Chestnut Hill | http://www.ironhillbrewery.com
-Iron Hill Brewery & Restaurant - Greenville | http://www.ironhillbrewery.com
-Iron Hill Brewery & Restaurant - Huntingdon Valley | http://www.ironhillbrewery.com
-Iron Hill Brewery & Restaurant - Lancaster | http://www.ironhillbrewery.com
-Iron Hill Brewery & Restaurant - Maple Shade | http://www.ironhillbrewery.com
-Iron Hill Brewery & Restaurant - Media | http://www.ironhillbrewery.com
-Iron Hill Brewery & Restaurant - Newark | http://www.ironhillbrewery.com
-Iron Hill Brewery & Restaurant - North Wales | http://www.ironhillbrewery.com
-Iron Hill Brewery & Restaurant - Phoenixville | http://www.ironhillbrewery.com
-Iron Hill Brewery & Restaurant - Rehoboth Beach | http://www.ironhillbrewery.com
-Iron Hill Brewery & Restaurant - Voorhees | http://www.ironhillbrewery.com
-Iron Hill Brewery & Restaurant - West Chester | http://www.ironhillbrewery.com
-Iron Hill Brewery & Restaurant - Wilmington | http://www.ironhillbrewery.com
+Iron Hill Brewery & Restaurant | http://www.ironhillbrewery.com
 Iron Horse Brewery | http://www.ironhorsebrewery.com
 Iron John's Brewing Company | http://www.ironjohnsbrewing.com
 Iron Monk Brewing Company | http://www.ironmonkbeer.com
@@ -3592,15 +3508,6 @@ Karbach Brewing Co | https://www.karbachbrewing.com/
 Karben4 Brewing | http://www.karben4.com
 Karetas Brewing | http://www.karetasbeer.com
 Karl Strauss Brewing Co | http://www.karlstrauss.com
-Karl Strauss Brewing Co - 4S Ranch | http://www.karlstrauss.com
-Karl Strauss Brewing Co - Anaheim
-Karl Strauss Brewing Co - Carlsbad | http://www.karlstrauss.com
-Karl Strauss Brewing Co - Costa Mesa | http://www.karlstrauss.com
-Karl Strauss Brewing Co - Downtown | http://www.karlstrauss.com
-Karl Strauss Brewing Co - Downtown Los Angeles
-Karl Strauss Brewing Co - La Jolla | http://www.karlstrauss.com
-Karl Strauss Brewing Co - Sorrento Mesa | http://www.karlstrauss.com
-Karl Strauss Brewing Co - Universal CityWalk | http://www.karlstrauss.com
 Karst Brewing LLC | http://www.karstbrewed.com
 Katabatic Brewing Co | http://www.katabaticbrewing.com
 Kathrin's Biergarten | http://www.kathrinsbiergarten.com
@@ -3634,7 +3541,6 @@ Kettlehouse Brewing Co - Bonner Brewery
 Kettlehouse Brewing Co - Southside | http://www.kettlehouse.com
 Keuka Brewing Co | http://www.keukabrewingcompany.com
 Keweenaw Brewing Co | http://www.keweenawbrewing.com
-Keweenaw Brewing Co - Production Facility | http://www.keweenawbrewing.com
 Key Brewing Co. | http://www.keybrewing.com
 Key City Brewing Co. | http://keycitybeer.com
 Khoffner Brewery LTD | http://www.khoffner.us
@@ -3928,7 +3834,6 @@ Lone Peak Brewery | http://www.lonepeakbrewery.com
 Lone Pine Brewing Company | http://www.lonepinebrewery.com
 Lone Pint Brewery | http://www.lonepint.com
 Lone Tree Brewing Co | http://www.lonetreebrewingco.com
-Lone Tree Brewing Co - Parker | http://www.lonetreebrewingco.com
 Lonerider Brewing Co | http://www.loneriderbeer.com
 Lonesome Pine Brewing Co. | http://www.lonesomepinebrewing.com
 Lonesome Valley Brewing | http://www.lonesomevalleybrewing.com
@@ -4026,7 +3931,6 @@ Lunkenheimer Craft Brewing Co. LLC | http://www.lunkenheimercraftbrewing.com
 LuPine Brewing Co | http://www.lupinebrewing.com
 Luppoleto Brewing Company - Torch | https://www.luppoleto.com/torch
 Lupulin Brewing | http://www.lupulinbrewing.com
-Lupulin Brewing - Sioux Falls | http://www.lupulinbrewing.com
 Lydian Stone Brewery | http://www.lydianstonebrewing.com
 Lynchpin Beer Company / The Laundry | http://www.lunchandbeyond.com
 LynLake Brewery | http://www.lynlakebrewery.com
@@ -4173,38 +4077,9 @@ McGuire's Irish Pub and Brewery - Destin | http://www.mcguiresirishpub.com
 McGuire's Irish Pub and Brewery - Pensacola | http://www.mcguiresirishpub.com
 McIntosh Orchards | http://www.mcintoshorchards.com
 McKenzie Brew House | http://www.mckenziebrewhouse.com
-McKenzie Brew House (#2) | http://www.mckenziebrewhouse.com
 McKenzie Brew House (#3)
 McKenzie Brewing Company | http://www.steelheadbrewery.com
-McMenamins - Cedar Hills
-McMenamins Anderson School Brewery | http://www.mcmenamins.com/anderson-school
 McMenamins Breweries | http://www.mcmenamins.com
-McMenamins Concordia Brewery at Kennedy School | http://www.mcmenamins.com
-McMenamins Cornelius Pass Roadhouse | http://www.mcmenamins.com
-McMenamins Crystal Ballroom Brewery | http://www.mcmenamins.com
-McMenamins East Vancouver Brewery | https://www.mcmenamins.com/east-vancouver
-McMenamins Edgefield Brewery | http://www.mcmenamins.com
-McMenamins Elks Temple | https://www.mcmenamins.com/elks-temple
-McMenamins Fulton Pub and Brewery | http://www.mcmenamins.com
-McMenamins High Street Brewery | http://www.mcmenamins.com
-McMenamins Highland Pub and Brewery | http://www.mcmenamins.com
-McMenamins Hillsdale Brewery and Public House | http://www.mcmenamins.com
-McMenamins John Barleycorns | http://www.mcmenamins.com
-McMenamins Kalama Harbor Lodge | https://www.mcmenamins.com/kalama-harbor-lodge
-McMenamins Lighthouse Brewery | http://www.mcmenamins.com
-McMenamins Mill Creek Brewery | https://www.mcmenamins.com/mill-creek
-McMenamins Murray & Allen | http://www.mcmenamins.com
-McMenamins Oak Hills Brewery | http://www.mcmenamins.com
-McMenamins Old Church Brewery | http://www.mcmenamins.com/Wilsonville
-McMenamins Old St. Francis School | http://www.mcmenamins.com
-McMenamins Olympic Club Brewery | https://www.mcmenamins.com/olympic-club
-McMenamins on Monroe
-McMenamins On the Columbia Brewery | https://www.mcmenamins.com/mcmenamins-on-the-columbia
-McMenamins Queen Anne Brewery | https://www.mcmenamins.com/queen-anne
-McMenamins Roseburg Station Brewery | http://www.mcmenamins.com
-McMenamins Spar Cafe Brewery | https://www.mcmenamins.com/spar-cafe
-McMenamins Thompson Brewery | http://www.mcmenamins.com
-McMenamins West Linn Brewery | http://www.mcmenamins.com
 MDs Sports Tavern and Grill | http://www.mdsportstavern.com
 Meadowlark Brewing | http://www.meadowlarkbrewing.com
 Mean King Brewing | http://www.meankingbrewing.com
@@ -4377,7 +4252,6 @@ Moscow Brewing Company | https://moscowbrewing.com/index.html
 Moss Mill Brewing | http://www.mossmillbrewing.com
 Mother Bunch Brewing, Inc. | http://www.motherbunchbrew.com
 Mother Earth Brew Co | https://www.motherearthbrewco.com/nampa
-Mother Earth Brew Co LLC | http://www.motherearthbrewco.com
 Mother Earth Brewing | http://www.motherearthbrewing.com
 Mother Road Brewery and Taproom | http://www.motherroadbeer.com/butler-brewery
 Mother Road Brewing Co | http://www.motherroadbeer.com
@@ -4489,7 +4363,6 @@ New England Brewing Co | http://www.newenglandbrewing.com
 New English Brewing Co Inc | http://www.newenglishbrewing.com
 New Era Fine Fermentations | http://www.neffbrewing.com
 New Glarus Brewing Co | http://www.newglarusbrewing.com
-New Glarus Brewing Co - Riverside | http://www.newglarusbrewing.com
 New Glory Craft Brewery | http://www.newglorybeer.com
 New Groove Artisan Brewery | http://www.newgroovebrew.com
 New Heights Brewing Co | http://www.newheightsbrewing.com
@@ -4559,6 +4432,7 @@ Nomadic Beerworks | http://www.nomadicbeerworks.com
 Nonesuch River Brewing | http://www.nonesuchriverbrewing.com
 Noon Whistle Brewing Company | http://www.noonwhistlebrewing.com
 Norfork Brewing Company | http://www.nfbrew.com
+Nørrebro Bryghus
 Norris English Pub | http://www.norrisenglishpub.com
 Norsemen Brewing Co. | http://www.norsemenbrewingco.com
 North 47 Brewing Co | http://www.north47brewery.com
@@ -4600,7 +4474,6 @@ Northwoods Brewpub and Grill | http://www.northwoodsbrewpub.com
 Nortons Brewing Co. | http://www.nortonsbrewing.com
 Norway Brewing Company | http://www.norwaybrewing.com
 Notch Brewing | http://www.notchbrewing.com
-Notch Brewing - Brighton | https://www.notchbrewing.com/notchbrighton
 Nothing's Left Brewing Co. | http://www.nothingsleftbrew.co
 Nova Brewing Co | http://www.novabrewingco.com
 Novel Brewing Company | http://novelbrewing.com
@@ -4890,7 +4763,6 @@ Pdub Brewing Co | http://www.pdubbrewing.com
 Peabody Heights Brewery | http://www.peabodyheightsbrewery.com
 Peace of Mind Brewing | http://www.peaceofmindbrewing.com
 Peace Tree Brewing Company | http://www.peacetreebrewing.com
-Peace Tree Brewing Company - Des Moines Branch | http://www.peacetreebrewing.com
 Peacemaker Brewing Company | http://www.peacemakerbrewing.com
 Peak Organic Brewing Co | http://www.peakbrewing.com
 Peak To Peak Tap & Brew | http://www.peakbrews.com
@@ -4994,26 +4866,18 @@ Pixeled Brewing Company | http://pixeled.beer
 Pizza Beer Company | http://www.pizzabeer.net
 Pizza Boy Brewing Co | http://www.pizzaboybrewing.com
 Pizza By Elizabeths | http://www.pizzabyelizabeths.com
-Pizza Port - Bressi Ranch | http://www.pizzaport.com
-Pizza Port Carlsbad | http://www.pizzaport.com
-Pizza Port Ocean Beach | http://www.pizzaport.com
-Pizza Port San Clemente | http://www.pizzaport.com
-Pizza Port Solana Beach | http://www.pizzaport.com
 Placerville Brewing Co | http://www.placervillebrewing.com
 Plan 9 Alehouse | http://www.plan9alehouse.com
 Plan Bee Farm Brewery | http://www.planbeefarmbrewery.com
 Planetary Brewing Company | http://www.planetarybrewing.com
 Plank Town Brewing | http://planktownbrewing.com
 Platform Beer Co | http://platformbeer.co
-Platform Beer Co - Production Facility | http://www.platformbeer.co
-Platform Beer Co Taproom | http://www.platformbeer.co
 Platform Cincinnati
 Platt Park Brewing Co. | http://www.plattparkbrewing.com
 Platte Creek Brewing Company | http://www.plattecreekbrewingcompany.com
 Plattsburgh Brewing Co | http://www.plattsburghbrewingco.com
 Platypus Brewing | http://www.platypusbrewing.com
 Playalinda Brewing Company | http://www.playalindabrewingcompany.com
-Playalinda Brewing Company - Brix Project | http://www.playalindabrewingcompany.com
 Pleasure House Brewing | http://www.pleasurehousebrewing.com
 Plow Brewing Company | http://www.sonomacounty.com/brewery/plow-brewing-company
 Plymouth Brewing Co | http://www.plymouthbrewingcompany.com
@@ -5073,7 +4937,6 @@ Pratt Street Ale House | http://www.oliverales.com
 Precarious Beer Project | http://www.theamberox.com
 Prehistoric Brewing Company | http://www.prehistoricbrewing.com
 Prescott Brewing Co | http://www.prescottbrewingcompany.com
-Prescott Brewing Co - Production Facility | http://www.prescottbrewingcompany.com
 Pressure Drop Brewing | http://www.barrelfactory.com
 Prestonrose Farm and Brewing Co. | http://prestonrose.squarespace.com
 Pretentious Barrel House | http://www.pretentiousbarrelhouse.com
@@ -5101,7 +4964,6 @@ Props Brewery and Grill | http://www.propsbrewery.com
 Props Craft Brewery Taproom | http://www.propsbrewery.com
 Prospect Point Brewing | http://prospectpointbrewing.com/
 Prost Brewing | http://www.prostbrewing.com
-Prost Brewing - Highlands Ranch | https://www.prostbrewing.com/
 Protector Brewery | http://www.protectorbrewery.com
 Providence Brewing Company | https://providencebrewingcompany.com
 Pryes Brewing Company | http://www.pryesbrewing.com
@@ -5177,18 +5039,7 @@ Raised Grain Brewing Company
 RAK Brewing | https://rakbrewing.com/
 Raleigh Brewing Company | http://www.raleighbrewingcompany.com
 Rally King Brewing | http://www.rallykingbrewing.com
-RAM Restaurant and Brewery - Boise | http://www.theram.com
-RAM Restaurant and Brewery - Clackamas
-RAM Restaurant and Brewery - Indianapolis | http://www.theram.com
-RAM Restaurant and Brewery - Lakewood | http://www.theram.com
-RAM Restaurant and Brewery - Medford
-RAM Restaurant and Brewery - Production | http://www.theram.com
-RAM Restaurant and Brewery - Puyallup South Hill | http://www.theram.com
-RAM Restaurant and Brewery - Salem | http://www.theram.com
-RAM Restaurant and Brewery - Schaumburg | http://www.theram.com
-RAM Restaurant and Brewery - Seattle | http://www.theram.com
-RAM Restaurant and Brewery - Tacoma | http://www.theram.com
-RAM Restaurant and Brewery - Wheeling | http://www.theram.com
+RAM Restaurant and Brewery | http://www.theram.com
 Ramblin Reds Brewing Company | http://www.northriverbrewingco.com
 Randolph Beer Dumbo | http://www.randolphbeer.com
 Random Precision Brewing Company | http://www.randomprecisionbrewing.com
@@ -5280,7 +5131,6 @@ Remnant Brewing | http://www.remnantsomerville.com
 Renaissance Brewing Co | http://www.renaissancebeer.com
 Rendezvous Junction Brewing Company | http://www.rendezvousjunction.com
 Renegade Brewing Company | http://renegadebrewing.com
-Renegade Brewing Company - Production | http://www.renegadebrewing.com
 Rentsch Brewery | http://www.rentschbrewery.com
 Republic Brewing Company | https://republicbrewingcompany.com/
 Rescue Brewing Co | http://www.rescuebrewingco.com
@@ -5294,7 +5144,6 @@ Restless Moons Brewing | http://www.restlessmoons.com
 Restoration Brew Worx | http://www.restorationbrewworx.com
 Resurgence Brewing Company | http://www.resurgencebrewing.com
 Reuben's Brews | http://www.reubensbrews.com
-Reuben's Brews Taproom | http://www.reubensbrews.com
 ReUnion Brewery | http://www.reunionbrewery.com
 Revel Urban Winery / Revel OTR | http://www.revelotr.com
 Revelation Ale Works | http://www.revales.com
@@ -5302,7 +5151,6 @@ Revelation Craft Brewing Co | http://Www.revbeer.com
 Revelry Brewing Co. | http://www.revelrybrewingco.com
 Revision Brewing Company | http://www.revisionbrewing.com
 Revival Brewing | http://www.revivalbrewing.com
-Revolution Brewing - Brewpub | http://www.revbrew.com
 Revolver Brewing | http://www.revolverbrewing.com
 RG Brewery / Five Sons Winery | http://www.rgbrewery.com
 Rhinegeist Brewery | http://www.rhinegeist.com
@@ -5381,32 +5229,7 @@ Roc Brewing Co | http://www.rocbrewingco.com
 Rochester Mills Beer Co | http://www.beercos.com
 Rochester Mills Production Brewery | http://www.beercos.com
 Rock Art Brewery | http://www.rockartbrewery.com
-Rock Bottom Brewery
-Rock Bottom Brewery - Arrowhead | http://www.rockbottom.com
-Rock Bottom Brewery - Bethesda | http://www.rockbottom.com
-Rock Bottom Brewery - Centerra Promenade | http://www.rockbottom.com
-Rock Bottom Brewery - Chicago | http://www.rockbottom.com
-Rock Bottom Brewery - Cincinnati | http://www.rockbottom.com
-Rock Bottom Brewery - Colorado Springs | http://www.rockbottom.com
-Rock Bottom Brewery - Denver | http://www.rockbottom.com
-Rock Bottom Brewery - Englewood | http://www.rockbottom.com
-Rock Bottom Brewery - Highlands Ranch
-Rock Bottom Brewery - Indianapolis | http://www.rockbottom.com
-Rock Bottom Brewery - La Jolla | http://www.rockbottom.com
-Rock Bottom Brewery - Long Beach | http://www.rockbottom.com
-Rock Bottom Brewery - Milwaukee | http://www.rockbottom.com
-Rock Bottom Brewery - Minneapolis | http://www.rockbottom.com
-Rock Bottom Brewery - Nashville | http://www.bigrivergrille.com
-Rock Bottom Brewery - Orchard Cntr | http://www.rockbottom.com
-Rock Bottom Brewery - Orland Park | http://www.rockbottom.com
-Rock Bottom Brewery - Pittsburgh | http://www.rockbottom.com
-Rock Bottom Brewery - Portland | http://www.rockbottom.com
-Rock Bottom Brewery - San Jose | http://www.rockbottom.com
-Rock Bottom Brewery - Warrenville | http://www.rockbottom.com
-Rock Bottom Brewery - Westminster | http://www.rockbottom.com
-Rock Bottom Brewery - Yorktown | http://www.rockbottom.com
-Rock Bottom Brewery -Short Pump | https://rockbottom.com/locations/richmond/
-Rock Bottom Brewery- Charlotte
+Rock Bottom Brewery | http://www.rockbottom.com
 Rock County Brewing Company | http://www.rockcounty.beer
 Rock Cut Brewing Company | http://www.rockcutbrewing.com
 Rock God Brewing Company | http://rockgodbeer.com
@@ -5511,7 +5334,6 @@ Rush River Brewing Co | http://www.rushriverbeer.com
 Rushford & Sons Brewhouse | https://www.rasbrewhouse.com
 Rushing Duck Brewing Co | http://www.rushingduck.com
 Russian River Brewing Co | http://www.russianriverbrewing.com
-Russian River Brewing Co - Production | http://www.russianriverbrewing.com
 Rustic Brew | http://www.rusticbrew.com
 Rustic Brewing Company | https://www.rusticbrewco.com
 Rustic Leaf Brewing Company | http://www.rusticleafbrewingcompany.com
@@ -5584,7 +5406,6 @@ Sandy Springs Brewing Company | http://www.sandyspringsbrewery.com
 Sandy Valley Brewing Co | http://www.sandyvalleybrewingcompany.com
 Sanford Brewing Company | http://www.sanfordbrewing.com
 Sanitas Brewing Co | http://www.sanitasbrewing.com/
-Sanitas Brewing Co - Englewood | http://www.sanitasbrewing.com/
 Santa Barbara Brewing Co | http://www.sbbrewco.com
 Santa Clara Valley Brewing | http://www.scvbrewing.com
 Santa Cruz Mountain Brewing
@@ -5614,7 +5435,6 @@ Save the World Brewing Co | http://www.savetheworldbrewing.com
 Sawmill Brewing Co | http://www.sawmillbrewing.net
 Sawmill Pizza and Brew Shed | http://www.weddingsinechovalley.com
 Sawtooth Brewery | http://www.sawtoothbrewery.com
-Sawtooth Brewery - Ketchum Public House | https://www.sawtoothbrewery.com
 Scale House Brewery | http://www.scalehousebrews.com
 Scale House Brewery & Pub | http://www.scalehousebrewpub.com
 Scamp Brewing Co | http://www.scampbrewing.com
@@ -5726,7 +5546,6 @@ Shoreline Brewery | http://www.shorelinebrewery.com
 Short Fuse Brewing Company | http://www.shortfusebrewing.com
 Short Story Brewing | http://www.shortstorybrewing.com
 Short's Brewing Co | http://www.shortsbrewing.com
-Short's Brewing Co - Production Facility | http://www.shortsbrewing.com
 Shorthead Brewing | http://www.shortheadbrewing.com
 Shortway Brewing Company | http://www.shortwaybrewing.com
 Shoug Brewing Company | http://www.shougbrewing.com
@@ -6049,7 +5868,6 @@ Stockholms Vardshus | http://www.stockholmsbrewpub.com
 Stockyards Brewing Company | http://www.stockyardsbrewing.com
 Stoic Brewing US | http://stoicbrewing.com
 Stone Brewing Co | http://www.stonebrewing.com
-Stone Brewing Co- Richmond | http://www.stonebrewing.com/visit/outposts/richmond
 Stone Brewing World Bistro & Gardens- Liberty Station | http://www.stonelibertystation.com
 Stone Cellar Brewpub / Stone Arch Brew House | http://www.stonecellarbrewpub.com
 Stone Church Brewing | http://www.stonechurchbrewing.com
@@ -6274,7 +6092,6 @@ The Boathouse Beer Co and Boozery | http://www.boathousebeerco.com
 The Boiler Room Brewhaus LLC | http://www.Boileroombrewhaus.com
 The Bold Mariner Brewing Company | http://www.boldmariner.com
 The Booth Brewing Co. | http://www.theboothbrewing.com
-The BottleHouse Brewery And Meadery | http://www.thebottlehousebrewingcompany.com
 The Brew Brothers / Scioto Downs Racino | https://www.sciotodowns.com/venue/restaurants/brew-brothers?utm_source=gmb&utm_medium=brew%20brothers
 The Brew Brothers/Eldorado Hotel and Casino | http://www.eldoradoresorts.com
 The Brew Kettle, Taproom and Smokehouse | http://www.thebrewkettle.com
@@ -6329,7 +6146,6 @@ The Grateful Gnome Sandwich Shoppe and Brewery | http://www.thegratefulgnome.com
 The Guardian Brewing Company | http://www.theguardianbrewingco.com
 The Guild Brewing Co - Pawtucket Beer Hall | https://www.theguildpawtucket.com
 The Guild Brewing Co - Warren | https://www.theguildwarren.com
-The Half Wall Brewery | http://www.halfwallbrewery.com
 The Harmony Inn
 The Heavy Metal Brewing Co. | http://www.theheavymetalbrewingco.com
 The Highway Brewing Co. | http://www.highwaybrewingco.com
@@ -6585,7 +6401,6 @@ Tribute Brewing Co | http://www.tributebrewing.com
 Triceratops Brewing | http://www.triceratopsbrewing.com
 Trickster's Brewing Company | http://www.trickstersbrewing.com
 Trillium Brewing | http://www.trilliumbrewing.com
-Trillium Brewing - Fort Point | https://trilliumbrewing.com/pages/fort-point
 Trim Tab Brewing | http://www.trimtabbrewing.com
 Trinity Brewhouse | http://www.trinitybrewhouse.com
 Trinity Brewing | http://www.trinitybrew.com
@@ -6733,7 +6548,6 @@ Unruly Brewing Company | http://www.unrulybrewing.com
 Unsung Brewing Company- Taproom
 Untapped Territory, LLC
 Untold Brewing | http://www.untoldbrewing.com
-Untold Brewing - Plymouth | https://www.untoldbrewing.com/plymouth
 UpCountry Brewing | http://upcountrybrewing.com/
 Upland Brewing Co
 Upland Brewing Co - Bloomington Brewpub | http://www.uplandbeer.com
@@ -7010,7 +6824,6 @@ Wild Onion Brewing Co. | http://www.onionpub.com
 Wild Parrot Brewing Company | https://www.wildparrotbrewing.com/
 Wild Ride Brewing | http://www.wildridebrew.com
 Wild River Brewing and Pizza Co | http://www.wildriverbrewing.com
-Wild River Brewing and Pizza Co - Grants Pass | http://www.wildriverbrewing.com
 Wild Side Brewing Company | http://www.wildsidebrewing.com
 Wild Wolf Brewing Co | http://www.wildwolfbeer.com
 Wild Woods Brewery | http://www.wildwoodsbrewery.com
@@ -7264,7 +7077,6 @@ Smithwick's
 Franciscan Well Brewery
 Galway Bay Brewery | https://galwaybaybrewery.com
 Kinnegar Brewing | https://kinnegarbrewing.ie
-Carlow Brewing Company (O'Hara's) | https://carlowbrewing.com
 White Hag Brewing | https://thewhitehag.com
 Magners Irish Cider
 
@@ -7324,7 +7136,6 @@ Stone Barrel Brewing Company | http://www.stonebarrelbrewing.ie/
 Sullivan's Brewing Company | https://www.sullivansbrewingcompany.com/
 The Franciscan Well Brewery | http://www.franciscanwellbrewery.com/en/index
 The Porterhouse Brewing Company | http://www.porterhousebrewco.ie/
-The White Hag Brewery | http://www.thewhitehag.com/
 The Wicklow Brewery | http://www.wicklowbrewery.ie/
 Third Barrel Brewing | https://thirdbarrel.com/
 Tig Bhric & West Kerry Brewery | https://westkerrybrewery.ie/
@@ -7371,8 +7182,6 @@ Brouwerij De Ranke | https://www.deranke.be
 28 Brewery | https://www.belgianbeerworld.be/
 3 Fonteinen | https://3fonteinen.be/nl/
 Abbay de Bonne Esperance | http://www.abbaye-bonne-esperance.be/
-Abbaye Chimay | https://www.scourmont.be/
-Abbaye d'Orval | https://www.orval.be/fr/
 Abbaye de Brogne | https://www.brogne.com/labbaye/
 Abbaye des Rocs
 Abbaye St. Rémy | http://www.abbaye-rochefort.be/
@@ -7386,8 +7195,6 @@ Alken-Maes | http://www.alken-maes.be/
 Allies | https://www.brasserievds.be/
 Alvinne | http://www.alvinne.be/
 Amai | http://www.brouwerij-amai.be/
-Anders | http://www.brouwerij-anders.be/
-Angerik | http://www.angerik.be/
 Antwerpse Brouw Compagnie | http://www.seef.be/
 Antwerpse Brouw Compagnie, Brouwerij & Taproom | http://www.seef.be/
 Artois (Inbev) | https://www.breweryvisits.com/en/stella-artois
@@ -7405,7 +7212,6 @@ Belgian Brewers Museum | https://beermuseum.be/
 Belgium Peak Beer | http://www.peakbeer.be/
 Belgoo Brewery | http://www.belgoobeer.net/
 Belle-Vue | http://www.ab-inbev.com/
-Bellevaux | http://www.brasseriedebellevaux.be/
 Bertinchamps Brewery | http://www.bertinchamps.be/
 Bier en Karakter | http://www.hoevedumoulin.be/
 Binchoise | http://www.labinchoise.be/
@@ -7413,7 +7219,6 @@ Bio-Brouwerij Den Hopperd | http://www.denhopperd.be/
 Bistro Belgo Belge | https://bistrobelgobelge.be/
 Blaugies | https://www.brasseriedeblaugies.com/
 Bockor | http://www.omervanderghinste.be/
-Bocq | http://www.bocq.be/
 Boelens | http://www.brouwerijboelens.be/
 BOMBrewery BVBA | https://triporteurbeer.com/dutchv/
 Boon Brewery | http://www.boon.be/
@@ -7450,7 +7255,6 @@ Brasserie Du Moulin
 Brasserie du Val de Sambre | https://www.brasserievds.be/
 Brasserie Dubuisson | https://www.dubuisson.com/
 Brasserie et malterie de la Marine | http://www.ermitagenanobrasserie.be/
-Brasserie Grain dorge | https://www.grain-dorge.com/
 Brasserie la Rogère
 Brasserie Les Ouvriers Reunis
 Brasserie Lion | http://www.brasserielion.com/
@@ -7461,7 +7265,6 @@ Brasserie Surréaliste | http://www.brasseriesurrealiste.com/
 BRAUW | http://brauw.be/
 Brew Bakers | https://abdijaffligem.wordpress.com/
 Brewery Bourgogne des Flandres | http://bourgognedesflandres.be/
-Brewery De Ranke | http://www.deranke.be/
 Brewery Het Anker | http://www.hetanker.be/
 Brewery of the Lesse | http://www.brasseriedelalesse.be/
 Brewery Saint-Feuillien | https://st-feuillien.com/
@@ -7504,14 +7307,12 @@ Callebaut | http://www.barry-callebaut.com/
 Campina | http://www.decampina.be/
 Cantillon Brewery & Museum | http://www.cantillon.be/
 Capoen | http://www.seef.be/
-Caracole | http://www.brasseriecaracole.be/
 Castle Brewery Ter Dolen | http://www.terdolen.be/
 Caulier | http://brasseriecaulier.beer/
 Caulier S.A. | http://brasseriecaulier.beer/
 Cazeau | http://brasseriedecazeau.be/
 Centrale de Marbaix-la-Tour | http://www.halvemaan.be/
 Cerckel | https://inventaris.onroerenderfgoed.be/erfgoedobjecten/200131
-Chimay | http://chimay.com/
 Clarysse & Co NV | http://www.claryssedranken.be/
 Contreras | http://www.contreras.be/
 Cornelissen | http://www.brouwerijcornelissen.be/
@@ -7526,7 +7327,6 @@ De Bie | http://www.brouwerijdebie.be/
 de Block | http://www.brewerydeblock.com/
 De Boezemvrienden | http://www.beersecret.com/
 De Bouillon (Louis & Men)
-de Cazeau | http://brasseriedecazeau.be/
 De Circus | http://www.circusbrouwerij.be/
 De Dinant | https://leffe.com/fr/maison-leffe
 De Dolle Brouwers | http://www.dedollebrouwers.be/
@@ -7534,12 +7334,10 @@ De Donder
 De Feniks | http://www.guldenspoor.be/
 De Garre | http://www.degarre.be/
 De Gheest (Dendria) | http://www.denheiligengheest.be/
-De Glazen Toren | http://www.glazentoren.be/
 de Gomme | http://www.deleite.be/
 De Graal | http://www.degraal.be/
 De Halve Maan | http://www.halvemaan.be/
 De Koninck | http://www.dekoninck.be/
-De Koninck - Antwerp City Brewery | http://www.dekoninck.be/
 De Kustbrouwerij Middelkerke | http://www.jusdemer.be/
 De La Chasse Royale | https://www.belgianbeerworld.be/
 de la Semois | https://www.campingdelasemois.be/
@@ -7557,7 +7355,6 @@ de Sater | http://www.brouwerijdesater.be/
 De Schuur | http://www.brouwerijdeschuur.info/
 De Troch | http://www.detroch.be/
 De Tubize | http://www.la-brasserie-de-tubize.be/
-De Vlier | https://www.brouwerijdevlier.be/brouwerij.php
 De Wilde Brouwers | https://www.dewildebrouwers.be/
 De Zwaan
 Deca Brewery | http://www.decabrouwerij.be/
@@ -7567,11 +7364,9 @@ Delirium - Brouwerij Huyghe | http://www.delirium.be/en/world-of-delirium
 Delirium - Brussels | https://www.deliriumvillage.com/
 Den Bierberg | http://www.het3debedrijf.be/
 Den Teut (L. Pauwels) | http://denteut.be/
-Den Toeteler | http://www.toeteler.be/
 Den Toetëlèr | http://www.toeteler.be/
 Den Triest | http://www.dentriest.be/
 Des Carrieres | http://www.diole.be/
-Des Fagnes | http://www.brasseriedesfagnes.com/
 DijkWaert | http://www.brouwerijleysen.be/
 Dilewyns | http://www.vicaris.be/
 Dirk en Katrien Vissers (De Proost Dorpsbrouwerij Humulus)
@@ -7584,7 +7379,6 @@ Donn | http://www.hophemel.be/
 DS | http://www.dedollebrouwers.be/
 Du Bavery | http://www.val-dieu.com/
 Du Bocq | http://www.bocq.be/
-Dubuisson | https://www.dubuisson.com/
 Dupont | http://www.brasserie-dupont.com/
 Duvel Moortgat Brewery | https://www.duvel.com/
 Duvieusart | https://www.duvel.com/
@@ -7614,7 +7408,6 @@ Geve | http://www.novabirra.com/
 Ghent Gruut Brewery | http://www.gruut.be/
 Gibrit | http://www.vbdck.be/
 Gigi de l'Etoile
-Glazen Toren | http://www.glazentoren.be/
 Grain d'Orge | https://www.grain-dorge.com/
 Grand Cafe Remise 56 | https://www.remise56.be/
 Grandes Brasseries Reunies Aigle-Belgica S.A. | http://www.halvemaan.be/
@@ -7623,7 +7416,6 @@ Grote Brouwerijen van Hougaerde | http://nieuwhuys.be/
 Gulden Spoor | http://www.guldenspoor.be/
 Guldenboot | https://www.deoudebrouwerijaffligem.be/
 Haacht | http://www.haacht.com/
-Haeseveld | https://haeseveld.be/?utm_source=google&utm_medium=organic&utm_campaign=gbp-listing
 Halen | https://halenbreweries.com/
 Heilig Hart Brouwerij - Desolari - Pure Natural Taste | http://www.desolari.be/
 Henricus | http://www.paljas-bier.be/
@@ -7633,7 +7425,6 @@ Het Nest | https://www.brouwerijhetnest.be/
 Het Sas | http://www.haacht.com/
 Heyvaert P.V.B.A | http://beerproject.be/pages/dansaert-taproom
 Hobbybrouwers Hopscheppers | http://www.brouwerijleysen.be/
-Hof ten Dormaal | https://hoftendormaal.com/
 Houblonde | http://www.houblonde.com/
 Huisbrouwerij De Geiteling | https://huisbrouwerijdegeiteling.be/
 Huisbrouwerij De Halve Maan | http://www.halvemaan.be/
@@ -7652,7 +7443,6 @@ Jupiler Brewery | http://www.ab-inbev.be/
 Kastelse Biervereniging | https://kastelsekayakklub.be/
 Kazematten Brewery | http://www.kazematten.be/
 Keersmaeker
-Kerkom | http://www.brouwerijkerkom.be/
 Kruger
 L'Arogante | http://www.gruut.be/
 La Binchoise | http://www.labinchoise.be/
@@ -7677,7 +7467,6 @@ LES BRASSERIES DE FLOBECQ | http://www.brasseriesdeflobecq.be/
 Les Brasseurs | https://www.facebook.com/Les-Brasseurs-722127614590850/
 Les Brasseurs de la Dyle | https://www.facebook.com/brasseriesdeliege
 Liefmans | https://www.liefmans.com/nl-be/brouwerij
-Lindemans | http://www.lindemans.be/
 Loterbol | http://www.loterbol.be/
 Louwaege | http://www.halvemaan.be/
 Lust | https://www.marthabeer.com/
@@ -7702,24 +7491,19 @@ Mort Subite | http://www.mort-subite.be/
 Mouterij H. Vermeulen & Company | http://www.kazematten.be/
 Nieuwhuys | http://nieuwhuys.be/
 Old Bailey | http://www.belgianbrewfactory.be/
-Orval | http://www.orval.be/
 Oud Beersel | https://oudbeersel.com/opening-hours/
-Oud Beersel blendery & Bierhuis | https://oudbeersel.com/opening-hours/
 Ox | https://www.oxbeer.com/
 Pairi Daiza | https://weiny.top/la-brasserie-3
 Pakhuis | http://www.pakhuis.info/
 Palm | https://swinkelsfamilybrewers.com/nl/ons-aanbod/bieren/palm.html
 Piedboeuf | http://www.ab-inbev.be/
 Poechenellekelder | http://www.poechenellekelder.be/
-Proefbrouwerij | http://www.proefbrouwerij.com/
 Riva (De Splenter) | https://inventaris.onroerenderfgoed.be/erfgoedobjecten/84397
 Rochefort | http://www.abbaye-rochefort.be/
 Rochehaut Brewery | http://www.rochehaut-attractions.be/
 Rodenbach | https://be.rodenbach.be/be/nl.html
-Rodenbach (Palm) | https://be.rodenbach.be/be/nl.html
 Roelants | https://www.facebook.com/PythonCraftBeer/
 Rolling Hills | http://www.rollinghills.be/
-Roman | https://www.roman.be/
 Rubbens | https://rubbens.be/
 Savio | http://www.terdolen.be/
 Scassenes | http://www.brasseriescassenes.be/
@@ -7742,7 +7526,6 @@ St. Bernardus | http://www.sintbernardus.be/
 St. Jozef | http://www.brouwerijcornelissen.be/
 Stadsbrouwerij Gruut | http://www.gruut.be/
 Stella Artois Brewery | https://www.breweryvisits.com/en/stella-artois
-Sterkens | https://www.brouwerijsterkens.be/
 Stokhove | http://www.brouwerijstokhove.be/
 Stroom Brewery | http://stroombrouwers.be/
 Strubbe | http://www.brouwerijstrubbe.be/
@@ -7759,7 +7542,6 @@ Tipsy Tribe Brewery & Distillery | https://www.tipsytribe.be/
 Toye | http://www.goedendagbier.be/
 Trappisten van Westmalle | http://www.trappistwestmalle.be/
 Trappistenabdij De Achelse Kluis | http://www.achelsekluis.be/
-Troch | http://www.detroch.be/
 Union Belgium
 Val de Sambre | https://www.brasserievds.be/
 Val-Dieu | http://www.val-dieu.com/
@@ -7769,7 +7551,6 @@ van Eecke
 van Honsebrouck | https://www.vanhonsebrouck.be/?utm_source=googlebusiness&utm_medium=organic
 Van Roy | http://www.brouwerijdebrabandere.be/
 van Steenberge | http://www.vansteenberge.com/
-Van-honsebrouck | https://www.vanhonsebrouck.be/?utm_source=googlebusiness&utm_medium=organic
 Vandeputte | http://www.vandeputte.com/
 Vander Linden | http://www.alldrinks.be/
 Vanuxeem | http://www.vanuxeem.com/
@@ -9479,7 +9260,6 @@ Hairyman Brewery | https://hairyman.com.au/
 Half-Pace Brewing Co. | https://hang10distillery.com.au/pages/beer
 Happy Valley Brewing Co. | https://happyvalleybrewingco.com.au/?utm_source=google&utm_medium=wix_google_business_profile&utm_campaign=713965300857523334
 Hard Road Brewing | https://www.hardroadbrewing.com/
-Hawkers | http://www.hawkers.beer/
 Hawkers Beer | http://www.hawkers.beer/
 Hawke’s Brewing Co. | https://www.hawkesbrewing.com/
 Heaps Normal | http://heapsnormal.com/
@@ -9513,7 +9293,6 @@ KAIJU! Beer | https://kaijubeer.com.au/pages/beer-pizza
 Kick Back Brewing Co | http://www.kickbackbrewing.com.au/
 Kicks Brewing | https://kicksbrewing.com.au/
 Killer Sprocket | http://www.killersprocket.com.au/
-Killer Sprocket Brewery & Tasting Room | http://www.killersprocket.com.au/
 King Island Brewhouse | http://kibrew.house/
 King River Brewing | http://www.kingriverbrewing.com.au/
 King Road Brewing Co. | https://kingroadbrewery.com/
@@ -9692,7 +9471,6 @@ Tasmanian Tonic Company | http://www.tasmaniantoniccompany.com.au/
 Temple Brewing Co | http://www.templebrewing.com.au/
 Terella Brewing | https://www.terellabrewing.com.au/
 The Albert Brewery | http://thealbertbrewery.com.au/
-The Bondi Brewing Co. | http://www.bondi.beer/
 The Coastal Brewing Company | http://www.thecoastalbrewingcompany.com/
 The Craft & Co | https://www.localbrewing.co/
 The Garden Brewery | http://www.thefbg.com.au/
@@ -9753,7 +9531,6 @@ Willie the Boatman | https://willietheboatman.com/
 Wilson Brewing Co. | https://www.wilsonbrewing.com.au/
 Wobbly Chook Brewing Co. | http://www.wobblychookbrewingco.com/
 Wolf Of The Willows | http://www.wolfofthewillows.com.au/
-Wolf of the Willows Brewery and Taproom | http://www.wolfofthewillows.com.au/
 Wooden Axe Brewing Co. | http://www.stompingground.beer/
 Woolgoolga Brewing Co. | http://www.woopibrewingco.com.au/
 Woolshed Brewery | http://www.wilkadene.com.au/

@@ -1,13 +1,17 @@
 # Beer styles for BeerKeeper
 #
 # One style per line. Blank lines and lines starting with "#" are ignored.
-# This list seeds the beer_styles TABLE, once, the first time the app
-# boots with an empty database. From that point on, styles are managed
-# from the admin page's "Beer Styles" panel, not this file - editing it
-# after first boot has no effect. If this install previously used the
-# old file-based version (a hand-edited beer_styles.txt in your data
-# directory), that file's contents were migrated in automatically instead
-# of this bundled list, preserving any customizations.
+# This list seeds the beer_styles TABLE the first time the app boots with
+# an empty database. From that point on, styles are managed from the
+# admin page's "Beer Styles" panel - but a style *added* to this list
+# later is still offered to existing installs on their next boot, once
+# each: every name is recorded once it's been offered, so deleting a
+# style from the admin panel is permanent and won't be undone here.
+# Removing or renaming a line, by contrast, has no effect on an install
+# that has already seeded it. If this install previously used the old
+# file-based version (a hand-edited beer_styles.txt in your data
+# directory), that file's contents were migrated in automatically,
+# alongside this bundled list.
 #
 # Starting point compiled from the general/public beer style taxonomy
 # (style names only - no descriptions), organized similarly to how
@@ -133,6 +137,8 @@ Chile Beer
 Fruit and Field Beer
 Herbed / Spiced Beer
 Kvass
+Mead (Melomel)
+Mead (Metheglin)
 Pumpkin Ale
 Sahti
 Smoked Beer
