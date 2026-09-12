@@ -15,6 +15,9 @@ audit trail.
   token already issued for that account, so a leaked token stops working
   the moment the account is secured - not just when it naturally expires
   (tokens last 14 days).
+- The session token is held in an HttpOnly cookie, not browser storage,
+  so a script running on the page can't read it. Requests that change
+  data must also carry a CSRF token.
 - Login, registration, and forgot-password are rate-limited per IP;
   forgot-password is also rate-limited per submitted email address, so
   spreading requests across many IPs can't be used to spam one inbox.
@@ -34,13 +37,6 @@ audit trail.
 - Every cellar/consumption/wanted-list endpoint scopes its query to the
   authenticated user - there's no way to read or modify another
   account's data by guessing an ID.
-- The session token is delivered as an HttpOnly, SameSite=Lax cookie, so
-  page script can't read it; `Secure` is added automatically when the
-  request arrives over HTTPS (directly or via a proxy), and omitted
-  otherwise so plain-HTTP LAN installs still work. Mutating requests
-  carry a double-submit CSRF token. An `Authorization: Bearer` header is
-  still accepted for scripts and API clients, and skips the CSRF check
-  since a browser never attaches that header on its own.
 - Every API endpoint requires a valid session except the auth flow
   itself, static assets, and the deliberately public pages (Browse,
   public cellar/trade profiles).
@@ -58,6 +54,11 @@ audit trail.
   `X-Frame-Options: DENY`, `Referrer-Policy: same-origin`.
 - File uploads (CSV import, backup restore) are capped and read in
   bounded chunks rather than loaded into memory unbounded.
+- Imported CSV rows are held to the same limits as data entered through
+  the app; a row that fails is reported and skipped rather than stored.
+- Push notification endpoints must be public HTTPS addresses, so the
+  server can't be tricked into sending requests to private addresses on
+  the network it's running in.
 - Full-instance backup restores are validated (integrity-checked, schema
   sanity-checked) before being accepted, and only ever applied at the
   next clean startup - never against a live, in-use database.
