@@ -44,8 +44,8 @@ app = FastAPI(title=config.APP_NAME, version=config.APP_VERSION)
 
 # Only used to hold the short-lived state/nonce for the OIDC handshake (a
 # few seconds, during the redirect to and back from the identity provider).
-# It is unrelated to the app's own login sessions, which are JWT bearer
-# tokens sent in the Authorization header, not cookies.
+# It is unrelated to the app's own login session, which is a separate
+# HttpOnly cookie set in app/session.py.
 app.add_middleware(
     SessionMiddleware,
     secret_key=auth.SECRET_KEY,

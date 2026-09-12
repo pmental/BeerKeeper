@@ -146,9 +146,9 @@ const App = (() => {
     const query = new URLSearchParams(queryString || "");
     const main = document.getElementById("main");
 
-    // The OIDC callback lands here as #/oidc-callback?token=... - pull the
-    // token out of the hash (it never reaches the server, by design), store
-    // it, then hand off to the normal cellar view with a clean URL.
+    // The OIDC callback lands here with no token in the URL - the server
+    // has already set the session cookie on the redirect, so this just
+    // asks who we are and hands off to the cellar view.
     if (hash.startsWith("#/oidc-callback")) {
       const error = query.get("oidc_error");
       await refreshUser();

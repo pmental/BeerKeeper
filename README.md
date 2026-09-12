@@ -181,18 +181,21 @@ page itself.
 ## Beer styles
 
 The Style field suggests from a list as you type: a hand-picked default
-set of ~105 styles, seeded into the database once on first boot. Managed
-from the admin page's "Beer Styles" panel from that point on: add,
-rename, or delete freely. Like the brewery list, it's just suggestions;
-typing something not on the list is always fine.
+set of ~107 styles, seeded into the database on first boot. Styles added
+to the bundled list in a later release are offered to existing installs
+too, once each, so deleting one is permanent. Managed from the admin
+page's "Beer Styles" panel: add, rename, or delete freely. Like the
+brewery list, it's just suggestions; typing something not on the list is
+always fine.
 
 ## Pre-populated breweries
 
 The database starts with 10,000+ real, currently-operating breweries: a hand-picked starting set (Swedish craft breweries, major American and Belgian names, cider makers and meaderies, and a spread across the rest of Europe), plus a bulk import from [Open Brewery DB](https://www.openbrewerydb.org/) covering the US and 20+ other countries.
 
-Seeded once, then managed from the admin page's "Breweries" panel:
-rename, delete (once nothing references it), add, or bulk import/export
-as CSV.
+Managed from the admin page's "Breweries" panel: rename, delete (once
+nothing references it), add, or bulk import/export as CSV. Breweries
+added to the bundled list in a later release reach existing installs
+too, once each, so a deletion you make is permanent.
 Source list for the initial seed: `app/breweries_default.txt`.
 
 ## Upgrading an existing deployment
