@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app import backup, config, models, schemas
 from app.auth import hash_password
-from app.database import eq_unicode, get_db, ilike_unicode, search_unicode
+from app.database import eq_unicode, get_db, search_unicode
 from app.deps import require_admin
 from app.crypto import encrypt_secret
 from app.csv_utils import csv_safe
@@ -277,10 +277,11 @@ def create_brewery_admin(
     db: Session = Depends(get_db),
     _admin: models.User = Depends(require_admin),
 ):
-    existing = db.query(models.Brewery).filter(ilike_unicode(models.Brewery.name, payload.name)).first()
+    name = payload.name.strip()
+    existing = db.query(models.Brewery).filter(eq_unicode(models.Brewery.name, name)).first()
     if existing:
         raise HTTPException(status_code=400, detail="A brewery with that name already exists.")
-    brewery = models.Brewery(name=payload.name.strip(), website=sanitize_url(payload.website))
+    brewery = models.Brewery(name=name, website=sanitize_url(payload.website))
     db.add(brewery)
     db.commit()
     db.refresh(brewery)
@@ -305,7 +306,7 @@ def update_brewery_admin(
             raise HTTPException(status_code=400, detail="Name can't be empty.")
         dupe = (
             db.query(models.Brewery)
-            .filter(ilike_unicode(models.Brewery.name, new_name), models.Brewery.id != brewery_id)
+            .filter(eq_unicode(models.Brewery.name, new_name), models.Brewery.id != brewery_id)
             .first()
         )
         if dupe:
@@ -378,7 +379,7 @@ async def import_breweries_admin(
             skipped += 1
             errors.append(f"Row {i}: missing name.")
             continue
-        existing = db.query(models.Brewery).filter(ilike_unicode(models.Brewery.name, name)).first()
+        existing = db.query(models.Brewery).filter(eq_unicode(models.Brewery.name, name)).first()
         if existing:
             skipped += 1
             continue
@@ -459,7 +460,7 @@ def create_beer_admin(
         raise HTTPException(status_code=404, detail="Brewery not found.")
     existing = (
         db.query(models.Beer)
-        .filter(models.Beer.brewery_id == payload.brewery_id, ilike_unicode(models.Beer.name, payload.name))
+        .filter(models.Beer.brewery_id == payload.brewery_id, eq_unicode(models.Beer.name, payload.name.strip()))
         .first()
     )
     if existing:
@@ -499,7 +500,7 @@ def update_beer_admin(
             db.query(models.Beer)
             .filter(
                 models.Beer.brewery_id == new_brewery_id,
-                ilike_unicode(models.Beer.name, new_name),
+                eq_unicode(models.Beer.name, new_name),
                 models.Beer.id != beer_id,
             )
             .first()
@@ -653,7 +654,7 @@ def create_beer_style_admin(
     db: Session = Depends(get_db),
     _admin: models.User = Depends(require_admin),
 ):
-    existing = db.query(models.BeerStyle).filter(ilike_unicode(models.BeerStyle.name, payload.name)).first()
+    existing = db.query(models.BeerStyle).filter(eq_unicode(models.BeerStyle.name, payload.name.strip())).first()
     if existing:
         raise HTTPException(status_code=400, detail="That style already exists.")
     # New styles go at the end of the (otherwise category-grouped)
@@ -679,7 +680,7 @@ def update_beer_style_admin(
     new_name = payload.name.strip()
     dupe = (
         db.query(models.BeerStyle)
-        .filter(ilike_unicode(models.BeerStyle.name, new_name), models.BeerStyle.id != style_id)
+        .filter(eq_unicode(models.BeerStyle.name, new_name), models.BeerStyle.id != style_id)
         .first()
     )
     if dupe:

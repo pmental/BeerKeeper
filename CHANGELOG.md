@@ -1,5 +1,6 @@
 # Changelog
 
+- **0.0.86**: The duplicate-name fix from the last release now applies to the admin pages too, for breweries, beers and styles. CSV import reports an unreadable date instead of quietly leaving it blank.
 - **0.0.85**: Changing a bottle's drink-by date now lets it remind you again, instead of staying silent because an earlier reminder was already sent. Brewery and beer names with leading or trailing spaces no longer create duplicates. Admin beer imports report bad rows instead of failing partway.
 - **0.0.84**: Ratings can now be given in half stars. Tapping the star you're already on clears the rating.
 - **0.0.83**: Clearer account settings: enabling trading now says plainly that it publishes a trade list anyone with the link can see, and the tasting-notes setting no longer claims it only applies to a public cellar.

@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app import models, schemas
 from app.csv_utils import csv_safe
-from app.database import get_db, ilike_unicode
+from app.database import eq_unicode, get_db
 from app.deps import get_current_user
 from app.routers.beers import _get_or_create_brewery
 from app.uploads import read_upload_limited
@@ -39,13 +39,18 @@ CSV_COLUMNS = [
 
 
 def _parse_date(value: str):
+    """A date, or None if the cell was blank.
+
+    Raises ValueError on a value that was filled in but isn't a date, so
+    the caller reports it rather than quietly storing NULL. Silently
+    dropping "2025-99-99" was the one place the importer still lost data
+    without saying so, which sits badly next to it now telling you about
+    every other kind of bad cell.
+    """
     value = (value or "").strip()
     if not value:
         return None
-    try:
-        return dt.date.fromisoformat(value)
-    except ValueError:
-        return None
+    return dt.date.fromisoformat(value)
 
 
 def _resolve_size_oz(row: dict, unit_system: str) -> float | None:
@@ -202,6 +207,13 @@ def export_cellar(
     )
 
 
+def _parse_date_labelled(value: str, column: str):
+    try:
+        return _parse_date(value)
+    except ValueError:
+        raise ValueError(f"{column}: '{(value or '').strip()}' isn't a valid date (expected YYYY-MM-DD)")
+
+
 def _validated_row(row: dict, unit_system: str) -> "tuple[schemas.CellarEntryIn | None, str | None]":
     """Put one CSV row through the same schemas the API uses.
 
@@ -232,8 +244,8 @@ def _validated_row(row: dict, unit_system: str) -> "tuple[schemas.CellarEntryIn 
             custom_location=(row.get("custom_location") or "").strip() or None,
             quantity=int(qty_raw) if qty_raw else 1,
             size_oz=size_oz,
-            bottle_date=_parse_date(row.get("bottle_date")),
-            best_before=_parse_date(row.get("best_before")),
+            bottle_date=_parse_date_labelled(row.get("bottle_date"), "bottle_date"),
+            best_before=_parse_date_labelled(row.get("best_before"), "best_before"),
             batch_notes=(row.get("batch_notes") or "").strip() or None,
             trade_status=(row.get("trade_status") or "none").strip().lower(),
         )
@@ -299,7 +311,7 @@ async def import_cellar(
         brewery = _get_or_create_brewery(db, None, brewery_name)
         beer = (
             db.query(models.Beer)
-            .filter(models.Beer.brewery_id == brewery.id, ilike_unicode(models.Beer.name, beer_name))
+            .filter(models.Beer.brewery_id == brewery.id, eq_unicode(models.Beer.name, beer_name))
             .first()
         )
         if not beer:
