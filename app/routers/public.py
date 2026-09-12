@@ -11,11 +11,17 @@ router = APIRouter(prefix="/api/public", tags=["public"])
 
 
 def public_notes_for(user: models.User, notes: "str | None") -> "str | None":
-    """Batch notes for a public view, or None if this user keeps them private.
+    """Any user-written note on a public view, or None if they're private.
 
-    Exists so no public endpoint has to remember the rule on its own. The
-    trade board previously serialized notes directly and so leaked them
-    for users who had notes set to private but trading enabled.
+    Covers every note field, not just tasting notes on owned bottles:
+    wanted-list notes go through here too. The distinction between "a
+    tasting note" and "a note on something I'm looking for" is too fine
+    to hang someone's privacy on - if they've said their notes are
+    private, free text they typed shouldn't be served to anonymous
+    visitors because it happened to be attached to a different table.
+
+    Exists so no public endpoint has to remember the rule on its own,
+    which is how the trade board came to leak notes in the first place.
     """
     return notes if user.notes_public else None
 
@@ -136,7 +142,7 @@ def public_trades(username: str, db: Session = Depends(get_db)):
         .all()
     )
     wanted += [
-        {"id": f"wanted-{w.id}", "owned": False, "notes": w.notes, "beer": serialize_beer(w.beer)}
+        {"id": f"wanted-{w.id}", "owned": False, "notes": public_notes_for(user, w.notes), "beer": serialize_beer(w.beer)}
         for w in wanted_entries
     ]
     wanted.sort(key=lambda x: sort_key(x["beer"]["name"], x["beer"]["brewery"]["name"]))

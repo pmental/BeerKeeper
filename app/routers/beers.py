@@ -3,7 +3,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app import models, schemas
-from app.database import get_db, ilike_unicode, search_unicode
+from app.database import eq_unicode, get_db, search_unicode
 from app.deps import get_current_user
 from app.url_utils import sanitize_url
 
@@ -105,10 +105,11 @@ def create_brewery(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    existing = db.query(models.Brewery).filter(ilike_unicode(models.Brewery.name, payload.name)).first()
+    name = payload.name.strip()
+    existing = db.query(models.Brewery).filter(eq_unicode(models.Brewery.name, name)).first()
     if existing:
         return existing
-    brewery = models.Brewery(name=payload.name.strip(), website=sanitize_url(payload.website))
+    brewery = models.Brewery(name=name, website=sanitize_url(payload.website))
     db.add(brewery)
     db.commit()
     db.refresh(brewery)
@@ -122,10 +123,11 @@ def _get_or_create_brewery(db: Session, brewery_id: int | None, new_name: str | 
             raise HTTPException(status_code=404, detail="Brewery not found.")
         return brewery
     if new_name:
-        existing = db.query(models.Brewery).filter(ilike_unicode(models.Brewery.name, new_name)).first()
+        name = new_name.strip()
+        existing = db.query(models.Brewery).filter(eq_unicode(models.Brewery.name, name)).first()
         if existing:
             return existing
-        brewery = models.Brewery(name=new_name.strip())
+        brewery = models.Brewery(name=name)
         db.add(brewery)
         db.flush()
         return brewery
@@ -148,7 +150,7 @@ def resolve_or_create_beer_id(db: Session, beer_id: int | None, beer_in: "schema
     brewery = _get_or_create_brewery(db, beer_in.brewery_id, beer_in.new_brewery_name)
     beer = (
         db.query(models.Beer)
-        .filter(models.Beer.brewery_id == brewery.id, ilike_unicode(models.Beer.name, beer_in.name))
+        .filter(models.Beer.brewery_id == brewery.id, eq_unicode(models.Beer.name, beer_in.name.strip()))
         .first()
     )
     if not beer:
@@ -201,7 +203,7 @@ def create_beer(
     brewery = _get_or_create_brewery(db, payload.brewery_id, payload.new_brewery_name)
     existing = (
         db.query(models.Beer)
-        .filter(models.Beer.brewery_id == brewery.id, ilike_unicode(models.Beer.name, payload.name))
+        .filter(models.Beer.brewery_id == brewery.id, eq_unicode(models.Beer.name, payload.name.strip()))
         .first()
     )
     if existing:

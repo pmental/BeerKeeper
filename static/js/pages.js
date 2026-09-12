@@ -1633,7 +1633,7 @@ const Pages = (() => {
           ${toggleRow("unit_metric", "Use metric units", "Show and enter bottle sizes in millilitres (mL) instead of fluid ounces (oz).", a.unit_system === "metric")}
           ${toggleRow("show_fridge_column", "Track a separate fridge", "Turn off if you only track one shelf.", a.show_fridge_column)}
           ${toggleRow("show_location_column", "Track custom shelf / location", "Adds a free-text location field to each bottle.", a.show_location_column)}
-          ${toggleRow("trading_enabled", "Enable trading labels", "Mark bottles as For Trade or In Search Of, and track beers you don't have yet on a wanted list.", a.trading_enabled)}
+          ${toggleRow("trading_enabled", "Enable trading labels", "Mark bottles as For Trade or In Search Of, and track beers you don't have yet on a wanted list. This publishes a trade list anyone with the link can see, even if your cellar is private.", a.trading_enabled)}
         </div>
       </div>
 
@@ -1684,7 +1684,7 @@ const Pages = (() => {
         <h3>Privacy</h3>
         <div class="settings-grid">
           ${toggleRow("cellar_public", "Make my cellar public", "Others can find you via Browse cellars and view your bottles.", a.cellar_public)}
-          ${toggleRow("notes_public", "Show my tasting notes publicly", "Only applies if your cellar is public.", a.notes_public)}
+          ${toggleRow("notes_public", "Show my tasting notes publicly", "Applies to your public cellar, and to your trade list if trading is on.", a.notes_public)}
           ${toggleRow("drinkby_public", "Show drink-by dates publicly", "Only applies if your cellar is public.", a.drinkby_public)}
         </div>
       </div>

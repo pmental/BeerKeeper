@@ -83,7 +83,10 @@ def _resolve_size_oz(row: dict, unit_system: str) -> float | None:
 
 _CELLARBEER_SIGNATURE_COLUMNS = {"Brewery", "Beer", "In Cellar"}
 
-_CELLARBEER_SIZE_PATTERN = re.compile(r"^\s*([\d.]+)\s*(ml|cl|l)\s*$", re.IGNORECASE)
+# Deliberately not [\d.]+ - that matches "1.2.3", which then blows up in
+# float() and aborts the whole import before the per-row validation
+# layer ever sees it.
+_CELLARBEER_SIZE_PATTERN = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*(ml|cl|l)\s*$", re.IGNORECASE)
 
 
 def _parse_cellarbeer_size_ml(value: str | None) -> tuple[str, str | None]:

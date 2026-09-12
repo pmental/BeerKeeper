@@ -172,7 +172,7 @@ class CellarEntryIn(BaseModel):
     location: str = Field(default="cellar", pattern="^(cellar|fridge)$")
     custom_location: Optional[str] = Field(default=None, max_length=120)
     quantity: int = Field(default=1, ge=0, le=10000)
-    size_oz: Optional[float] = Field(default=None, ge=0)
+    size_oz: Optional[float] = Field(default=None, ge=0, le=5000, allow_inf_nan=False)
     bottle_date: Optional[dt.date] = None
     best_before: Optional[dt.date] = None
     batch_notes: Optional[str] = Field(default=None, max_length=4000)
@@ -183,7 +183,7 @@ class CellarEntryPatch(BaseModel):
     location: Optional[str] = Field(default=None, pattern="^(cellar|fridge)$")
     custom_location: Optional[str] = Field(default=None, max_length=120)
     quantity: Optional[int] = Field(default=None, ge=0, le=10000)
-    size_oz: Optional[float] = Field(default=None, ge=0)
+    size_oz: Optional[float] = Field(default=None, ge=0, le=5000, allow_inf_nan=False)
     bottle_date: Optional[dt.date] = None
     best_before: Optional[dt.date] = None
     batch_notes: Optional[str] = Field(default=None, max_length=4000)
@@ -210,7 +210,7 @@ class CellarEntryOut(BaseModel):
 class DrinkIn(BaseModel):
     quantity: int = Field(default=1, ge=1, le=10000)
     note: Optional[str] = Field(default=None, max_length=4000)
-    rating: Optional[float] = Field(default=None, ge=0, le=5)
+    rating: Optional[float] = Field(default=None, ge=0, le=5, multiple_of=0.5)
     consumed_on: Optional[dt.date] = None
     delete_if_empty: bool = False
 
@@ -240,14 +240,14 @@ class ConsumptionLogIn(BaseModel):
     quantity: int = Field(default=1, ge=1, le=10000)
     consumed_on: Optional[dt.date] = None
     note: Optional[str] = Field(default=None, max_length=4000)
-    rating: Optional[float] = Field(default=None, ge=0, le=5)
+    rating: Optional[float] = Field(default=None, ge=0, le=5, multiple_of=0.5)
 
 
 class ConsumptionLogPatch(BaseModel):
     quantity: Optional[int] = Field(default=None, ge=1, le=10000)
     consumed_on: Optional[dt.date] = None
     note: Optional[str] = Field(default=None, max_length=4000)
-    rating: Optional[float] = Field(default=None, ge=0, le=5)
+    rating: Optional[float] = Field(default=None, ge=0, le=5, multiple_of=0.5)
 
 
 # ---------- Wanted (not owned) ----------

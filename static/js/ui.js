@@ -116,23 +116,38 @@ const UI = (() => {
     return `<div class="tally">${dots}${extra}<span class="count-label">${quantity} on hand</span></div>`;
   }
 
+  // Markup for the i-th star at a given rating. Shared by the read-only
+  // display and the picker so the two can't drift apart.
+  //
+  // A half star is built by overlaying a clipped full star on an empty
+  // one, rather than using U+2BEA (STAR WITH LEFT HALF BLACK). That
+  // character is obscure enough that plenty of font stacks either lack
+  // it or render it badly - the same trap that made the notes icon a
+  // blank box on some phones and let Opera recolour the menu icon. This
+  // uses only U+2605 and U+2606, which are effectively universal.
+  function starMarkup(rating, i) {
+    if (rating >= i) return `<span class="star on">\u2605</span>`;
+    if (rating >= i - 0.5)
+      return `<span class="star half"><span class="star-fill">\u2605</span>\u2606</span>`;
+    return `<span class="star">\u2606</span>`;
+  }
+
   function starsReadonly(rating) {
     if (rating === null || rating === undefined) return "";
     let out = "";
     for (let i = 1; i <= 5; i++) {
-      const full = rating >= i;
-      const half = !full && rating >= i - 0.5;
-      out += `<span style="color:${full || half ? "var(--accent)" : "var(--text-faint)"}">${
-        full ? "\u2605" : half ? "\u2bea" : "\u2606"
-      }</span>`;
+      out += starMarkup(rating, i);
     }
     return `<span class="stars" aria-label="${rating} out of 5">${out}</span>`;
   }
 
   function starPicker(name, initial = 0) {
-    let html = `<div class="stars" data-star-picker="${name}">`;
+    let html = `<div class="stars star-picker" data-star-picker="${name}" role="group" aria-label="Rating">`;
     for (let i = 1; i <= 5; i++) {
-      html += `<button type="button" data-val="${i}" class="${i <= initial ? "on" : ""}">\u2605</button>`;
+      html += `<button type="button" data-val="${i}" aria-label="${i} star${i === 1 ? "" : "s"}">${starMarkup(
+        initial,
+        i
+      )}</button>`;
     }
     html += `</div><input type="hidden" name="${name}" value="${initial}" />`;
     return html;
@@ -142,13 +157,33 @@ const UI = (() => {
     container.querySelectorAll("[data-star-picker]").forEach((wrap) => {
       const name = wrap.dataset.starPicker;
       const hidden = container.querySelector(`input[type=hidden][name="${name}"]`);
-      wrap.querySelectorAll("button").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const val = Number(btn.dataset.val);
-          hidden.value = String(val);
-          wrap.querySelectorAll("button").forEach((b) => {
-            b.classList.toggle("on", Number(b.dataset.val) <= val);
-          });
+      const buttons = Array.from(wrap.querySelectorAll("button"));
+
+      function paint(value) {
+        buttons.forEach((b) => {
+          b.innerHTML = starMarkup(value, Number(b.dataset.val));
+        });
+        wrap.setAttribute("aria-label", value ? `Rating: ${value} out of 5` : "Rating: not set");
+      }
+
+      buttons.forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          const i = Number(btn.dataset.val);
+          let value = i;
+          // A click from the keyboard (Enter/Space) carries no pointer
+          // position - detail is 0 and clientX would read as the far left,
+          // which would silently turn every keyboard press into a half
+          // star. Those get the whole star instead.
+          if (e.detail !== 0) {
+            const rect = btn.getBoundingClientRect();
+            if (e.clientX - rect.left < rect.width / 2) value = i - 0.5;
+          }
+          // Picking the value it already holds clears it, since there's
+          // otherwise no way back to unrated once half stars exist - the
+          // left edge of the first star is 0.5, not 0.
+          if (Number(hidden.value) === value) value = 0;
+          hidden.value = String(value);
+          paint(value);
         });
       });
     });

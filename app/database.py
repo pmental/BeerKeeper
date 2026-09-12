@@ -85,11 +85,22 @@ Base = declarative_base()
 def ilike_unicode(column, value):
     """A drop-in replacement for column.ilike(value) that also works
     correctly for non-ASCII names - see the unicode_lower() registration
-    above for why plain ilike() can't be trusted here. Works the same way
-    whether value has %-wildcards (a substring search) or is a plain
-    string (an exact case-insensitive match, e.g. a duplicate-name
-    check) - LIKE handles both once the case-folding itself is correct."""
+    above for why plain ilike() can't be trusted here. For substring
+    searches, where value carries %-wildcards.
+
+    Not for uniqueness checks: a name containing % or _ would be treated
+    as a pattern there and match the wrong row. Use eq_unicode() for
+    that."""
     return func.unicode_lower(column).like(func.unicode_lower(value))
+
+
+def eq_unicode(column, value):
+    """Exact case-insensitive comparison, for duplicate-name checks.
+
+    Uses = rather than LIKE so that a brewery genuinely called "100%
+    Brett" is compared literally instead of having its % read as a
+    wildcard."""
+    return func.unicode_lower(column) == func.unicode_lower(value)
 
 
 def search_unicode(column, value):

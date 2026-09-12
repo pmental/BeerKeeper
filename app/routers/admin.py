@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app import backup, config, models, schemas
 from app.auth import hash_password
-from app.database import get_db, ilike_unicode, search_unicode
+from app.database import eq_unicode, get_db, ilike_unicode, search_unicode
 from app.deps import require_admin
 from app.crypto import encrypt_secret
 from app.csv_utils import csv_safe
@@ -591,22 +591,39 @@ async def import_beers_admin(
             errors.append(f"Row {i}: missing name or brewery.")
             continue
         brewery = _get_or_create_brewery(db, None, brewery_name)
+
+        # Through the same schema the admin API uses, so a bad ABV is a
+        # skipped row with a reason rather than an exception that takes
+        # the rest of the file down with it.
+        abv_raw = (row.get("abv") or "").strip()
+        try:
+            valid = schemas.AdminBeerIn(
+                name=name,
+                brewery_id=brewery.id,
+                style=(row.get("style") or "").strip() or None,
+                abv=float(abv_raw) if abv_raw else None,
+                reference_url=(row.get("reference_url") or "").strip() or None,
+            )
+        except ValueError as e:
+            skipped += 1
+            errors.append(f"Row {i}: {str(e).splitlines()[0]}")
+            continue
+
         existing = (
             db.query(models.Beer)
-            .filter(models.Beer.brewery_id == brewery.id, ilike_unicode(models.Beer.name, name))
+            .filter(models.Beer.brewery_id == brewery.id, eq_unicode(models.Beer.name, valid.name))
             .first()
         )
         if existing:
             skipped += 1
             continue
-        abv_raw = (row.get("abv") or "").strip()
         db.add(
             models.Beer(
-                name=name,
+                name=valid.name,
                 brewery_id=brewery.id,
-                style=(row.get("style") or "").strip() or None,
-                abv=float(abv_raw) if abv_raw else None,
-                reference_url=sanitize_url(row.get("reference_url")),
+                style=valid.style,
+                abv=valid.abv,
+                reference_url=sanitize_url(valid.reference_url),
             )
         )
         created += 1

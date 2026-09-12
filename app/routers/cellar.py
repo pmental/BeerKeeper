@@ -118,6 +118,18 @@ def update_entry(
 ):
     entry = _get_owned_entry(db, entry_id, current_user.id)
     data = payload.model_dump(exclude_unset=True)
+
+    # A reminder already sent covers the bottle as it was then. If the
+    # drink-by date moves, or an entry comes back from zero to having
+    # bottles in it, that's a new situation worth being told about - so
+    # the marker is cleared and the next sweep treats it as unreminded.
+    # Without this, pushing a date out by a year would silently suppress
+    # the reminder for the new date.
+    date_changed = "best_before" in data and data["best_before"] != entry.best_before
+    refilled = "quantity" in data and entry.quantity == 0 and (data["quantity"] or 0) > 0
+    if date_changed or refilled:
+        entry.drinkby_notified_at = None
+
     for field, value in data.items():
         setattr(entry, field, value)
     db.commit()

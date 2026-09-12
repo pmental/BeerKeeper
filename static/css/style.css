@@ -1112,8 +1112,37 @@ textarea.input {
   font-size: 20px;
   line-height: 1;
 }
-.stars button.on {
+/* A half star is an empty outline with the left half of a filled star
+   laid over it, so only the two universally-available glyphs are needed
+   (see starMarkup in ui.js). */
+.star {
+  position: relative;
+  display: inline-block;
+  color: var(--text-faint);
+}
+.star.on {
   color: var(--accent);
+}
+.star.half > .star-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50%;
+  overflow: hidden;
+  color: var(--accent);
+}
+.stars button {
+  color: inherit;
+}
+/* Only the interactive picker grows. Each star is two hit zones now
+   (left half / right half), so at the read-only size a target would be
+   about 10px across - too small to hit reliably on a phone. */
+.stars.star-picker {
+  gap: 6px;
+}
+.stars.star-picker button {
+  font-size: 30px;
+  padding: 4px 3px;
 }
 
 /* ============ Account settings ============ */

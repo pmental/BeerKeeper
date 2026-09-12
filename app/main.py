@@ -1,7 +1,10 @@
+import math
 import os
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -111,6 +114,27 @@ async def security_headers(request, call_next):
         # else entirely.
         response.headers["Cache-Control"] = "no-store"
     return response
+
+
+@app.exception_handler(RequestValidationError)
+async def _validation_error_handler(request: Request, exc: RequestValidationError):
+    """Return validation failures as JSON even when the rejected value
+    can't be represented in JSON.
+
+    FastAPI echoes the offending input back in the error body. For a value
+    like infinity - which Pydantic correctly refuses - that echo is itself
+    unserializable, so the 422 turned into a 500. Dropping the echoed
+    value keeps the message intact and the response valid.
+    """
+    safe = []
+    for err in exc.errors():
+        err = dict(err)
+        value = err.get("input")
+        if isinstance(value, float) and not math.isfinite(value):
+            err["input"] = str(value)
+        err.pop("ctx", None)
+        safe.append(err)
+    return JSONResponse(status_code=422, content={"detail": safe})
 
 
 app.include_router(auth_router.router)
