@@ -1,5 +1,6 @@
 import re
 import secrets
+import logging
 from urllib.parse import quote
 
 from authlib.integrations.starlette_client import OAuth
@@ -13,6 +14,8 @@ from app.auth import create_access_token, hash_password
 from app.session import start_session
 from app.database import SessionLocal
 from app.email import is_smtp_enabled, send_welcome_email
+
+log = logging.getLogger("cellar.oidc")
 
 router = APIRouter(prefix="/api/auth/oidc", tags=["oidc"])
 
@@ -157,9 +160,11 @@ async def oidc_login(request: Request):
         return await oauth.oidc.authorize_redirect(request, redirect_uri)
     except Exception as e:
         # Most commonly a bad CELLAR_OIDC_ISSUER (unreachable, wrong path, TLS
-        # issue) that broke discovery. Send the browser back with a readable
-        # message instead of a bare 500 and a stack trace.
-        message = f"Couldn't reach the SSO provider ({type(e).__name__}: {e})."[:300]
+        # issue) that broke discovery. The detail goes to the log, not the
+        # browser: it can name internal hosts, ports and TLS particulars,
+        # and the person looking at the login page can't act on it anyway.
+        log.warning("OIDC discovery/redirect failed: %s: %s", type(e).__name__, e)
+        message = "Couldn't reach the SSO provider. Check the server logs for details."
         return RedirectResponse(f"{config.BASE_URL}/#/login?oidc_error=" + quote(message, safe=""))
 
 
@@ -169,7 +174,9 @@ async def oidc_callback(request: Request, background_tasks: BackgroundTasks):
     try:
         token = await oauth.oidc.authorize_access_token(request)
     except Exception as e:
-        return RedirectResponse(f"{config.BASE_URL}/#/login?oidc_error=" + quote(str(e)[:200], safe=""))
+        log.warning("OIDC token exchange failed: %s: %s", type(e).__name__, e)
+        message = "SSO sign-in failed. Check the server logs for details."
+        return RedirectResponse(f"{config.BASE_URL}/#/login?oidc_error=" + quote(message, safe=""))
 
     # Some providers put a full claim set in the ID token; others put only
     # the bare minimum there (sometimes just `sub`) and expect the rest

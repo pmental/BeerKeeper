@@ -10,6 +10,15 @@ PENDING_RESTORE_PATH = os.path.join(DATA_DIR, ".pending_restore.zip")
 
 ZIP_DB_ENTRY = "cellar.db"
 
+# Cap on the *uncompressed* database, checked before it's pulled into
+# memory. The upload itself is capped, but zip compresses well and a
+# deliberately crafted archive can expand to orders of magnitude more
+# than it weighs on the wire - so the upload limit alone doesn't bound
+# what a restore can allocate. This is far above any realistic cellar
+# (the bundled ~10k brewery list is a few MB) while keeping a malicious
+# archive from exhausting memory.
+MAX_DB_BYTES = 256 * 1024 * 1024
+
 # A backup/restore of a database that doesn't even loosely resemble this
 # app's schema would be worse than useless - this is a cheap sanity check
 # against uploading the wrong file, not full schema validation.
@@ -50,10 +59,30 @@ def validate_backup_zip(data: bytes) -> None:
     except zipfile.BadZipFile:
         raise ValueError("That's not a valid backup file (not a zip archive).")
 
-    if ZIP_DB_ENTRY not in zf.namelist():
+    names = zf.namelist()
+    if ZIP_DB_ENTRY not in names:
         raise ValueError(f"That backup is missing {ZIP_DB_ENTRY} - doesn't look like a BeerKeeper backup.")
 
-    db_bytes = zf.read(ZIP_DB_ENTRY)
+    # A backup this app produces contains exactly one entry. Anything else
+    # didn't come from here, and there's no reason to carry it around in
+    # the pending-restore file.
+    unexpected = [n for n in names if n != ZIP_DB_ENTRY]
+    if unexpected:
+        raise ValueError(
+            f"That backup contains unexpected files ({', '.join(unexpected[:3])}"
+            f"{'...' if len(unexpected) > 3 else ''}) - only {ZIP_DB_ENTRY} is expected."
+        )
+
+    # Check the size the archive claims before decompressing anything...
+    if zf.getinfo(ZIP_DB_ENTRY).file_size > MAX_DB_BYTES:
+        raise ValueError("The database inside that backup is too large to restore.")
+
+    # ...then read with a hard ceiling anyway, since that header is just a
+    # number in the archive and a crafted one can understate the truth.
+    with zf.open(ZIP_DB_ENTRY) as fh:
+        db_bytes = fh.read(MAX_DB_BYTES + 1)
+    if len(db_bytes) > MAX_DB_BYTES:
+        raise ValueError("The database inside that backup is too large to restore.")
     if not db_bytes.startswith(b"SQLite format 3\x00"):
         raise ValueError("The database inside that backup isn't a valid SQLite file.")
 
