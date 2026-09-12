@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 
-from app import models
+from app import models, schemas
 from app.csv_utils import csv_safe
 from app.database import get_db, ilike_unicode
 from app.deps import get_current_user
@@ -199,6 +199,62 @@ def export_cellar(
     )
 
 
+def _validated_row(row: dict, unit_system: str) -> "tuple[schemas.CellarEntryIn | None, str | None]":
+    """Put one CSV row through the same schemas the API uses.
+
+    The importer used to do its own parsing, which meant a file could
+    carry values the API would refuse: an ABV of 9999, a 50,000-character
+    note, a quantity of a billion. Worse, a non-numeric ABV raised
+    straight out of float() and took the whole import down with it,
+    losing the rows that had already been read.
+
+    Building the same Pydantic models the JSON endpoints use keeps one
+    set of rules rather than two that can drift apart, and turns a bad
+    row into a skipped row with a readable reason.
+    """
+    qty_raw = (row.get("quantity") or "1").strip()
+    abv_raw = (row.get("abv") or "").strip()
+    size_oz = _resolve_size_oz(row, unit_system)
+
+    try:
+        beer = schemas.BeerIn(
+            name=(row.get("beer") or "").strip(),
+            new_brewery_name=(row.get("brewery") or "").strip(),
+            style=(row.get("style") or "").strip() or None,
+            abv=float(abv_raw) if abv_raw else None,
+        )
+        entry = schemas.CellarEntryIn(
+            beer=beer,
+            location=(row.get("location") or "cellar").strip().lower(),
+            custom_location=(row.get("custom_location") or "").strip() or None,
+            quantity=int(qty_raw) if qty_raw else 1,
+            size_oz=size_oz,
+            bottle_date=_parse_date(row.get("bottle_date")),
+            best_before=_parse_date(row.get("best_before")),
+            batch_notes=(row.get("batch_notes") or "").strip() or None,
+            trade_status=(row.get("trade_status") or "none").strip().lower(),
+        )
+    except ValueError as e:
+        # Covers both Pydantic's ValidationError and a plain float()/int()
+        # failure on a field that isn't a number at all.
+        return None, _first_validation_message(e)
+    return entry, None
+
+
+def _first_validation_message(e: Exception) -> str:
+    """One readable line out of a validation failure, rather than the
+    multi-line dump Pydantic produces."""
+    errors = getattr(e, "errors", None)
+    if callable(errors):
+        try:
+            first = errors()[0]
+            field = ".".join(str(p) for p in first.get("loc", ()) if p != "beer")
+            return f"{field or 'row'}: {first.get('msg', 'invalid value')}"
+        except Exception:  # noqa: BLE001
+            pass
+    return str(e).splitlines()[0]
+
+
 @router.post("/import")
 async def import_cellar(
     file: UploadFile = File(...),
@@ -231,6 +287,12 @@ async def import_cellar(
             errors.append(f"Row {i}: missing brewery or beer name.")
             continue
 
+        valid, problem = _validated_row(row, current_user.unit_system)
+        if valid is None:
+            skipped += 1
+            errors.append(f"Row {i}: {problem}")
+            continue
+
         brewery = _get_or_create_brewery(db, None, brewery_name)
         beer = (
             db.query(models.Beer)
@@ -238,35 +300,26 @@ async def import_cellar(
             .first()
         )
         if not beer:
-            abv_raw = (row.get("abv") or "").strip()
             beer = models.Beer(
-                name=beer_name,
+                name=valid.beer.name,
                 brewery_id=brewery.id,
-                style=(row.get("style") or "").strip() or None,
-                abv=float(abv_raw) if abv_raw else None,
+                style=valid.beer.style,
+                abv=valid.beer.abv,
             )
             db.add(beer)
             db.flush()
 
-        location = (row.get("location") or "cellar").strip().lower()
-        if location not in ("cellar", "fridge"):
-            location = "cellar"
-        qty_raw = (row.get("quantity") or "1").strip()
-        trade = (row.get("trade_status") or "none").strip().lower()
-        if trade not in ("none", "ft", "iso"):
-            trade = "none"
-
         entry = models.CellarEntry(
             user_id=current_user.id,
             beer_id=beer.id,
-            location=location,
-            custom_location=(row.get("custom_location") or "").strip() or None,
-            quantity=int(qty_raw) if qty_raw.isdigit() else 1,
-            size_oz=_resolve_size_oz(row, current_user.unit_system),
-            bottle_date=_parse_date(row.get("bottle_date")),
-            best_before=_parse_date(row.get("best_before")),
-            batch_notes=(row.get("batch_notes") or "").strip() or None,
-            trade_status=trade if current_user.trading_enabled else "none",
+            location=valid.location,
+            custom_location=valid.custom_location,
+            quantity=valid.quantity,
+            size_oz=valid.size_oz,
+            bottle_date=valid.bottle_date,
+            best_before=valid.best_before,
+            batch_notes=valid.batch_notes,
+            trade_status=valid.trade_status if current_user.trading_enabled else "none",
         )
         db.add(entry)
         created += 1

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app import config, models
 from app.admin_bootstrap import promote_earliest_if_no_admin
 from app.auth import create_access_token, hash_password
+from app.session import start_session
 from app.database import SessionLocal
 from app.email import is_smtp_enabled, send_welcome_email
 
@@ -238,4 +239,10 @@ async def oidc_callback(request: Request, background_tasks: BackgroundTasks):
         f"resolved_display_name={display_name!r} resolved_username={user.username!r}"
     )
 
-    return RedirectResponse(f"{config.BASE_URL}/#/oidc-callback?token={jwt_token}")
+    # The token goes in the session cookie rather than the redirect URL.
+    # A fragment isn't sent to servers, but it does land in browser
+    # history and is readable by script on the landing page, which is
+    # exactly what the cookie is meant to avoid.
+    redirect = RedirectResponse(f"{config.BASE_URL}/#/oidc-callback")
+    start_session(redirect, request, jwt_token)
+    return redirect

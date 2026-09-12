@@ -1133,7 +1133,6 @@ const Pages = (() => {
       const fd = new FormData(form);
       try {
         const { access_token } = await Api.login(fd.get("username"), fd.get("password"));
-        Api.setToken(access_token);
         await ctx.refreshUser();
         toast(`Welcome back, ${fd.get("username")}.`);
         location.hash = "#/cellar";
@@ -1169,7 +1168,6 @@ const Pages = (() => {
       const fd = new FormData(form);
       try {
         const { access_token } = await Api.register(fd.get("username"), fd.get("email"), fd.get("password"));
-        Api.setToken(access_token);
         await ctx.refreshUser();
         toast("Cellar created. Welcome!");
         location.hash = "#/cellar";
@@ -1257,7 +1255,6 @@ const Pages = (() => {
       submitBtn.disabled = true;
       try {
         const { access_token } = await Api.resetPassword(token, fd.get("new_password"));
-        Api.setToken(access_token);
         await ctx.refreshUser();
         toast("Password set. You're logged in.");
         location.hash = "#/cellar";
@@ -1813,8 +1810,7 @@ const Pages = (() => {
         const fd = new FormData(pwForm);
         try {
           const { access_token } = await Api.changePassword(fd.get("current_password"), fd.get("new_password"));
-          Api.setToken(access_token);
-          toast("Password updated.");
+            toast("Password updated.");
           pwForm.reset();
         } catch (err) {
           pwError.textContent = err.message;

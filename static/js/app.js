@@ -26,13 +26,8 @@ const App = (() => {
   }
 
   async function refreshUser() {
-    if (!Api.getToken()) {
-      state.user = null;
-      state.displayName = null;
-      state.account = null;
-      await refreshVersionTag();
-      return;
-    }
+    // The session cookie is HttpOnly, so there's no local flag to test
+    // first - ask the server, and treat a 401 as "not signed in".
     try {
       const account = await Api.me();
       state.user = account.username;
@@ -42,7 +37,6 @@ const App = (() => {
       state.user = null;
       state.displayName = null;
       state.account = null;
-      Api.setToken(null);
     }
     await refreshVersionTag();
   }
@@ -86,8 +80,12 @@ const App = (() => {
       `;
       const logoutBtn = document.getElementById("logout-btn");
       if (logoutBtn) {
-        logoutBtn.addEventListener("click", () => {
-          Api.setToken(null);
+        logoutBtn.addEventListener("click", async () => {
+          try {
+            await Api.logout();
+          } catch (e) {
+            /* clearing the cookie is best effort; fall through either way */
+          }
           state.user = null;
           state.account = null;
           refreshVersionTag();
@@ -152,11 +150,9 @@ const App = (() => {
     // token out of the hash (it never reaches the server, by design), store
     // it, then hand off to the normal cellar view with a clean URL.
     if (hash.startsWith("#/oidc-callback")) {
-      const token = query.get("token");
       const error = query.get("oidc_error");
-      if (token) {
-        Api.setToken(token);
-        await refreshUser();
+      await refreshUser();
+      if (state.user) {
         UI.toast(`Welcome, ${state.displayName || state.user}.`);
         location.replace("#/cellar");
       } else {

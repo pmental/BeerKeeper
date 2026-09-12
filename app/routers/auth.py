@@ -2,7 +2,7 @@ import datetime as dt
 import hashlib
 import secrets
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -11,6 +11,7 @@ from app import config, models, schemas
 from app.admin_bootstrap import promote_earliest_if_no_admin
 from app.auth import create_access_token, hash_password, verify_password
 from app.database import get_db
+from app.session import end_session, start_session
 from app.deps import get_current_user
 from app.email import is_smtp_enabled, send_password_reset_email, send_welcome_email
 from app.rate_limit import rate_limit, rate_limit_by_key
@@ -76,7 +77,11 @@ def auth_config(db: Session = Depends(get_db)):
 
 @router.post("/register", response_model=schemas.TokenOut)
 def register(
-    payload: schemas.RegisterIn, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
+    request: Request,
+    response: Response,
+    payload: schemas.RegisterIn,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
 ):
     rate_limit(request, "register", max_attempts=10, window_seconds=600)
     _require_password_auth()
@@ -99,11 +104,12 @@ def register(
     if is_smtp_enabled(db):
         background_tasks.add_task(send_welcome_email, user.email, user.username)
     token = create_access_token(user.id, user.username)
+    start_session(response, request, token)
     return schemas.TokenOut(access_token=token)
 
 
 @router.post("/login", response_model=schemas.TokenOut)
-def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(request: Request, response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     rate_limit(request, "login", max_attempts=10, window_seconds=300)
     _require_password_auth()
     if len(form_data.password) > 200:
@@ -118,7 +124,23 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Incorrect username or password.")
     token = create_access_token(user.id, user.username)
+    start_session(response, request, token)
     return schemas.TokenOut(access_token=token)
+
+
+@router.post("/logout")
+def logout(response: Response):
+    """Clear the session cookie.
+
+    Needs a server round trip now: an HttpOnly cookie is by definition
+    something the page's own script can't delete, which is the whole
+    point of it. Deliberately unauthenticated - logging out should work
+    even if the token has already expired or been invalidated, and there
+    is nothing to protect here beyond removing a cookie the caller
+    already holds.
+    """
+    end_session(response)
+    return {"ok": True}
 
 
 @router.get("/me", response_model=schemas.AccountOut)
@@ -128,6 +150,8 @@ def me(current_user: models.User = Depends(get_current_user)):
 
 @router.post("/change-password", response_model=schemas.TokenOut)
 def change_password(
+    request: Request,
+    response: Response,
     payload: schemas.ChangePasswordIn,
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -146,6 +170,7 @@ def change_password(
     current_user.token_valid_after = now
     db.commit()
     token = create_access_token(current_user.id, current_user.username, issued_at=now)
+    start_session(response, request, token)
     return schemas.TokenOut(access_token=token)
 
 
@@ -175,7 +200,7 @@ def forgot_password(
 
 
 @router.post("/reset-password", response_model=schemas.TokenOut)
-def reset_password(payload: schemas.ResetPasswordIn, db: Session = Depends(get_db)):
+def reset_password(request: Request, response: Response, payload: schemas.ResetPasswordIn, db: Session = Depends(get_db)):
     _require_password_auth()
     _require_password_change_enabled()
     token_hash = _hash_token(payload.token)
@@ -193,4 +218,5 @@ def reset_password(payload: schemas.ResetPasswordIn, db: Session = Depends(get_d
     reset.used = True
     db.commit()
     token = create_access_token(user.id, user.username, issued_at=now)
+    start_session(response, request, token)
     return schemas.TokenOut(access_token=token)

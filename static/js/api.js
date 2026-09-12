@@ -1,12 +1,15 @@
 const Api = (() => {
-  const TOKEN_KEY = "cellar_token";
+  // The access token lives in an HttpOnly cookie the browser attaches on
+  // its own, so there is deliberately nothing to read or store here - it
+  // can't be reached from script, which is the point. What's left is the
+  // CSRF token, which is a readable cookie precisely so it can be echoed
+  // back in a header; a page on another origin can't read it to do the
+  // same.
+  const CSRF_COOKIE = "cellar_csrf";
 
-  function getToken() {
-    return localStorage.getItem(TOKEN_KEY);
-  }
-  function setToken(t) {
-    if (t) localStorage.setItem(TOKEN_KEY, t);
-    else localStorage.removeItem(TOKEN_KEY);
+  function csrfToken() {
+    const match = document.cookie.match(/(?:^|;\s*)cellar_csrf=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : null;
   }
 
   async function request(method, path, { body, form, auth = true } = {}) {
@@ -19,18 +22,22 @@ const Api = (() => {
       headers["Content-Type"] = "application/json";
       payload = JSON.stringify(body);
     }
-    if (auth) {
-      const token = getToken();
-      if (token) headers["Authorization"] = "Bearer " + token;
+    if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
+      const csrf = csrfToken();
+      if (csrf) headers["X-CSRF-Token"] = csrf;
     }
-    const res = await fetch(path, { method, headers, body: payload });
+    const res = await fetch(path, {
+      method,
+      headers,
+      body: payload,
+      // Same-origin is already the default, but state it: the session
+      // now rides on a cookie rather than a header.
+      credentials: "same-origin",
+    });
     const isJson = (res.headers.get("content-type") || "").includes("application/json");
     const data = isJson ? await res.json().catch(() => null) : await res.text();
 
     if (!res.ok) {
-      if (res.status === 401 && auth) {
-        setToken(null);
-      }
       const detail = isJson && data && data.detail;
       let message = "Something went wrong.";
       if (typeof detail === "string") message = detail;
@@ -46,8 +53,7 @@ const Api = (() => {
   }
 
   return {
-    getToken,
-    setToken,
+    logout: () => request("POST", "/api/auth/logout", { auth: false }),
     get: (path, opts) => request("GET", path, opts),
     post: (path, body, opts) => request("POST", path, { ...opts, body }),
     patch: (path, body, opts) => request("PATCH", path, { ...opts, body }),
@@ -131,10 +137,7 @@ const Api = (() => {
     adminSendTestEmail: (toEmail) => request("POST", "/api/admin/settings/smtp/test", { body: { to_email: toEmail } }),
 
     async adminDownloadBackup() {
-      const token = getToken();
-      const res = await fetch("/api/admin/backup", {
-        headers: token ? { Authorization: "Bearer " + token } : {},
-      });
+      const res = await fetch("/api/admin/backup", { credentials: "same-origin" });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new Error((data && data.detail) || "Couldn't download the backup.");
@@ -152,10 +155,7 @@ const Api = (() => {
     adminPatchBrewery: (id, payload) => request("PATCH", `/api/admin/breweries/${id}`, { body: payload }),
     adminDeleteBrewery: (id) => request("DELETE", `/api/admin/breweries/${id}`),
     async adminExportBreweries() {
-      const token = getToken();
-      const res = await fetch("/api/admin/breweries/export", {
-        headers: token ? { Authorization: "Bearer " + token } : {},
-      });
+      const res = await fetch("/api/admin/breweries/export", { credentials: "same-origin" });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new Error((data && data.detail) || "Couldn't export breweries.");
@@ -166,13 +166,14 @@ const Api = (() => {
       return { blob, filename: match ? match[1] : "breweries.csv" };
     },
     async adminImportBreweries(file) {
-      const token = getToken();
       const fd = new FormData();
       fd.append("file", file);
+      const csrf = csrfToken();
       const res = await fetch("/api/admin/breweries/import", {
         method: "POST",
-        headers: token ? { Authorization: "Bearer " + token } : {},
+        headers: csrf ? { "X-CSRF-Token": csrf } : {},
         body: fd,
+        credentials: "same-origin",
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
@@ -188,10 +189,7 @@ const Api = (() => {
     adminPatchBeer: (id, payload) => request("PATCH", `/api/admin/beers/${id}`, { body: payload }),
     adminDeleteBeer: (id) => request("DELETE", `/api/admin/beers/${id}`),
     async adminExportBeers() {
-      const token = getToken();
-      const res = await fetch("/api/admin/beers/export", {
-        headers: token ? { Authorization: "Bearer " + token } : {},
-      });
+      const res = await fetch("/api/admin/beers/export", { credentials: "same-origin" });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new Error((data && data.detail) || "Couldn't export beers.");
@@ -202,13 +200,14 @@ const Api = (() => {
       return { blob, filename: match ? match[1] : "beers.csv" };
     },
     async adminImportBeers(file) {
-      const token = getToken();
       const fd = new FormData();
       fd.append("file", file);
+      const csrf = csrfToken();
       const res = await fetch("/api/admin/beers/import", {
         method: "POST",
-        headers: token ? { Authorization: "Bearer " + token } : {},
+        headers: csrf ? { "X-CSRF-Token": csrf } : {},
         body: fd,
+        credentials: "same-origin",
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
@@ -225,13 +224,14 @@ const Api = (() => {
     adminDeleteBeerStyle: (id) => request("DELETE", `/api/admin/beer-styles/${id}`),
 
     async adminUploadRestore(file) {
-      const token = getToken();
       const fd = new FormData();
       fd.append("file", file);
+      const csrf = csrfToken();
       const res = await fetch("/api/admin/restore", {
         method: "POST",
-        headers: token ? { Authorization: "Bearer " + token } : {},
+        headers: csrf ? { "X-CSRF-Token": csrf } : {},
         body: fd,
+        credentials: "same-origin",
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
@@ -253,10 +253,7 @@ const Api = (() => {
     deleteWanted: (id) => request("DELETE", `/api/wanted/${id}`),
 
     async exportCellar() {
-      const token = getToken();
-      const res = await fetch("/api/cellar/export", {
-        headers: token ? { Authorization: "Bearer " + token } : {},
-      });
+      const res = await fetch("/api/cellar/export", { credentials: "same-origin" });
       if (!res.ok) throw new Error("Couldn't export your cellar.");
       const blob = await res.blob();
       const disposition = res.headers.get("content-disposition") || "";
@@ -265,13 +262,14 @@ const Api = (() => {
     },
 
     async importCellar(file) {
-      const token = getToken();
       const fd = new FormData();
       fd.append("file", file);
+      const csrf = csrfToken();
       const res = await fetch("/api/cellar/import", {
         method: "POST",
-        headers: token ? { Authorization: "Bearer " + token } : {},
+        headers: csrf ? { "X-CSRF-Token": csrf } : {},
         body: fd,
+        credentials: "same-origin",
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {

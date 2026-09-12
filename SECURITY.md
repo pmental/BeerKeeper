@@ -34,6 +34,13 @@ audit trail.
 - Every cellar/consumption/wanted-list endpoint scopes its query to the
   authenticated user - there's no way to read or modify another
   account's data by guessing an ID.
+- The session token is delivered as an HttpOnly, SameSite=Lax cookie, so
+  page script can't read it; `Secure` is added automatically when the
+  request arrives over HTTPS (directly or via a proxy), and omitted
+  otherwise so plain-HTTP LAN installs still work. Mutating requests
+  carry a double-submit CSRF token. An `Authorization: Bearer` header is
+  still accepted for scripts and API clients, and skips the CSRF check
+  since a browser never attaches that header on its own.
 - Every API endpoint requires a valid session except the auth flow
   itself, static assets, and the deliberately public pages (Browse,
   public cellar/trade profiles).
