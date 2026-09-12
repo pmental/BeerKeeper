@@ -252,8 +252,10 @@ const Api = (() => {
     addWanted: (payload) => request("POST", "/api/wanted", { body: payload }),
     deleteWanted: (id) => request("DELETE", `/api/wanted/${id}`),
 
-    async exportCellar() {
-      const res = await fetch("/api/cellar/export", { credentials: "same-origin" });
+    async exportCellar(format) {
+      const res = await fetch("/api/cellar/export" + (format ? `?format=${encodeURIComponent(format)}` : ""), {
+        credentials: "same-origin",
+      });
       if (!res.ok) throw new Error("Couldn't export your cellar.");
       const blob = await res.blob();
       const disposition = res.headers.get("content-disposition") || "";

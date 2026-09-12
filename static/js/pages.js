@@ -1716,7 +1716,14 @@ const Pages = (() => {
         <p class="field-hint" style="margin-top:-4px">Export your whole cellar as a CSV file, or import one to add bottles in bulk.</p>
         <div class="form-actions" style="margin-top:10px; justify-content:flex-start;">
           <button class="btn btn-primary btn-sm" id="export-btn">Download CSV</button>
+          <button class="btn btn-ghost btn-sm" id="export-cb-btn">Download for cellar.beer</button>
         </div>
+        <p class="field-hint">
+          Exporting to cellar.beer WILL require manual work and is to be considered an experimental
+          feature. Manual additions/searches will likely be needed for many bottles. It also loses
+          ABV, trade status, drinking history, ratings or your wanted list - their format has nowhere
+          to put those.
+        </p>
         <div class="field" style="margin-top:14px">
           <label>Import from CSV</label>
           <p class="field-hint" style="margin-top:-4px">
@@ -1819,25 +1826,31 @@ const Pages = (() => {
       });
     }
 
-    root.querySelector("#export-btn").addEventListener("click", async (e) => {
-      const btn = e.currentTarget;
-      btn.disabled = true;
-      try {
-        const { blob, filename } = await Api.exportCellar();
-        const url = URL.createObjectURL(blob);
-        const a2 = document.createElement("a");
-        a2.href = url;
-        a2.download = filename;
-        document.body.appendChild(a2);
-        a2.click();
-        a2.remove();
-        URL.revokeObjectURL(url);
-      } catch (err) {
-        toast(err.message, "error");
-      } finally {
-        btn.disabled = false;
-      }
-    });
+    function wireExport(selector, format) {
+      const el = root.querySelector(selector);
+      if (!el) return;
+      el.addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        try {
+          const { blob, filename } = await Api.exportCellar(format);
+          const url = URL.createObjectURL(blob);
+          const a2 = document.createElement("a");
+          a2.href = url;
+          a2.download = filename;
+          document.body.appendChild(a2);
+          a2.click();
+          a2.remove();
+          URL.revokeObjectURL(url);
+        } catch (err) {
+          toast(err.message, "error");
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    }
+    wireExport("#export-btn", null);
+    wireExport("#export-cb-btn", "cellarbeer");
 
     root.querySelector("#import-file").addEventListener("change", async (e) => {
       const file = e.target.files[0];

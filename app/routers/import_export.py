@@ -3,7 +3,7 @@ import datetime as dt
 import io
 import re
 
-from fastapi import APIRouter, Depends, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 
@@ -166,11 +166,52 @@ def _normalize_cellarbeer_row(row: dict) -> tuple[dict, list[str]]:
     return normalized, warnings
 
 
+# Exactly the header a cellar.beer export produces, in that order - their
+# importer expects the same shape it emits, so this has to match rather
+# than merely carry the same information.
+CELLARBEER_COLUMNS = ["Brewery", "Beer", "Style", "Size", "Bottle Date", "Drink By", "In Cellar", "Location", "Notes"]
+
+
+def _to_cellarbeer_row(e) -> dict:
+    """One cellar entry in cellar.beer's own column layout.
+
+    The reverse of _normalize_cellarbeer_row(). Lossy in one direction
+    only: their format has no column for ABV or trade status, and one
+    free-text Location rather than a cellar/fridge split, so a fridge
+    bottle says so in that field instead of losing the distinction
+    entirely. Sizes go out in millilitres, the unit their exports use.
+    """
+    where = e.custom_location or ""
+    if e.location == "fridge":
+        where = f"Fridge - {where}" if where else "Fridge"
+    return {
+        "Brewery": csv_safe(e.beer.brewery.name),
+        "Beer": csv_safe(e.beer.name),
+        "Style": csv_safe(e.beer.style or ""),
+        "Size": f"{round(e.size_oz * OZ_TO_ML)} ml" if e.size_oz is not None else "",
+        "Bottle Date": e.bottle_date.isoformat() if e.bottle_date else "",
+        "Drink By": e.best_before.isoformat() if e.best_before else "",
+        "In Cellar": e.quantity,
+        "Location": csv_safe(where),
+        "Notes": csv_safe((e.batch_notes or "").replace("\n", " ")),
+    }
+
+
 @router.get("/export")
 def export_cellar(
+    format: str = "beerkeeper",
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
+    """CSV of the whole cellar.
+
+    format=cellarbeer writes cellar.beer's own column layout instead, for
+    moving to that service. It carries the bottles but not ABV, trade
+    status, drinking history, ratings or the wanted list - their format
+    has nowhere to put those.
+    """
+    if format not in ("beerkeeper", "cellarbeer"):
+        raise HTTPException(status_code=400, detail="Unknown export format.")
     entries = (
         db.query(models.CellarEntry)
         .options(joinedload(models.CellarEntry.beer).joinedload(models.Beer.brewery))
@@ -178,6 +219,19 @@ def export_cellar(
         .all()
     )
     buf = io.StringIO()
+    if format == "cellarbeer":
+        writer = csv.DictWriter(buf, fieldnames=CELLARBEER_COLUMNS)
+        writer.writeheader()
+        for e in entries:
+            writer.writerow(_to_cellarbeer_row(e))
+        buf.seek(0)
+        filename = f"{current_user.username}-cellar-{dt.date.today().isoformat()}-cellarbeer.csv"
+        return StreamingResponse(
+            iter([buf.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
+
     writer = csv.DictWriter(buf, fieldnames=CSV_COLUMNS)
     writer.writeheader()
     for e in entries:

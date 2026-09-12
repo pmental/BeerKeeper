@@ -1,5 +1,6 @@
 # Changelog
 
+- **0.0.87**: Export your cellar in [cellar.beer](https://cellar.beer) format, if you want to move there. Experimental: expect manual work for many bottles, and it loses ABV, trade status, drinking history, ratings and your wanted list.
 - **0.0.86**: The duplicate-name fix from the last release now applies to the admin pages too, for breweries, beers and styles. CSV import reports an unreadable date instead of quietly leaving it blank.
 - **0.0.85**: Changing a bottle's drink-by date now lets it remind you again, instead of staying silent because an earlier reminder was already sent. Brewery and beer names with leading or trailing spaces no longer create duplicates. Admin beer imports report bad rows instead of failing partway.
 - **0.0.84**: Ratings can now be given in half stars. Tapping the star you're already on clears the rating.
