@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.0.81.** See [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.0.82.** See [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -106,6 +106,7 @@ created automatically on first boot.
 | `CELLAR_DATA_DIR`    | `/data`          | Where the SQLite database file lives.                                 |
 | `CELLAR_PORT`        | `8000`           | Host port, used by `docker-compose.yml` only.                         |
 | `CELLAR_PASSWORD_AUTH_ENABLED` | `true` | Set `false` to disable username/password login and registration (hides the forms too). |
+| `CELLAR_TRUST_PROXY_HEADERS` | `false` | Set `true` only if a reverse proxy or tunnel sits in front and overwrites `X-Forwarded-For`. Without it, rate limits behind a proxy apply to everyone at once rather than per visitor. Never enable it on a directly-exposed instance. |
 | `CELLAR_PASSWORD_CHANGE_ENABLED` | `true` | Set `false` to disable self-service password changes (change/forgot/reset), while login stays working - useful for a demo instance with known credentials. Doesn't affect an admin resetting another user's password. |
 | `CELLAR_OIDC_ENABLED` | `false`         | Set `true` to enable SSO. Requires the four `CELLAR_OIDC_*` vars below plus `CELLAR_BASE_URL`. |
 | `CELLAR_OIDC_ISSUER` | *(none)*         | Your OIDC provider's issuer URL (discovery is fetched from `<issuer>/.well-known/openid-configuration`). |

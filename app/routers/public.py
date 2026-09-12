@@ -10,6 +10,16 @@ from app.routers.cellar import sort_entries
 router = APIRouter(prefix="/api/public", tags=["public"])
 
 
+def public_notes_for(user: models.User, notes: "str | None") -> "str | None":
+    """Batch notes for a public view, or None if this user keeps them private.
+
+    Exists so no public endpoint has to remember the rule on its own. The
+    trade board previously serialized notes directly and so leaked them
+    for users who had notes set to private but trading enabled.
+    """
+    return notes if user.notes_public else None
+
+
 @router.get("/cellars", response_model=list[schemas.PublicUserOut])
 def browse_cellars(db: Session = Depends(get_db)):
     users = db.query(models.User).filter(models.User.cellar_public.is_(True)).all()
@@ -105,7 +115,7 @@ def public_trades(username: str, db: Session = Depends(get_db)):
         .all()
     )
     for_trade = [
-        {"id": e.id, "quantity": e.quantity, "batch_notes": e.batch_notes, "beer": serialize_beer(e.beer)}
+        {"id": e.id, "quantity": e.quantity, "batch_notes": public_notes_for(user, e.batch_notes), "beer": serialize_beer(e.beer)}
         for e in entries
         if e.trade_status == "ft" and e.quantity > 0
     ]
@@ -115,7 +125,7 @@ def public_trades(username: str, db: Session = Depends(get_db)):
     # own some already but want more) and WantedEntry rows (you don't own
     # any yet) - each tagged so the page can label them differently.
     wanted = [
-        {"id": f"cellar-{e.id}", "owned": True, "notes": e.batch_notes, "beer": serialize_beer(e.beer)}
+        {"id": f"cellar-{e.id}", "owned": True, "notes": public_notes_for(user, e.batch_notes), "beer": serialize_beer(e.beer)}
         for e in entries
         if e.trade_status == "iso"
     ]
@@ -167,7 +177,7 @@ def public_cellar(username: str, db: Session = Depends(get_db)):
             "quantity": e.quantity,
             "size_oz": e.size_oz,
             "best_before": e.best_before.isoformat() if (user.drinkby_public and e.best_before) else None,
-            "batch_notes": e.batch_notes if user.notes_public else None,
+            "batch_notes": public_notes_for(user, e.batch_notes),
             "trade_status": e.trade_status if user.trading_enabled else "none",
             "beer": {
                 "id": e.beer.id,

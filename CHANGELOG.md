@@ -1,5 +1,6 @@
 # Changelog
 
+- **0.0.82**: Fixed tasting notes being visible on the public trade board even when set to private. Rate limits can now be applied per visitor behind a reverse proxy (see `CELLAR_TRUST_PROXY_HEADERS`), instead of everyone sharing one limit. Sending reminders no longer makes the app briefly unresponsive.
 - **0.0.81**: Failed SSO sign-ins now show a short message and record the details in the server log, rather than putting them on screen. Backup restores reject archives that are oversized or contain unexpected files.
 - **0.0.80**: Sign-in now uses a secure session cookie instead of browser storage, so the login token can't be read by scripts running on the page. Signing out clears it properly. Existing sessions will need a fresh sign-in. CSV import now reports bad rows instead of failing the whole file, and applies the same limits as adding a bottle by hand.
 - **0.0.79**: Drink-by reminders. Opt-in and off by default. Email reminders are an account setting; push notifications are per browser/device. Also added a web app manifest, so the app can be installed to a home screen and opened without browser. The move-to-fridge/cellar button now moves a single bottle instead of the whole entry, merging into a matching row if one exists.

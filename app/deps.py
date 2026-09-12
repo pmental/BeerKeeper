@@ -73,8 +73,12 @@ def get_optional_user(
     token: str | None = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ) -> models.User | None:
+    # Rejects rather than quietly falling back to "not signed in". Only
+    # reachable on GET endpoints today, where csrf_ok() is always true,
+    # but degrading to guest would mean a future optional-auth write
+    # endpoint silently processed a forged request instead of refusing it.
     if not csrf_ok(request):
-        return None
+        raise HTTPException(status_code=403, detail="Invalid or missing CSRF token.")
     return _user_from_token(_resolve_token(request, token), db)
 
 

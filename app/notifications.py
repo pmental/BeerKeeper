@@ -178,6 +178,15 @@ def run_sweep(db: Session, now: "dt.datetime | None" = None) -> dict:
     return summary
 
 
+def _sweep_once() -> "dict | None":
+    """One sweep with its own session, sized to run in a worker thread."""
+    db = SessionLocal()
+    try:
+        return run_sweep(db)
+    finally:
+        db.close()
+
+
 async def sweep_loop() -> None:
     """Background loop started at app startup.
 
@@ -190,13 +199,13 @@ async def sweep_loop() -> None:
     """
     while True:
         try:
-            db = SessionLocal()
-            try:
-                summary = run_sweep(db)
-                if summary["users_notified"]:
-                    log.info("Drink-by sweep: %s", summary)
-            finally:
-                db.close()
+            # Off the event loop: run_sweep talks to SMTP and push services
+            # with blocking synchronous calls, and a slow or unresponsive
+            # one would otherwise stall every request the app is serving
+            # for as long as it takes to time out.
+            summary = await asyncio.to_thread(_sweep_once)
+            if summary and summary["users_notified"]:
+                log.info("Drink-by sweep: %s", summary)
         except Exception as e:  # noqa: BLE001 - the loop must outlive any single failure
             log.warning("Drink-by sweep failed: %s", e)
         await asyncio.sleep(_SWEEP_INTERVAL_SECONDS)

@@ -27,6 +27,14 @@ def _ensure_scheme(raw: str, var_name: str) -> str:
     return raw
 
 
+# Set true only when this app genuinely sits behind a reverse proxy or
+# tunnel that overwrites X-Forwarded-For. Without it the rate limiter sees
+# the proxy's address for every request and buckets all users together, so
+# one person hitting the login limit locks everyone out. With it wrongly
+# set on a directly-exposed instance, anyone could send a fake header and
+# sidestep the limit entirely - hence off by default.
+TRUST_PROXY_HEADERS = _bool_env("CELLAR_TRUST_PROXY_HEADERS", False)
+
 PASSWORD_AUTH_ENABLED = _bool_env("CELLAR_PASSWORD_AUTH_ENABLED", True)
 # For demo/showcase instances: lets an admin disable self-service password
 # changes (change-password, forgot-password, reset-password) without
@@ -39,7 +47,7 @@ PASSWORD_CHANGE_ENABLED = _bool_env("CELLAR_PASSWORD_CHANGE_ENABLED", True)
 APP_NAME = "BeerKeeper"
 # Bump this with every set of changes: 0.0.1, 0.0.2, ... until told to
 # bump the minor/major version instead.
-APP_VERSION = "0.0.81"
+APP_VERSION = "0.0.82"
 
 OIDC_ENABLED = _bool_env("CELLAR_OIDC_ENABLED", False)
 OIDC_ISSUER = _ensure_scheme(os.environ.get("CELLAR_OIDC_ISSUER", ""), "CELLAR_OIDC_ISSUER")
