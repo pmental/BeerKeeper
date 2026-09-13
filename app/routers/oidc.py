@@ -241,9 +241,11 @@ async def oidc_callback(request: Request, background_tasks: BackgroundTasks):
     # `docker compose logs` after a login attempt is actually useful for
     # tracking down provider-specific claim-shape issues without needing
     # access to the real token.
-    print(
-        f"[oidc] login: claims_received={sorted(userinfo.keys())} "
-        f"resolved_display_name={display_name!r} resolved_username={user.username!r}"
+    log.info(
+        "OIDC login: claims=%s resolved_display_name=%r resolved_username=%r",
+        sorted(userinfo.keys()),
+        display_name,
+        user.username,
     )
 
     # The token goes in the session cookie rather than the redirect URL.

@@ -370,7 +370,7 @@ class InstanceSettingsOut(BaseModel):
     # one is set". The password itself is never returned, only whether
     # one is currently stored here.
     smtp_host: Optional[str] = None
-    smtp_port: Optional[int] = None
+    smtp_port: Optional[int] = Field(default=None, ge=1, le=65535)
     smtp_security: Optional[str] = None
     smtp_username: Optional[str] = None
     smtp_password_set: bool = False
@@ -388,7 +388,7 @@ class InstanceSettingsOut(BaseModel):
 class InstanceSettingsPatch(BaseModel):
     registration_enabled: Optional[bool] = None
     smtp_host: Optional[str] = Field(default=None, max_length=255)
-    smtp_port: Optional[int] = None
+    smtp_port: Optional[int] = Field(default=None, ge=1, le=65535)
     smtp_security: Optional[str] = Field(default=None, pattern="^(starttls|ssl|none)$")
     smtp_username: Optional[str] = Field(default=None, max_length=255)
     smtp_password: Optional[str] = Field(default=None, max_length=255)

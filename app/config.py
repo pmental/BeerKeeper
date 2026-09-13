@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 import warnings
@@ -47,7 +48,7 @@ PASSWORD_CHANGE_ENABLED = _bool_env("CELLAR_PASSWORD_CHANGE_ENABLED", True)
 APP_NAME = "BeerKeeper"
 # Bump this with every set of changes: 0.0.1, 0.0.2, ... until told to
 # bump the minor/major version instead.
-APP_VERSION = "0.0.87"
+APP_VERSION = "0.88"
 
 OIDC_ENABLED = _bool_env("CELLAR_OIDC_ENABLED", False)
 OIDC_ISSUER = _ensure_scheme(os.environ.get("CELLAR_OIDC_ISSUER", ""), "CELLAR_OIDC_ISSUER")
@@ -83,7 +84,28 @@ ADMIN_USERNAMES = [
 
 # --- SMTP (password reset + welcome emails) ---------------------------
 SMTP_HOST = os.environ.get("CELLAR_SMTP_HOST", "").strip()
-SMTP_PORT = int(os.environ.get("CELLAR_SMTP_PORT", "587").strip() or "587")
+def _int_env(name: str, default: int) -> int:
+    """An int from the environment, falling back rather than refusing to start.
+
+    A typo here used to raise straight out of module import, so the
+    container died before it could log anything useful - a misspelt port
+    shouldn't be the difference between a running app and a crash loop.
+    Email simply won't work until it's corrected, which is recoverable and
+    visible on the admin page.
+    """
+    raw = (os.environ.get(name) or "").strip()
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        logging.getLogger("cellar.config").warning(
+            "%s is not a number (%r); falling back to %s.", name, raw, default
+        )
+        return default
+
+
+SMTP_PORT = _int_env("CELLAR_SMTP_PORT", 587)
 SMTP_USERNAME = os.environ.get("CELLAR_SMTP_USERNAME", "").strip()
 SMTP_PASSWORD = os.environ.get("CELLAR_SMTP_PASSWORD", "")
 # "starttls" (default, typically port 587): connect plain, then upgrade.
