@@ -1,6 +1,6 @@
 # Changelog
 
-- **0.89**: Updated PyJWT, which now warns on startup if `CELLAR_SECRET_KEY` is too short to be secure.
+- **0.89**: Updated PyJWT, which now warns on startup if `CELLAR_SECRET_KEY` is too short to be secure. Minor UI updates.
 - **0.88**: A mistyped SMTP port no longer stops the app from starting; it warns and falls back to the default instead. SMTP port numbers are validated on the admin page.
 - **0.0.87**: Export your cellar in [cellar.beer](https://cellar.beer) format, if you want to move there. Experimental: expect manual work for many bottles, and it loses ABV, trade status, drinking history, ratings and your wanted list.
 - **0.0.86**: The duplicate-name fix from the last release now applies to the admin pages too, for breweries, beers and styles. CSV import reports an unreadable date instead of quietly leaving it blank.

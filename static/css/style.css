@@ -170,14 +170,6 @@ button, input, select, textarea {
 .brand .glow {
   color: var(--accent);
 }
-.brand .tag {
-  font-family: var(--body);
-  font-weight: 500;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
 
 .nav-links {
   display: flex;
@@ -240,9 +232,6 @@ button, input, select, textarea {
    older or embedded rendering engines even though modern browsers
    handle it fine per spec. */
 @media (max-width: 760px) {
-  .brand .tag {
-    display: none;
-  }
   .nav-toggle {
     display: flex;
     /* Sits beside the brand, with this auto margin absorbing the slack so
