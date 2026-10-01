@@ -324,14 +324,10 @@ const Pages = (() => {
     const year = Number(m[1]);
     const month = Number(m[2]);
     const day = Number(m[3]);
-    // Constructed and checked entirely in local time - no UTC round-trip.
-    // (An earlier version used `new Date(value + "T00:00:00")` then compared
-    // against `.toISOString()`, which converts to UTC: for anyone in a
-    // timezone ahead of UTC, local midnight rolls back to the previous
-    // calendar day in UTC, so a perfectly valid date like "2026-08-26"
-    // would come back as "2026-08-25" and fail the comparison. Comparing
-    // local year/month/day components directly sidesteps that entirely,
-    // while still correctly catching bogus dates like "2026-02-30".)
+    // Built and checked in local time. Round-tripping through UTC (e.g.
+    // `.toISOString()`) shifts local midnight back a day for anyone east
+    // of UTC, so a valid "2026-08-26" would fail. Comparing local
+    // components still rejects impossible dates like "2026-02-30".
     const d = new Date(year, month - 1, day);
     return d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day;
   }
@@ -1861,8 +1857,8 @@ const Pages = (() => {
         const result = await Api.importCellar(file);
         resultBox.innerHTML = `<div class="form-error" style="background:var(--secondary-wash);border-color:var(--secondary);color:var(--text)">
           Imported ${result.created} bottle${result.created === 1 ? "" : "s"}${
-          result.skipped ? `, skipped ${result.skipped}` : ""
-        }.
+          result.merged ? `, ${result.merged} added to bottles already in your cellar` : ""
+        }${result.skipped ? `, skipped ${result.skipped}` : ""}.
           ${result.errors && result.errors.length ? "<br>" + result.errors.map(escapeHtml).join("<br>") : ""}
         </div>`;
       } catch (err) {

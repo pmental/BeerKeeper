@@ -1,25 +1,21 @@
 """Cookie-based session handling.
 
-The access token used to live in localStorage, which meant any script
-running on the page could read it. It's now delivered as an HttpOnly
-cookie instead, so script can't touch it at all - the point being that
-this app is self-hosted by people whose deployments can't be audited from
-here. Someone may run it behind a CDN that injects its own JavaScript, or
-a proxy that drops the Content-Security-Policy header, and the token
-shouldn't be reachable when that happens.
+The access token is delivered as an HttpOnly cookie so page script can't
+read it. Deployments of this app can't be audited from here - it may sit
+behind a CDN that injects its own JavaScript, or a proxy that drops the
+Content-Security-Policy header - and the token shouldn't be reachable if
+that happens.
 
-The token is still returned in the login response body, because scripts
-and other API clients legitimately use it as a Bearer token. What changed
-is that the app's own frontend no longer stores it anywhere.
+The token is also returned in the login response body for scripts and
+other API clients that send it as a Bearer token; the app's own frontend
+never stores it.
 
-Moving to cookies means the browser attaches credentials automatically,
-which is what makes CSRF possible, so that has to be answered too. Two
-things do it here: SameSite=Lax, which stops the browser sending the
-cookie on cross-site POSTs at all, and a double-submit token for
-defence in depth against a same-site attacker (a neighbouring subdomain,
-say). The CSRF cookie is deliberately readable by script - it isn't a
-secret, it just has to be something a cross-origin page can't read in
-order to echo it back in a header.
+Because the browser attaches the cookie automatically, CSRF has to be
+handled. SameSite=Lax stops the cookie being sent on cross-site POSTs, and
+a double-submit token covers a same-site attacker such as a neighbouring
+subdomain. The CSRF cookie is deliberately readable by script: it isn't
+secret, it just has to be something a cross-origin page can't read and
+echo back in a header.
 """
 
 import secrets

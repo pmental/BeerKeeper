@@ -19,10 +19,9 @@ from app.database import Base
 
 def utcnow():
     # Every DateTime column in this app is naive (no tzinfo) and means
-    # UTC by convention - datetime.utcnow() used to be the natural way
-    # to get that, but it's deprecated as of Python 3.12. This gets the
-    # same naive-but-UTC value through the non-deprecated path: an aware
-    # UTC datetime, with the tzinfo then stripped back off.
+    # UTC by convention. datetime.utcnow() is the obvious way to get that
+    # but is deprecated as of Python 3.12, so this takes an aware UTC
+    # datetime and strips the tzinfo back off.
     return dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
 
 

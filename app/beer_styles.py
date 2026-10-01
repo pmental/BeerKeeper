@@ -8,11 +8,9 @@ from app.database import DATA_DIR
 
 _DEFAULT_STYLES_SOURCE = os.path.join(os.path.dirname(__file__), "beer_styles_default.txt")
 
-# Styles used to live here as a hand-editable plain text file, outside the
-# database entirely - which meant a database-only backup would silently
-# drop any custom styles, and backup.py had to bundle this file in
-# separately to work around it. Kept only as a one-time migration source
-# below; nothing reads or writes it anymore once that's run.
+# Legacy location: older installs kept styles in this hand-edited file in
+# the data directory. It's migrated into the database once (below) and not
+# read again, so styles are covered by database backups.
 _LEGACY_STYLES_FILE = os.path.join(DATA_DIR, "beer_styles.txt")
 
 # Which style names this install has already tried to seed. Mirrors the

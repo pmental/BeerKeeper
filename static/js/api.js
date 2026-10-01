@@ -54,10 +54,6 @@ const Api = (() => {
 
   return {
     logout: () => request("POST", "/api/auth/logout", { auth: false }),
-    get: (path, opts) => request("GET", path, opts),
-    post: (path, body, opts) => request("POST", path, { ...opts, body }),
-    patch: (path, body, opts) => request("PATCH", path, { ...opts, body }),
-    del: (path, opts) => request("DELETE", path, opts),
 
     register: (username, email, password) =>
       request("POST", "/api/auth/register", { body: { username, email, password }, auth: false }),
@@ -123,7 +119,6 @@ const Api = (() => {
     deleteConsumption: (id) => request("DELETE", `/api/consumption/${id}`),
     patchConsumption: (id, payload) => request("PATCH", `/api/consumption/${id}`, { body: payload }),
 
-    getAccount: () => request("GET", "/api/account"),
     patchAccount: (payload) => request("PATCH", "/api/account", { body: payload }),
 
     adminListUsers: () => request("GET", "/api/admin/users"),
@@ -248,7 +243,6 @@ const Api = (() => {
     publicTrades: (username) =>
       request("GET", "/api/public/u/" + encodeURIComponent(username) + "/trades", { auth: false }),
 
-    listWanted: () => request("GET", "/api/wanted"),
     addWanted: (payload) => request("POST", "/api/wanted", { body: payload }),
     deleteWanted: (id) => request("DELETE", `/api/wanted/${id}`),
 

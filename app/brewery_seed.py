@@ -48,9 +48,9 @@ def seed_breweries_if_needed(db: Session) -> None:
     already_attempted = _load_seeded_names()
     # One query up front instead of one per line (~10k+ round trips on a
     # fresh install otherwise, which was the dominant cost of first
-    # boot). Python's str.lower() here, not SQLite's - see
-    # ilike_unicode() in database.py for why SQLite's own case-folding
-    # can't be trusted for accented names.
+    # boot). Python's str.lower() here, not SQLite's - see the
+    # unicode_lower() registration in database.py for why SQLite's own
+    # case-folding can't be trusted for accented names.
     existing_names_lower = {name.lower() for (name,) in db.query(models.Brewery.name).all()}
     seen_this_run = set()
     newly_attempted = []

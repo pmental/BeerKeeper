@@ -43,9 +43,9 @@ def _set_sqlite_pragma(dbapi_connection, connection_record):
     # accented name (not just Swedish - German, French, Polish, etc. are
     # all affected), since ilike() relies on that same mechanism.
     # Registering a real Python-backed lower() - which *is*
-    # Unicode-aware - and using it explicitly (see ilike_unicode() below)
-    # fixes this without needing a SQLite build with the ICU extension,
-    # which most platforms don't ship.
+    # Unicode-aware - and using it explicitly (see eq_unicode() and
+    # search_unicode() below) fixes this without needing a SQLite build
+    # with the ICU extension, which most platforms don't ship.
     dbapi_connection.create_function("unicode_lower", 1, lambda s: s.lower() if s is not None else None)
     dbapi_connection.create_function("unicode_fold", 1, _fold_for_search)
 
@@ -82,18 +82,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
-def ilike_unicode(column, value):
-    """A drop-in replacement for column.ilike(value) that also works
-    correctly for non-ASCII names - see the unicode_lower() registration
-    above for why plain ilike() can't be trusted here. For substring
-    searches, where value carries %-wildcards.
-
-    Not for uniqueness checks: a name containing % or _ would be treated
-    as a pattern there and match the wrong row. Use eq_unicode() for
-    that."""
-    return func.unicode_lower(column).like(func.unicode_lower(value))
-
-
 def eq_unicode(column, value):
     """Exact case-insensitive comparison, for duplicate-name checks.
 
@@ -104,15 +92,11 @@ def eq_unicode(column, value):
 
 
 def search_unicode(column, value):
-    """Like ilike_unicode(), but also accent-insensitive - for the
-    autocomplete/search boxes only.
+    """Case- and accent-insensitive substring match, for search boxes.
 
-    Kept as a separate helper rather than folded into ilike_unicode()
-    because that one also backs the exact-match uniqueness checks
-    (does this brewery already exist, does this rename collide), and
-    those should stay accent-sensitive: matching loosely is right when
-    someone is looking a name up, wrong when deciding whether two names
-    are the same record."""
+    Deliberately separate from eq_unicode(): matching loosely is right
+    when someone is looking a name up, wrong when deciding whether two
+    names are the same record."""
     # The pattern is folded here in Python rather than via func.unicode_fold()
     # so SQLite only has to call back into Python for the column, once per
     # row, instead of for both sides of the comparison.

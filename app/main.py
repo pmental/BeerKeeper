@@ -121,10 +121,9 @@ async def _validation_error_handler(request: Request, exc: RequestValidationErro
     """Return validation failures as JSON even when the rejected value
     can't be represented in JSON.
 
-    FastAPI echoes the offending input back in the error body. For a value
-    like infinity - which Pydantic correctly refuses - that echo is itself
-    unserializable, so the 422 turned into a 500. Dropping the echoed
-    value keeps the message intact and the response valid.
+    FastAPI echoes the offending input back in the error body, and a value
+    like infinity can't be serialized, which would turn a 422 into a 500.
+    Non-finite values are replaced with their string form.
     """
     safe = []
     for err in exc.errors():

@@ -205,12 +205,9 @@ button, input, select, textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: transparent;
-  /* The glyph is an inline SVG using stroke="currentColor", not a Unicode
-     character, so it actually takes this colour. U+2630 (the obvious
-     choice) gets substituted from a colour emoji font on some platforms -
-     Opera Mobile among them - and a colour font carries its own palette,
-     so CSS `color` is silently ignored and the icon renders in whatever
-     the font decided. Same trap as the compact-view notes icon. */
+  /* The icon is an inline SVG drawn with currentColor rather than a
+     Unicode character like U+2630, which some platforms substitute from
+     a colour emoji font - and a colour font ignores CSS `color`. */
   color: var(--accent);
   line-height: 1;
   cursor: pointer;
@@ -723,11 +720,10 @@ textarea.input {
   margin-left: 4px;
 }
 .notes-icon {
-  /* Compact view only - batch notes are hidden behind a tap/click
-     instead of a full extra row, to keep compact cards genuinely
-     compact. Same color as .drinkby-alert, by request. An inline SVG,
-     not a Unicode character - some platforms don't have a glyph for
-     the character this used before, rendering as a blank tofu box. */
+  /* Compact view only: batch notes sit behind a tap instead of taking an
+     extra row, so compact cards stay compact. Matches .drinkby-alert's
+     colour. An inline SVG rather than a Unicode glyph, since glyph
+     support varies by platform. */
   display: inline-flex;
   align-items: center;
   color: var(--accent);
@@ -957,7 +953,7 @@ textarea.input {
 .suggest-item:last-child {
   border-bottom: none;
 }
-.suggest-item:hover, .suggest-item.hi {
+.suggest-item:hover {
   background: var(--accent-wash);
 }
 .suggest-item .b {

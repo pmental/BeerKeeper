@@ -8,10 +8,12 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 
 from app import models, schemas
-from app.csv_utils import csv_safe
+from app.csv_utils import csv_safe, undo_csv_safe
 from app.database import eq_unicode, get_db
+from app.units import OZ_TO_ML
 from app.deps import get_current_user
 from app.routers.beers import _get_or_create_brewery
+from app.routers.cellar import find_matching_entry
 from app.uploads import read_upload_limited
 
 router = APIRouter(prefix="/api/cellar", tags=["import-export"])
@@ -19,7 +21,6 @@ router = APIRouter(prefix="/api/cellar", tags=["import-export"])
 # Same constant and precision as the frontend's OZ_TO_ML (static/js/ui.js) -
 # keeping these in sync matters so a size that round-trips through the UI
 # and through a CSV export ends up meaning the same thing either way.
-OZ_TO_ML = 29.5735295625
 
 CSV_COLUMNS = [
     "brewery",
@@ -42,10 +43,7 @@ def _parse_date(value: str):
     """A date, or None if the cell was blank.
 
     Raises ValueError on a value that was filled in but isn't a date, so
-    the caller reports it rather than quietly storing NULL. Silently
-    dropping "2025-99-99" was the one place the importer still lost data
-    without saying so, which sits badly next to it now telling you about
-    every other kind of bad cell.
+    the row is reported rather than quietly imported with the date missing.
     """
     value = (value or "").strip()
     if not value:
@@ -73,7 +71,7 @@ def _resolve_size_oz(row: dict, unit_system: str) -> float | None:
         value = float(raw)
     except ValueError:
         return None
-    return value / OZ_TO_ML if is_ml else value
+    return round(value / OZ_TO_ML if is_ml else value, 3)
 
 
 # --- cellar.beer import support -------------------------------------------
@@ -271,15 +269,9 @@ def _parse_date_labelled(value: str, column: str):
 def _validated_row(row: dict, unit_system: str) -> "tuple[schemas.CellarEntryIn | None, str | None]":
     """Put one CSV row through the same schemas the API uses.
 
-    The importer used to do its own parsing, which meant a file could
-    carry values the API would refuse: an ABV of 9999, a 50,000-character
-    note, a quantity of a billion. Worse, a non-numeric ABV raised
-    straight out of float() and took the whole import down with it,
-    losing the rows that had already been read.
-
-    Building the same Pydantic models the JSON endpoints use keeps one
-    set of rules rather than two that can drift apart, and turns a bad
-    row into a skipped row with a readable reason.
+    One set of rules for both paths, so a file can't carry values the API
+    would refuse, and a bad row becomes a skipped row with a readable
+    reason instead of an exception that stops the whole import.
     """
     qty_raw = (row.get("quantity") or "1").strip()
     abv_raw = (row.get("abv") or "").strip()
@@ -339,7 +331,7 @@ async def import_cellar(
     # apart, so "Import CSV" can just handle either without the user
     # needing to know or pick which format they have.
     is_cellarbeer = _CELLARBEER_SIGNATURE_COLUMNS.issubset(set(reader.fieldnames or []))
-    created, skipped = 0, 0
+    created, merged, skipped = 0, 0, 0
     errors = []
 
     for i, raw_row in enumerate(reader, start=2):  # row 1 is the header
@@ -347,7 +339,9 @@ async def import_cellar(
             row, row_warnings = _normalize_cellarbeer_row(raw_row)
             errors.extend(f"Row {i}: {w}" for w in row_warnings)
         else:
-            row = raw_row
+            # Undo the protection export adds, so a file exported from
+            # here imports back exactly as it was.
+            row = {k: undo_csv_safe(v) for k, v in raw_row.items()}
 
         brewery_name = (row.get("brewery") or "").strip()
         beer_name = (row.get("beer") or "").strip()
@@ -378,20 +372,45 @@ async def import_cellar(
             db.add(beer)
             db.flush()
 
-        entry = models.CellarEntry(
+        trade_status = valid.trade_status if current_user.trading_enabled else "none"
+        existing = find_matching_entry(
+            db,
             user_id=current_user.id,
             beer_id=beer.id,
             location=valid.location,
             custom_location=valid.custom_location,
-            quantity=valid.quantity,
             size_oz=valid.size_oz,
             bottle_date=valid.bottle_date,
             best_before=valid.best_before,
             batch_notes=valid.batch_notes,
-            trade_status=valid.trade_status if current_user.trading_enabled else "none",
+            trade_status=trade_status,
         )
-        db.add(entry)
+        if existing:
+            if existing.quantity == 0 and valid.quantity > 0:
+                # Back from empty: a fresh drink-by reminder is due.
+                existing.drinkby_notified_at = None
+            existing.quantity += valid.quantity
+            merged += 1
+            continue
+
+        db.add(
+            models.CellarEntry(
+                user_id=current_user.id,
+                beer_id=beer.id,
+                location=valid.location,
+                custom_location=valid.custom_location,
+                quantity=valid.quantity,
+                size_oz=valid.size_oz,
+                bottle_date=valid.bottle_date,
+                best_before=valid.best_before,
+                batch_notes=valid.batch_notes,
+                trade_status=trade_status,
+            )
+        )
+        # The session doesn't autoflush, so without this a later identical
+        # row in the same file wouldn't find this one and would duplicate it.
+        db.flush()
         created += 1
 
     db.commit()
-    return {"created": created, "skipped": skipped, "errors": errors[:20]}
+    return {"created": created, "merged": merged, "skipped": skipped, "errors": errors[:20]}

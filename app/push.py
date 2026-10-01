@@ -71,27 +71,20 @@ def public_key_b64() -> str:
 def endpoint_rejection_reason(raw: str) -> "str | None":
     """None if this endpoint looks safe to send to, else why not.
 
-    The endpoint comes from the client and the sweep later makes an
-    outbound request to it, so without a check an authenticated user
-    could point it at anything the server can reach - an internal
-    service, a cloud metadata address - and use the reminder sweep as a
-    request proxy. Requiring HTTPS alone isn't enough, since https:// to
-    an internal host works just as well, so the host is resolved and
-    non-public addresses are refused.
+    The client supplies the endpoint and the sweep later requests it, so
+    without a check an authenticated user could aim it at an internal
+    service or cloud metadata address and use the sweep as a proxy. HTTPS
+    alone isn't enough, since https:// to an internal host works too, so
+    the host is resolved and non-public addresses are refused.
 
-    Deliberately not an allowlist of vendor hostnames: browser vendors
-    move their push infrastructure, and a stale allowlist would silently
-    break subscriptions for real users.
+    Not an allowlist of vendor hostnames: vendors move their push
+    infrastructure, and a stale allowlist would break real subscriptions.
 
-    Worth being honest about what this does and doesn't cover. It's
-    checked both when subscribing and again immediately before each send,
-    so a host that later starts resolving to an internal address stops
-    being delivered to. It does not close the gap entirely: the push
-    library resolves the name again itself when it opens the connection,
-    so a DNS record flipped in the moment between this check and that one
-    would still get through. Closing that properly means validating the
-    IP the connection actually goes to, which needs control of the socket
-    that pywebpush owns.
+    Checked at subscribe time and again before each send, so a host that
+    later resolves internally stops being sent to. This doesn't fully
+    close DNS rebinding: pywebpush resolves the name again when it
+    connects, and closing that gap needs control of a socket the library
+    owns.
     """
     parsed = urlparse(raw)
     if parsed.scheme != "https":

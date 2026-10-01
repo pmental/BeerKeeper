@@ -41,15 +41,6 @@ const UI = (() => {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
-  function fmtDateTime(iso) {
-    // For any future timestamp (date + time) display: ISO date, 24h clock.
-    if (!iso) return "";
-    const d = new Date(iso);
-    if (isNaN(d)) return String(iso);
-    const pad = (n) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  }
-
   // ---------- Units ----------
 
   const OZ_TO_ML = 29.5735295625;
@@ -119,12 +110,9 @@ const UI = (() => {
   // Markup for the i-th star at a given rating. Shared by the read-only
   // display and the picker so the two can't drift apart.
   //
-  // A half star is built by overlaying a clipped full star on an empty
-  // one, rather than using U+2BEA (STAR WITH LEFT HALF BLACK). That
-  // character is obscure enough that plenty of font stacks either lack
-  // it or render it badly - the same trap that made the notes icon a
-  // blank box on some phones and let Opera recolour the menu icon. This
-  // uses only U+2605 and U+2606, which are effectively universal.
+  // A half star is a clipped full star overlaid on an empty one, rather
+  // than U+2BEA (STAR WITH LEFT HALF BLACK), which many fonts lack or
+  // render badly. U+2605 and U+2606 are effectively universal.
   function starMarkup(rating, i) {
     if (rating >= i) return `<span class="star on">\u2605</span>`;
     if (rating >= i - 0.5)
@@ -202,7 +190,6 @@ const UI = (() => {
     firstName,
     toast,
     fmtDate,
-    fmtDateTime,
     volumeUnitLabel,
     ozToDisplay,
     displayToOz,

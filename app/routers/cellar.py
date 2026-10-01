@@ -1,13 +1,14 @@
 import datetime as dt
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app import models, schemas
 from app.database import get_db
 from app.deps import get_current_user
 from app.routers.beers import resolve_or_create_beer_id
+from app.units import OZ_TO_ML
 
 router = APIRouter(prefix="/api/cellar", tags=["cellar"])
 
@@ -149,31 +150,63 @@ def delete_entry(
     return {"ok": True}
 
 
-def _find_mergeable_entry(db: Session, entry: models.CellarEntry, location: str):
-    """An existing entry in `location` that this one can fold into.
+def _text_matches(column, value):
+    """Notes and locations compare after trimming, with blank and missing
+    treated as the same - "Nice one " typed by hand and "Nice one" from a
+    CSV are the same note."""
+    value = (value or "").strip()
+    if not value:
+        return or_(column.is_(None), func.trim(column) == "")
+    return func.trim(column) == value
+
+
+def _size_matches(column, size_oz):
+    """Sizes compare by whole millilitres rather than exact floats. The UI
+    stores ounces rounded to three places and a CSV may arrive in either
+    unit, so the same 750 ml bottle can be stored as slightly different
+    numbers; no two real bottle sizes are within a millilitre of each
+    other."""
+    if size_oz is None:
+        return column.is_(None)
+    return func.round(column * OZ_TO_ML) == round(size_oz * OZ_TO_ML)
+
+
+def find_matching_entry(
+    db: Session,
+    *,
+    user_id: int,
+    beer_id: int,
+    location: str,
+    custom_location,
+    size_oz,
+    bottle_date,
+    best_before,
+    batch_notes,
+    trade_status: str,
+    exclude_id=None,
+):
+    """An existing entry that bottles with these details belong to.
 
     Matches on everything that distinguishes one batch from another, not
-    just the beer: two bottles of the same beer with different bottling
-    dates or batch notes are genuinely different things and shouldn't be
-    collapsed together. Without this, clicking the move button twice
-    would leave two separate one-bottle rows for the same beer.
+    just the beer: bottles that differ in size, bottling or drink-by date,
+    notes or location are kept apart. Used wherever bottles are added to
+    a cellar, so moving or importing a bottle that's already there adds to
+    the existing row instead of creating a duplicate.
     """
-    return (
-        db.query(models.CellarEntry)
-        .filter(
-            models.CellarEntry.user_id == entry.user_id,
-            models.CellarEntry.id != entry.id,
-            models.CellarEntry.beer_id == entry.beer_id,
-            models.CellarEntry.location == location,
-            models.CellarEntry.custom_location == entry.custom_location,
-            models.CellarEntry.size_oz == entry.size_oz,
-            models.CellarEntry.bottle_date == entry.bottle_date,
-            models.CellarEntry.best_before == entry.best_before,
-            models.CellarEntry.batch_notes == entry.batch_notes,
-            models.CellarEntry.trade_status == entry.trade_status,
-        )
-        .first()
+    query = db.query(models.CellarEntry).filter(
+        models.CellarEntry.user_id == user_id,
+        models.CellarEntry.beer_id == beer_id,
+        models.CellarEntry.location == location,
+        _text_matches(models.CellarEntry.custom_location, custom_location),
+        _size_matches(models.CellarEntry.size_oz, size_oz),
+        models.CellarEntry.bottle_date == bottle_date,
+        models.CellarEntry.best_before == best_before,
+        _text_matches(models.CellarEntry.batch_notes, batch_notes),
+        models.CellarEntry.trade_status == trade_status,
     )
+    if exclude_id is not None:
+        query = query.filter(models.CellarEntry.id != exclude_id)
+    return query.first()
 
 
 @router.post("/{entry_id}/move", response_model=schemas.CellarEntryOut)
@@ -202,7 +235,19 @@ def move_entry(
             detail=f"Only {entry.quantity} bottle{'' if entry.quantity == 1 else 's'} to move.",
         )
 
-    target = _find_mergeable_entry(db, entry, payload.location)
+    target = find_matching_entry(
+        db,
+        user_id=entry.user_id,
+        beer_id=entry.beer_id,
+        location=payload.location,
+        custom_location=entry.custom_location,
+        size_oz=entry.size_oz,
+        bottle_date=entry.bottle_date,
+        best_before=entry.best_before,
+        batch_notes=entry.batch_notes,
+        trade_status=entry.trade_status,
+        exclude_id=entry.id,
+    )
 
     if qty == entry.quantity:
         # Moving the lot. Fold into a matching entry if one's already

@@ -117,8 +117,8 @@ const App = (() => {
     { pattern: /^#\/admin$/, page: Pages.admin },
     { pattern: /^#\/browse$/, page: Pages.browse },
     { pattern: /^#\/consumed$/, page: Pages.consumed },
-    // Import/export moved into the account page - keep the old link
-    // working for anyone with it bookmarked, rather than a dead route.
+    // Import/export lives on the account page; old bookmarks to this
+    // route land there instead of on a dead page.
     { pattern: /^#\/import-export$/, page: () => { location.hash = "#/account"; } },
     { pattern: /^#\/u\/([^/]+)\/trades$/, page: Pages.publicTrades, param: true },
     { pattern: /^#\/u\/([^/]+)$/, page: Pages.publicCellar, param: true },

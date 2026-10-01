@@ -26,3 +26,17 @@ def csv_safe(value):
     if isinstance(value, str) and value[:1] in _FORMULA_TRIGGER_CHARS:
         return "'" + value
     return value
+
+
+def undo_csv_safe(value):
+    """Reverse csv_safe() for a value read back in from a CSV.
+
+    Strips the apostrophe only when it's followed by one of the characters
+    csv_safe() guards, so an exported "- tart" comes back as "- tart"
+    rather than "'- tart". A value that genuinely starts with an
+    apostrophe followed by one of those characters would lose it, which
+    is the same convention spreadsheet apps apply on import.
+    """
+    if isinstance(value, str) and value[:1] == "'" and value[1:2] in _FORMULA_TRIGGER_CHARS:
+        return value[1:]
+    return value

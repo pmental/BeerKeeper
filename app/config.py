@@ -48,7 +48,7 @@ PASSWORD_CHANGE_ENABLED = _bool_env("CELLAR_PASSWORD_CHANGE_ENABLED", True)
 APP_NAME = "BeerKeeper"
 # Bump this with every set of changes: 0.0.1, 0.0.2, ... until told to
 # bump the minor/major version instead.
-APP_VERSION = "0.89"
+APP_VERSION = "0.90"
 
 OIDC_ENABLED = _bool_env("CELLAR_OIDC_ENABLED", False)
 OIDC_ISSUER = _ensure_scheme(os.environ.get("CELLAR_OIDC_ISSUER", ""), "CELLAR_OIDC_ISSUER")
@@ -84,14 +84,14 @@ ADMIN_USERNAMES = [
 
 # --- SMTP (password reset + welcome emails) ---------------------------
 SMTP_HOST = os.environ.get("CELLAR_SMTP_HOST", "").strip()
-def _int_env(name: str, default: int) -> int:
-    """An int from the environment, falling back rather than refusing to start.
 
-    A typo here used to raise straight out of module import, so the
-    container died before it could log anything useful - a misspelt port
-    shouldn't be the difference between a running app and a crash loop.
-    Email simply won't work until it's corrected, which is recoverable and
-    visible on the admin page.
+
+def _int_env(name: str, default: int) -> int:
+    """An int from the environment, or the default if it isn't one.
+
+    Read at import time, so raising here would stop the app from starting
+    at all. A mistyped port leaves email broken until it's corrected,
+    which is recoverable and visible on the admin page; a crash loop isn't.
     """
     raw = (os.environ.get(name) or "").strip()
     if not raw:
