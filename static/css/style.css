@@ -170,6 +170,17 @@ button, input, select, textarea {
 .brand .glow {
   color: var(--accent);
 }
+/* "BK" stands in for the full wordmark only when the full name would push
+   the account controls onto a second row; app.js decides when. */
+.brand-short {
+  display: none;
+}
+.topbar.brand-condensed .brand-full {
+  display: none;
+}
+.topbar.brand-condensed .brand-short {
+  display: inline;
+}
 
 .nav-links {
   display: flex;

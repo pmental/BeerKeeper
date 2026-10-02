@@ -41,6 +41,25 @@ const App = (() => {
     await refreshVersionTag();
   }
 
+  // Shorten the wordmark to "BK" only when the full name would push the
+  // account controls onto a second row. Measured rather than tied to a
+  // breakpoint, because where the header wraps depends on what's in it:
+  // the signed-out buttons are wider than the signed-in ones, and the
+  // wordmark itself changes width once its web font loads.
+  function fitBrand() {
+    const bar = document.querySelector(".topbar");
+    const brand = bar && bar.querySelector(".brand");
+    const right = document.getElementById("nav-right");
+    if (!brand || !right) return;
+    // Show the full name, then check whether the account controls ended up
+    // below it. Both class changes happen before the browser paints, so
+    // nothing flickers.
+    bar.classList.remove("brand-condensed");
+    if (right.getBoundingClientRect().top >= brand.getBoundingClientRect().bottom) {
+      bar.classList.add("brand-condensed");
+    }
+  }
+
   function renderNav(activeHash) {
     const navLinks = document.getElementById("nav-links");
     const navRight = document.getElementById("nav-right");
@@ -104,6 +123,7 @@ const App = (() => {
         }
       `;
     }
+    fitBrand();
   }
 
   const routes = [
@@ -187,6 +207,17 @@ const App = (() => {
     await Promise.all([refreshUser(), refreshAuthConfig()]);
     router();
     window.addEventListener("hashchange", router);
+
+    let fitQueued = false;
+    window.addEventListener("resize", () => {
+      if (fitQueued) return;
+      fitQueued = true;
+      requestAnimationFrame(() => {
+        fitQueued = false;
+        fitBrand();
+      });
+    });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitBrand);
 
     const navToggle = document.getElementById("nav-toggle");
     const navLinks = document.getElementById("nav-links");

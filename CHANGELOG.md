@@ -1,5 +1,6 @@
 # Changelog
 
+- **0.91**: On narrow phone screens the logo shortens to "BK" when the full name would push the account controls onto a second line.
 - **0.90**: Importing a CSV now adds to bottles already in your cellar when every detail matches, instead of creating duplicates, and notes starting with a dash or similar no longer gain a stray apostrophe when exported and imported again. Updated to Python 3.14.8, a security release. Minor code and comment cleanup.
 - **0.89**: Updated PyJWT, which now warns on startup if `CELLAR_SECRET_KEY` is too short to be secure. Minor UI updates.
 - **0.88**: A mistyped SMTP port no longer stops the app from starting; it warns and falls back to the default instead. SMTP port numbers are validated on the admin page.
