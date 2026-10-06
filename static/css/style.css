@@ -196,6 +196,7 @@ button, input, select, textarea {
   padding: 8px 12px;
   border-radius: var(--radius-sm);
   text-decoration: none;
+  white-space: nowrap;
 }
 .nav-links a:hover {
   color: var(--text);
@@ -278,6 +279,35 @@ button, input, select, textarea {
   .nav-links a {
     padding: 12px 14px;
   }
+}
+
+/* The same hamburger menu on wider screens, when app.js finds the links
+   don't fit (admins and traders have more of them). Keep in step with the
+   block above. */
+.topbar.nav-collapsed {
+  flex-wrap: wrap;
+}
+.topbar.nav-collapsed .nav-toggle {
+  display: flex;
+  margin-right: auto;
+  margin-left: 6px;
+}
+.topbar.nav-collapsed .nav-links {
+  display: none;
+  order: 10;
+  flex-basis: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.topbar.nav-collapsed .nav-links.open {
+  display: flex;
+}
+.topbar.nav-collapsed .nav-links a {
+  padding: 12px 14px;
 }
 
 .sr-only {
@@ -652,36 +682,69 @@ textarea.input {
   gap: 10px;
   margin-bottom: 20px;
 }
-.toolbar .spacer {
-  flex: 1;
-}
-.seg {
+.tb-field {
+  position: relative;
   display: inline-flex;
+}
+.tb-field::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -5px;
+  border-right: 1.5px solid var(--text-faint);
+  border-bottom: 1.5px solid var(--text-faint);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+.tb-select {
+  appearance: none;
+  -webkit-appearance: none;
+  /* Opaque on purpose: the open list takes its colours from here. */
+  background: var(--bg);
+  color: var(--text);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-.seg button {
-  background: transparent;
-  border: none;
-  color: var(--text-dim);
-  padding: 8px 13px;
+  padding: 8px 30px 8px 13px;
+  font: inherit;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }
-.seg button + button {
-  border-left: 1px solid var(--border);
+.tb-select:hover {
+  border-color: var(--accent-deep);
 }
-.seg button.active {
+.tb-select:focus-visible,
+.sort-dir:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 2px;
+}
+.sort-group {
+  display: inline-flex;
+}
+.sort-group .tb-select {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.sort-dir {
+  width: 38px;
+  border: 1px solid var(--border);
+  border-left: none;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
   background: var(--accent-wash);
   color: var(--accent-bright);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
 }
-/* Light theme only - #f3c63f (this app's --accent-bright, shared with
-   dark theme) reads too washed-out against the light background on
-   these specifically; a darker gold holds up better without touching
-   the shared variable and its other 12 uses. */
-[data-theme="light"] .seg button.active {
+.sort-dir:hover {
+  border-color: var(--accent-deep);
+}
+/* --accent-bright is too washed-out on the light background here. */
+[data-theme="light"] .sort-dir {
   color: #9c8132;
 }
 
@@ -1344,5 +1407,35 @@ textarea.input {
   }
   .field-row {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Phones: tighter cellar controls, so all three fit on one row.
+   pages.js shortens the drink-by sort label at the same width. */
+@media (max-width: 480px) {
+  .toolbar {
+    gap: 6px;
+  }
+  .tb-select {
+    padding: 8px 21px 8px 9px;
+  }
+  .tb-field::after {
+    right: 8px;
+  }
+  .sort-dir {
+    width: 32px;
+  }
+}
+
+/* 360px phones need a few pixels more to stay on one row. */
+@media (max-width: 374px) {
+  .toolbar {
+    gap: 5px;
+  }
+  .tb-select {
+    padding: 8px 20px 8px 8px;
+  }
+  .sort-dir {
+    width: 30px;
   }
 }

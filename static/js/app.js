@@ -41,6 +41,24 @@ const App = (() => {
     await refreshVersionTag();
   }
 
+  // Fold the menu into the hamburger whenever its links don't fit on one
+  // line, at any width. How much room they need depends on the account:
+  // admins and traders get extra links. Phones are handled by the
+  // stylesheet alone; this covers the widths above that.
+  function fitNav() {
+    const bar = document.querySelector(".topbar");
+    const right = document.getElementById("nav-right");
+    if (!bar || !right) return;
+    bar.classList.remove("nav-collapsed");
+    const edge = bar.getBoundingClientRect().right - parseFloat(getComputedStyle(bar).paddingRight);
+    if (right.getBoundingClientRect().right > edge + 0.5) bar.classList.add("nav-collapsed");
+  }
+
+  function fitHeader() {
+    fitNav();
+    fitBrand();
+  }
+
   // Shorten the wordmark to "BK" only when the full name would push the
   // account controls onto a second row. Measured rather than tied to a
   // breakpoint, because where the header wraps depends on what's in it:
@@ -74,6 +92,9 @@ const App = (() => {
     if (state.user) {
       links.push({ href: "#/cellar", label: "My cellar" });
       links.push({ href: "#/consumed", label: "History" });
+      if (state.account && state.account.trading_enabled) {
+        links.push({ href: `#/u/${encodeURIComponent(state.user)}/trades`, label: "Trade list" });
+      }
     }
     if (state.account && state.account.is_admin) {
       links.push({ href: "#/admin", label: "Admin" });
@@ -123,7 +144,7 @@ const App = (() => {
         }
       `;
     }
-    fitBrand();
+    fitHeader();
   }
 
   const routes = [
@@ -158,6 +179,8 @@ const App = (() => {
       return state.authConfig;
     },
     refreshUser,
+    // For settings that change what the menu shows, without a route change.
+    refreshNav: () => renderNav((location.hash || "#/").split("?")[0]),
   };
 
   async function router() {
@@ -214,10 +237,10 @@ const App = (() => {
       fitQueued = true;
       requestAnimationFrame(() => {
         fitQueued = false;
-        fitBrand();
+        fitHeader();
       });
     });
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitBrand);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeader);
 
     const navToggle = document.getElementById("nav-toggle");
     const navLinks = document.getElementById("nav-links");

@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.91.** See [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.93.** See [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -176,8 +176,8 @@ bottles **For Trade** or **In Search Of**, and to track beers you don't
 own yet on a **wanted list**. Once enabled, `#/u/<username>/trades` is a
 public, no-login page listing both, independent of your general cellar
 privacy setting, so you can keep your cellar private while still sharing
-just this list. Get the shareable link from Account or from the trade
-page itself.
+just this list. A **Trade list** link appears in the top menu, and the
+shareable link is on the Account page and on the trade page itself.
 
 ## Beer styles
 

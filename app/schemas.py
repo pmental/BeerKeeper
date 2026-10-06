@@ -326,7 +326,13 @@ class RecentConsumedOut(BaseModel):
     display_name: Optional[str] = None
     beer_name: str
     brewery_name: str
+    reference_url: Optional[str] = None
     consumed_on: dt.date
+    quantity: int = 1
+    # None when the drinker keeps these private (see recent_activity).
+    rating: Optional[float] = None
+    note: Optional[str] = None
+    best_before: Optional[dt.date] = None
 
 
 # ---------- Admin ----------

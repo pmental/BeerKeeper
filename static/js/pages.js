@@ -1034,10 +1034,18 @@ const Pages = (() => {
       } else {
         feed.innerHTML = recent
           .map(
-            (r) => `<div class="feed-row">
-              <span class="who">${escapeHtml(firstName(r.display_name) || r.username)}</span>
-              <span class="what">drank ${escapeHtml(r.beer_name)} <span class="subtle">(${escapeHtml(r.brewery_name)})</span></span>
-              <span class="meta">${fmtDate(r.consumed_on)}</span>
+            (r) => `<div class="feed-row" style="display:block">
+              <div><span class="who">${escapeHtml(firstName(r.display_name) || r.username)}</span>
+                <span class="what">drank <strong>${
+                  r.reference_url
+                    ? `<a href="${escapeHtml(r.reference_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(r.beer_name)}</a>`
+                    : escapeHtml(r.beer_name)
+                }</strong></span> <span class="subtle">&middot; ${escapeHtml(r.brewery_name)}</span>
+                <span class="meta">${fmtDate(r.consumed_on)}${r.quantity > 1 ? ` &middot; &times;${r.quantity}` : ""}${
+                  r.best_before ? ` &middot; (Drink by ${escapeHtml(fmtDate(r.best_before))})` : ""
+                }</span></div>
+              ${r.rating ? `<div>${starsReadonly(r.rating)}</div>` : ""}
+              ${r.note ? `<div class="subtle">${escapeHtml(r.note)}</div>` : ""}
             </div>`
           )
           .join("");
@@ -1262,6 +1270,17 @@ const Pages = (() => {
     });
   }
 
+  // Phones get a shorter label so the cellar's three controls fit on one
+  // row. The width matches the phone rules for .toolbar in style.css.
+  const phoneScreen = window.matchMedia("(max-width: 480px)");
+  const sortLabels = { beer: "By beer", brewery: "By brewery", drinkby: "By drink-by date" };
+  const sortLabel = (val) => (val === "drinkby" && phoneScreen.matches ? "By drink-by" : sortLabels[val]);
+  phoneScreen.addEventListener("change", () => {
+    document.querySelectorAll("[data-sort-select] option").forEach((o) => {
+      o.textContent = sortLabel(o.value);
+    });
+  });
+
   async function cellar(root, ctx) {
     if (!ctx.user) {
       location.hash = "#/login";
@@ -1282,12 +1301,9 @@ const Pages = (() => {
     // the account record.
     let viewMode = localStorage.getItem("cellar_view_mode") === "compact" ? "compact" : "comfortable";
 
-    const sortLabels = { beer: "By beer", brewery: "By brewery", drinkby: "By drink-by date" };
     const sortArrow = () => (sortDirection === "asc" ? "↑" : "↓");
-    const sortButtonHtml = (val) =>
-      `<button data-val="${val}" class="${sort === val ? "active" : ""}">${escapeHtml(sortLabels[val])}${
-        sort === val ? ` ${sortArrow()}` : ""
-      }</button>`;
+    const option = (val, label, current) =>
+      `<option value="${val}"${val === current ? " selected" : ""}>${escapeHtml(label)}</option>`;
 
     root.innerHTML = `
       <div class="page-head">
@@ -1299,26 +1315,28 @@ const Pages = (() => {
         </div>
       </div>
       <div class="toolbar">
-        <div class="seg" data-sort>
-          ${sortButtonHtml("beer")}
-          ${sortButtonHtml("brewery")}
-          ${sortButtonHtml("drinkby")}
+        <div class="sort-group">
+          <span class="tb-field">
+            <select class="tb-select" data-sort-select aria-label="Sort by">
+              ${Object.keys(sortLabels).map((val) => option(val, sortLabel(val), sort)).join("")}
+            </select>
+          </span>
+          <button type="button" class="sort-dir" data-sort-dir></button>
         </div>
         ${
           ctx.account.show_fridge_column
-            ? `<div class="seg" data-loc>
-                 <button data-val="" class="active">All</button>
-                 <button data-val="cellar">Cellar</button>
-                 <button data-val="fridge">Fridge</button>
-               </div>`
+            ? `<span class="tb-field">
+                 <select class="tb-select" data-loc-select aria-label="Location">
+                   ${option("", "All", "")}${option("cellar", "Cellar", "")}${option("fridge", "Fridge", "")}
+                 </select>
+               </span>`
             : ""
         }
-        <div class="seg" data-view>
-          <button data-val="comfortable" class="${viewMode === "comfortable" ? "active" : ""}">Comfortable</button>
-          <button data-val="compact" class="${viewMode === "compact" ? "active" : ""}">Compact</button>
-        </div>
-        <div class="spacer"></div>
-        ${ctx.account.trading_enabled ? `<a class="btn btn-ghost btn-sm" href="#/u/${encodeURIComponent(ctx.user)}/trades">Trade list</a>` : ""}
+        <span class="tb-field">
+          <select class="tb-select" data-view-select aria-label="View">
+            ${option("comfortable", "Comfortable", viewMode)}${option("compact", "Compact", viewMode)}
+          </select>
+        </span>
       </div>
       <div id="entries">${spinnerHtml()}</div>
     `;
@@ -1333,51 +1351,41 @@ const Pages = (() => {
       });
     }
 
-    function refreshSortButtons() {
-      root.querySelectorAll("[data-sort] button").forEach((b) => {
-        const val = b.dataset.val;
-        const isActive = val === sort;
-        b.classList.toggle("active", isActive);
-        b.textContent = isActive ? `${sortLabels[val]} ${sortArrow()}` : sortLabels[val];
-      });
+    const dirBtn = root.querySelector("[data-sort-dir]");
+    function showDirection() {
+      const label = sortDirection === "asc" ? "Ascending. Switch to descending" : "Descending. Switch to ascending";
+      dirBtn.textContent = sortArrow();
+      dirBtn.title = label;
+      dirBtn.setAttribute("aria-label", label);
     }
+    showDirection();
 
-    root.querySelectorAll("[data-sort] button").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const val = btn.dataset.val;
-        // Clicking the already-active sort flips direction; picking a
-        // different one starts fresh at ascending, like most sortable
-        // tables/lists do.
-        if (val === sort) {
-          sortDirection = sortDirection === "asc" ? "desc" : "asc";
-        } else {
-          sort = val;
-          sortDirection = "asc";
-        }
-        refreshSortButtons();
+    // Picking a different sort starts at ascending, like most sortable
+    // lists do.
+    root.querySelector("[data-sort-select]").addEventListener("change", (e) => {
+      sort = e.target.value;
+      sortDirection = "asc";
+      showDirection();
+      load();
+    });
+    dirBtn.addEventListener("click", () => {
+      sortDirection = sortDirection === "asc" ? "desc" : "asc";
+      showDirection();
+      load();
+    });
+    const locSelect = root.querySelector("[data-loc-select]");
+    if (locSelect) {
+      locSelect.addEventListener("change", (e) => {
+        locationFilter = e.target.value || null;
         load();
       });
-    });
-    const locSeg = root.querySelector("[data-loc]");
-    if (locSeg) {
-      locSeg.querySelectorAll("button").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          locationFilter = btn.dataset.val || null;
-          locSeg.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b === btn));
-          load();
-        });
-      });
     }
-    root.querySelectorAll("[data-view] button").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        viewMode = btn.dataset.val;
-        localStorage.setItem("cellar_view_mode", viewMode);
-        root.querySelectorAll("[data-view] button").forEach((b) => b.classList.toggle("active", b === btn));
-        // Compact now hides different fields, not just different CSS, so
-        // switching modes has to re-render the cards, not just toggle a
-        // class on the container.
-        renderEntries();
-      });
+    root.querySelector("[data-view-select]").addEventListener("change", (e) => {
+      viewMode = e.target.value;
+      localStorage.setItem("cellar_view_mode", viewMode);
+      // Compact hides different fields, not just different CSS, so the
+      // cards have to be re-rendered rather than restyled.
+      renderEntries();
     });
 
     function renderEntries() {
@@ -1749,6 +1757,7 @@ const Pages = (() => {
           Object.assign(ctx.account, updated);
           toast("Saved.");
           if (key === "trading_enabled") {
+            ctx.refreshNav(); // the Trade list menu link follows this setting
             account(root, ctx); // re-render so the trade-list share panel appears/disappears immediately
             return;
           }

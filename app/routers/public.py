@@ -74,16 +74,27 @@ def recent_activity(
         .limit(limit)
         .all()
     )
-    return [
-        schemas.RecentConsumedOut(
+    def row(log):
+        # The drinker's own privacy settings decide what others see; your own
+        # drinks always show in full, since this only ever reaches you.
+        own = current_user is not None and log.user_id == current_user.id
+        # A rating only appears alongside tasting notes, as on the public
+        # profile, so the same setting covers both.
+        notes_shown = own or log.user.notes_public
+        return schemas.RecentConsumedOut(
             username=log.user.username,
             display_name=log.user.display_name,
             beer_name=log.beer.name,
             brewery_name=log.beer.brewery.name,
+            reference_url=log.beer.reference_url,
             consumed_on=log.consumed_on,
+            quantity=log.quantity,
+            rating=log.rating if notes_shown else None,
+            note=log.note if own else public_notes_for(log.user, log.note),
+            best_before=log.best_before if (own or log.user.drinkby_public) else None,
         )
-        for log in logs
-    ]
+
+    return [row(log) for log in logs]
 
 
 @router.get("/u/{username}/trades")
