@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.93.** See [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.94.** See [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -105,6 +105,7 @@ created automatically on first boot.
 | `CELLAR_SECRET_KEY`  | *(auto-generated)* | Signs login sessions. If unset, a random key is generated and saved to your data directory on first boot, which works but loses every login if that directory is lost. **Set this explicitly in production.** |
 | `CELLAR_DATA_DIR`    | `/data`          | Where the SQLite database file lives.                                 |
 | `CELLAR_PORT`        | `8000`           | Host port, used by `docker-compose.yml` only.                         |
+| `CELLAR_LOG_LEVEL`   | `info`           | How much is logged: `debug`, `info`, `warning`, `error` or `critical`. `info` includes a line for every request; `warning` keeps only warnings and errors, and `error` only errors. |
 | `CELLAR_PASSWORD_AUTH_ENABLED` | `true` | Set `false` to disable username/password login and registration (hides the forms too). |
 | `CELLAR_TRUST_PROXY_HEADERS` | `false` | Set `true` only if a reverse proxy or tunnel sits in front and overwrites `X-Forwarded-For`. Without it, rate limits behind a proxy apply to everyone at once rather than per visitor. Never enable it on a directly-exposed instance. |
 | `CELLAR_PASSWORD_CHANGE_ENABLED` | `true` | Set `false` to disable self-service password changes (change/forgot/reset), while login stays working - useful for a demo instance with known credentials. Doesn't affect an admin resetting another user's password. |

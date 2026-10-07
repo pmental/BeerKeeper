@@ -1,3 +1,5 @@
+from app import logsetup  # noqa: F401  (first, so the log level is set before anything else logs)
+
 import math
 import os
 

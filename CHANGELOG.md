@@ -1,5 +1,6 @@
 # Changelog
 
+- **0.94**: New `CELLAR_LOG_LEVEL` setting to choose how much is logged, for example only warnings and errors. `CELLAR_TRUST_PROXY_HEADERS` and `CELLAR_VAPID_SUBJECT` set in `.env` now take effect with the bundled `docker-compose.yml`.
 - **0.93**: Minor UI updates.
 - **0.92**: "Recently uncorked" on the home page now shows ratings, tasting notes, quantity and drink-by dates, laid out like the History page. Each drinker's privacy settings still decide what others can see.
 - **0.91**: On narrow phone screens the logo shortens to "BK" when the full name would push the account controls onto a second line.

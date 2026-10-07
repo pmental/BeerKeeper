@@ -7,7 +7,7 @@ from email.message import EmailMessage
 from app import config
 from app.crypto import InvalidToken, decrypt_secret, encrypt_secret
 
-logger = logging.getLogger("beerkeeper.email")
+logger = logging.getLogger("cellar.email")
 
 
 @dataclass
