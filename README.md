@@ -75,25 +75,50 @@ domain and HTTPS.
 
 ## Running without Docker
 
-Python 3.14.8+ recommended.
+Python 3.14.8+ recommended. The app is configured entirely through
+environment variables, and the simplest way to supply them is one settings
+file passed to the start command.
 
-```bash
-pip install -r requirements.txt
-export CELLAR_SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")
-export CELLAR_DATA_DIR=./data
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
+1. Install the dependencies and copy the example settings:
+
+   ```bash
+   pip install -r requirements.txt
+   cp .env.example .env
+   ```
+
+2. Edit `.env`. Uncomment `CELLAR_DATA_DIR` so the database has somewhere
+   to live, and paste in a secret key:
+
+   ```bash
+   python3 -c "import secrets; print(secrets.token_hex(32))"
+   # paste the output as CELLAR_SECRET_KEY= in .env
+   ```
+
+3. Start it:
+
+   ```bash
+   uvicorn app.main:app --host 0.0.0.0 --port 8000 --env-file .env
+   ```
+
+4. Open `http://localhost:8000` and create an account.
+
+Everything else in `.env` is optional and documented in the file itself
+and in the table below. A few notes:
+
+- If `CELLAR_SECRET_KEY` is left empty, a random key is generated and
+  saved to `CELLAR_DATA_DIR` on first boot. It works, but every login is
+  lost if that directory is. The Docker Compose path insists on an
+  explicit key; running this way does not, so set one deliberately.
+- `CELLAR_PORT` is only used by Docker Compose. Here the port is whatever
+  you pass to `--port`.
+- Variables exported in the shell work too, and take precedence over the
+  file. Under systemd, point `EnvironmentFile=` at the same file instead
+  of using `--env-file`.
 
 (The Docker image installs from `requirements-lock.txt` instead, a fully
 pinned snapshot of the whole dependency tree, transitive packages
-included, for reproducible builds - see that file's own header for how to
+included, for reproducible builds. See that file's own header for how to
 regenerate it after changing `requirements.txt`.)
-
-Setting `CELLAR_SECRET_KEY` explicitly (as above) is recommended but not
-required: if it's unset, a random key is generated and saved to
-`CELLAR_DATA_DIR` on first boot instead. The Docker Compose path enforces
-setting it explicitly; running this way does not, so it's worth doing
-deliberately.
 
 The SQLite database and static assets need no separate setup: tables are
 created automatically on first boot.
