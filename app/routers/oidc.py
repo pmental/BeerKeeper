@@ -232,7 +232,7 @@ async def oidc_callback(request: Request, background_tasks: BackgroundTasks):
         db.close()
 
     if is_new and is_smtp_enabled() and user.email and not user.email.endswith("@no-reply.beerkeeper.internal"):
-        background_tasks.add_task(send_welcome_email, user.email, user.username)
+        background_tasks.add_task(send_welcome_email, user.email, user.username, user.first_name)
 
     # Diagnostic line for exactly the situation that prompted adding it:
     # "my provider has a name claim but the app isn't showing it." Doesn't

@@ -139,7 +139,7 @@ def create_user(
         raise HTTPException(status_code=400, detail="That username or email is already taken.")
     db.refresh(user)
     if payload.send_welcome_email and resolve_smtp_settings(db).enabled:
-        background_tasks.add_task(send_welcome_email, user.email, user.username)
+        background_tasks.add_task(send_welcome_email, user.email, user.username, user.first_name)
     return _serialize_user(db, user)
 
 

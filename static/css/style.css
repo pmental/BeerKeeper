@@ -1405,6 +1405,16 @@ textarea.input {
   .entry-card {
     grid-template-columns: 1fr;
   }
+  /* The card is a single column here, so a bottle's buttons share one
+     line instead of keeping the desktop's two stacked rows, and wrap only
+     when they don't fit. */
+  .bottle-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .bottle-actions .row {
+    display: contents;
+  }
   .field-row {
     grid-template-columns: 1fr;
   }

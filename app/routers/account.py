@@ -51,7 +51,7 @@ def update_account(
             old_email,
             "Your account email was changed",
             (
-                f"Hi {current_user.username},\n\n"
+                f"Hi {current_user.first_name or current_user.username},\n\n"
                 f"Your account's email address was just changed from this address to "
                 f"{current_user.email}.\n\n"
                 f"If that wasn't you, someone may have access to your account - change "

@@ -68,7 +68,7 @@ def _send_email(user: models.User, entries) -> bool:
     n = len(entries)
     subject = f"{n} bottle{'' if n == 1 else 's'} coming due in your cellar"
     body = (
-        f"Hi {user.username},\n\n"
+        f"Hi {user.first_name or user.username},\n\n"
         f"{'This bottle is' if n == 1 else 'These bottles are'} approaching "
         f"{'its' if n == 1 else 'their'} drink-by date:\n\n"
         f"{_describe(entries)}\n\n"

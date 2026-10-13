@@ -81,6 +81,13 @@ class User(Base):
 
     __table_args__ = (UniqueConstraint("oidc_issuer", "oidc_subject", name="uq_users_oidc_issuer_subject"),)
 
+    @property
+    def first_name(self) -> str | None:
+        """First word of the display name, or None without one. The same
+        rule as firstName() in static/js/ui.js."""
+        parts = (self.display_name or "").split()
+        return parts[0] if parts else None
+
 
 class Brewery(Base):
     __tablename__ = "breweries"

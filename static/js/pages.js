@@ -874,7 +874,7 @@ const Pages = (() => {
     const isPending = entry._pending === true;
 
     const actions = editable && !isPending
-      ? `<div class="entry-actions">
+      ? `<div class="entry-actions bottle-actions">
            <div class="row">
              <button class="btn btn-icon" data-act="add" title="Add one to stock">&plus;1</button>
              <button class="btn btn-ghost btn-sm" data-act="drink">Drink</button>

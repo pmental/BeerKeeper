@@ -139,10 +139,10 @@ def send_email_safely(to_email: str, subject: str, body_text: str) -> None:
         logger.exception("Failed to send email to %s (subject: %s)", to_email, subject)
 
 
-def send_welcome_email(to_email: str, username: str) -> None:
+def send_welcome_email(to_email: str, username: str, first_name: str | None = None) -> None:
     subject = f"Welcome to {config.APP_NAME}"
     body = (
-        f"Hi {username},\n\n"
+        f"Hi {first_name or username},\n\n"
         f"An account has been created for you on {config.APP_NAME}, a self-hosted "
         f"beer cellar tracker.\n\n"
         f"Username: {username}\n"
@@ -153,11 +153,13 @@ def send_welcome_email(to_email: str, username: str) -> None:
     send_email_safely(to_email, subject, body)
 
 
-def send_password_reset_email(to_email: str, username: str, raw_token: str) -> None:
+def send_password_reset_email(
+    to_email: str, username: str, raw_token: str, first_name: str | None = None
+) -> None:
     reset_link = f"{config.BASE_URL}/#/reset-password?token={raw_token}"
     subject = f"Reset your {config.APP_NAME} password"
     body = (
-        f"Hi {username},\n\n"
+        f"Hi {first_name or username},\n\n"
         f"Someone requested a password reset for your {config.APP_NAME} account. "
         f"If that was you, set a new password here:\n\n"
         f"{reset_link}\n\n"

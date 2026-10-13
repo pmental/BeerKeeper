@@ -102,7 +102,7 @@ def register(
     promote_earliest_if_no_admin(db)
     db.refresh(user)  # pick up is_admin if this was the promotion
     if is_smtp_enabled(db):
-        background_tasks.add_task(send_welcome_email, user.email, user.username)
+        background_tasks.add_task(send_welcome_email, user.email, user.username, user.first_name)
     token = create_access_token(user.id, user.username)
     start_session(response, request, token)
     return schemas.TokenOut(access_token=token)
@@ -195,7 +195,7 @@ def forgot_password(
     user = db.query(models.User).filter(models.User.email == payload.email).first()
     if user:
         raw_token = _create_reset_token(db, user)
-        background_tasks.add_task(send_password_reset_email, user.email, user.username, raw_token)
+        background_tasks.add_task(send_password_reset_email, user.email, user.username, raw_token, user.first_name)
     return {"ok": True, "detail": "If that email is registered, a reset link has been sent."}
 
 
