@@ -7,7 +7,7 @@ from email.message import EmailMessage
 from app import config
 from app.crypto import InvalidToken, decrypt_secret, encrypt_secret
 
-logger = logging.getLogger("cellar.email")
+log = logging.getLogger("cellar.email")
 
 
 @dataclass
@@ -60,7 +60,7 @@ def resolve_smtp_settings(db=None) -> ResolvedSmtp:
                 # gracefully rather than send ciphertext-shaped garbage
                 # as a password - fall back to the env var, if any, same
                 # as if nothing were stored here at all.
-                logger.error("Stored SMTP password could not be decrypted - falling back to CELLAR_SMTP_PASSWORD, if set.")
+                log.error("Stored SMTP password could not be decrypted - falling back to CELLAR_SMTP_PASSWORD, if set.")
                 db_password = None
         password = _first(db_password, config.SMTP_PASSWORD) or ""
         from_email = _first(row and row.smtp_from_email, config.SMTP_FROM_EMAIL)
@@ -136,7 +136,7 @@ def send_email_safely(to_email: str, subject: str, body_text: str) -> None:
     try:
         send_email(to_email, subject, body_text)
     except Exception:
-        logger.exception("Failed to send email to %s (subject: %s)", to_email, subject)
+        log.exception("Failed to send email to %s (subject: %s)", to_email, subject)
 
 
 def send_welcome_email(to_email: str, username: str, first_name: str | None = None) -> None:

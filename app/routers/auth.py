@@ -132,7 +132,7 @@ def login(request: Request, response: Response, form_data: OAuth2PasswordRequest
 def logout(response: Response):
     """Clear the session cookie.
 
-    Needs a server round trip now: an HttpOnly cookie is by definition
+    Done server-side because an HttpOnly cookie is by definition
     something the page's own script can't delete, which is the whole
     point of it. Deliberately unauthenticated - logging out should work
     even if the token has already expired or been invalidated, and there

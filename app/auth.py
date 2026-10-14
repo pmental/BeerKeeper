@@ -39,10 +39,10 @@ def _load_or_create_secret_key() -> str:
     os.makedirs(os.path.dirname(_SECRET_KEY_FILE), exist_ok=True)
     # Explicit 0600 (owner read/write only) from the moment the file is
     # created, via os.open's mode - a plain open() leaves the permissions
-    # up to the process umask, and this secret backs more than just JWT
-    # signing now (session cookies, and the encrypted SMTP password via
-    # app/crypto.py), so it shouldn't default to being readable by
-    # anything else on the same host.
+    # up to the process umask. This secret signs login tokens and the SSO
+    # handshake cookie and encrypts the stored SMTP password (app/crypto.py),
+    # so it shouldn't default to being readable by anything else on the
+    # same host.
     fd = os.open(_SECRET_KEY_FILE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(fd, "w", encoding="utf-8") as f:
         f.write(generated)

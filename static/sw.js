@@ -13,7 +13,7 @@
  * page - nothing registers it on page load.
  */
 
-self.addEventListener("install", (event) => {
+self.addEventListener("install", () => {
   // Take over immediately rather than waiting for existing tabs to
   // close; there's no cached state to migrate, so nothing to be careful
   // about here.
@@ -46,11 +46,10 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  // Only ever navigate to a relative path on this origin. The payload is
-  // written by this app's own server today, so this changes nothing now -
-  // it's here so that a future bug which let an attacker influence the
-  // notification body couldn't turn a tapped reminder into a redirect to
-  // a site of their choosing. "//evil.example" is rejected too: it starts
+  // Only ever navigate to a relative path on this origin. The payload
+  // comes from this app's own server; the check is defence in depth, so a
+  // bug that let an attacker influence the notification body couldn't
+  // turn a tapped reminder into a redirect to a site of their choosing. "//evil.example" is rejected too: it starts
   // with a slash but is a protocol-relative absolute URL.
   const raw = (event.notification.data && event.notification.data.url) || "/#/cellar";
   const target = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/#/cellar";

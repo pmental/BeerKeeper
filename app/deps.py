@@ -42,9 +42,9 @@ def _user_from_token(token: str | None, db: Session) -> models.User | None:
 def _resolve_token(request: Request, header_token: str | None) -> str | None:
     """Prefer the HttpOnly session cookie, fall back to the header.
 
-    The app's own frontend uses the cookie and no longer keeps a copy of
-    the token anywhere script can reach. The Authorization header is still
-    honoured so scripts and other API clients keep working.
+    The app's own frontend uses the cookie, so the token is never
+    reachable from page script. The Authorization header is honoured for
+    scripts and other API clients.
     """
     return request.cookies.get(SESSION_COOKIE) or header_token
 

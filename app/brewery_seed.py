@@ -36,11 +36,6 @@ def seed_breweries_if_needed(db: Session) -> None:
     _SEEDED_NAMES_FILE - so later app updates that add more entries to the
     default list reach existing installs too, while a brewery you've
     deliberately deleted after it was seeded is never silently recreated.
-    (Versions before 0.0.5 used a single all-or-nothing marker instead;
-    upgrading from one of those treats nothing as previously attempted,
-    so if you'd deleted one of that version's seeded breweries before
-    upgrading, it may reappear once - sorry. Anything seeded from 0.0.5
-    onward won't have that problem.)
     """
     if not os.path.exists(_DEFAULT_SOURCE):
         return

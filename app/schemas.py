@@ -1,17 +1,16 @@
 import datetime as dt
 from typing import Annotated, Optional
 
-from pydantic import AfterValidator, BaseModel, EmailStr, Field, field_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 def _check_password_byte_length(value: str) -> str:
     # bcrypt's actual limit is 72 *bytes*, not characters - a password
     # using accented letters, emoji, or non-Latin scripts can hit that
     # well under the 200-character limit below. Enforcing it here, with
-    # a clear message, beats letting the hashing call fail on its own:
-    # older bcrypt silently truncated instead of erroring, so this also
-    # closes a real (if minor) gap where a too-long password used to
-    # hash to something other than what the user actually typed.
+    # a clear message, beats letting the hashing call fail on its own.
+    # Older bcrypt versions truncated silently instead, so the check also
+    # guarantees that what gets hashed is exactly what was typed.
     if len(value.encode("utf-8")) > 72:
         raise ValueError("Password can't be longer than 72 bytes - about 72 plain characters, fewer if it includes accents, emoji, or non-Latin scripts.")
     return value
@@ -26,11 +25,6 @@ class RegisterIn(BaseModel):
     username: str = Field(min_length=3, max_length=32, pattern=r"^[a-zA-Z0-9_\-]+$")
     email: EmailStr
     password: PasswordStr
-
-
-class LoginIn(BaseModel):
-    username: str
-    password: str
 
 
 class TokenOut(BaseModel):
@@ -68,8 +62,7 @@ class BreweryOut(BaseModel):
     name: str
     website: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class BreweryIn(BaseModel):
@@ -121,8 +114,7 @@ class BeerOut(BaseModel):
     reference_url: Optional[str] = None
     brewery: BreweryOut
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AdminBeerOut(BaseModel):
@@ -203,8 +195,7 @@ class CellarEntryOut(BaseModel):
     beer: BeerOut
     updated_at: dt.datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DrinkIn(BaseModel):
@@ -231,8 +222,7 @@ class ConsumptionLogOut(BaseModel):
     best_before: Optional[dt.date] = None
     beer: BeerOut
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class ConsumptionLogIn(BaseModel):
@@ -258,8 +248,7 @@ class WantedEntryOut(BaseModel):
     created_at: dt.datetime
     beer: BeerOut
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class WantedEntryIn(BaseModel):
@@ -289,8 +278,7 @@ class AccountOut(BaseModel):
     notify_drinkby_email: bool
     notify_days_ahead: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class AccountPatch(BaseModel):

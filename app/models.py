@@ -57,7 +57,7 @@ class User(Base):
     show_location_column = Column(Boolean, default=False, nullable=False)
     trading_enabled = Column(Boolean, default=False, nullable=False)
     # Drink-by reminders. Email is an account-level preference; push is
-    # per device and so lives on PushSubscription instead. days_ahead is
+    # per device and so lives on PushSubscription instead. notify_days_ahead is
     # shared by both - it's about when a bottle counts as "due", not how
     # you hear about it.
     notify_drinkby_email = Column(Boolean, default=False, nullable=False)

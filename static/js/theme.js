@@ -46,5 +46,5 @@ const Theme = (() => {
     }
   }
 
-  return { init, set, getPreference };
+  return { init, set };
 })();

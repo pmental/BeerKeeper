@@ -13,8 +13,8 @@ def _bool_env(name: str, default: bool) -> bool:
 
 def _ensure_scheme(raw: str, var_name: str) -> str:
     """A bare domain (no http:// or https://) is a common copy-paste mistake
-    that used to crash deep inside authlib/httpx with a cryptic error at
-    login time instead of failing clearly at startup. Auto-correct it (https
+    that would otherwise crash deep inside authlib/httpx with a cryptic
+    error at login time. Auto-correct it (https
     is the right assumption for the vast majority of real providers) and
     say so loudly, so it's obvious what happened and how to override it."""
     raw = raw.strip().rstrip("/")
@@ -48,7 +48,7 @@ PASSWORD_CHANGE_ENABLED = _bool_env("CELLAR_PASSWORD_CHANGE_ENABLED", True)
 APP_NAME = "BeerKeeper"
 # Bump this with every set of changes: 0.0.1, 0.0.2, ... until told to
 # bump the minor/major version instead.
-APP_VERSION = "0.96"
+APP_VERSION = "0.97"
 
 OIDC_ENABLED = _bool_env("CELLAR_OIDC_ENABLED", False)
 OIDC_ISSUER = _ensure_scheme(os.environ.get("CELLAR_OIDC_ISSUER", ""), "CELLAR_OIDC_ISSUER")

@@ -1,5 +1,6 @@
 # Changelog
 
+- **0.97**: Minor code and comment cleanup, and clearer SSO sign-in error messages.
 - **0.96**: Emails greet you by first name when your account has one. On phones, a bottle's buttons share one row when they fit.
 - **0.95**: Security updates for dependencies, including a fix in the library used to send push notifications.
 - **0.94**: New `CELLAR_LOG_LEVEL` setting to choose how much is logged, for example only warnings and errors. `CELLAR_TRUST_PROXY_HEADERS` and `CELLAR_VAPID_SUBJECT` set in `.env` now take effect with the bundled `docker-compose.yml`.

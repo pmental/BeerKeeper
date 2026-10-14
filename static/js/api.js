@@ -8,11 +8,11 @@ const Api = (() => {
   const CSRF_COOKIE = "cellar_csrf";
 
   function csrfToken() {
-    const match = document.cookie.match(/(?:^|;\s*)cellar_csrf=([^;]*)/);
+    const match = document.cookie.match(new RegExp("(?:^|;\\s*)" + CSRF_COOKIE + "=([^;]*)"));
     return match ? decodeURIComponent(match[1]) : null;
   }
 
-  async function request(method, path, { body, form, auth = true } = {}) {
+  async function request(method, path, { body, form } = {}) {
     const headers = {};
     let payload = body;
     if (form) {
@@ -30,8 +30,8 @@ const Api = (() => {
       method,
       headers,
       body: payload,
-      // Same-origin is already the default, but state it: the session
-      // now rides on a cookie rather than a header.
+      // Same-origin is the default; stated explicitly because the
+      // session is a cookie.
       credentials: "same-origin",
     });
     const isJson = (res.headers.get("content-type") || "").includes("application/json");
@@ -53,20 +53,20 @@ const Api = (() => {
   }
 
   return {
-    logout: () => request("POST", "/api/auth/logout", { auth: false }),
+    logout: () => request("POST", "/api/auth/logout"),
 
     register: (username, email, password) =>
-      request("POST", "/api/auth/register", { body: { username, email, password }, auth: false }),
+      request("POST", "/api/auth/register", { body: { username, email, password } }),
     login: (username, password) =>
-      request("POST", "/api/auth/login", { body: { username, password }, form: true, auth: false }),
+      request("POST", "/api/auth/login", { body: { username, password }, form: true }),
     me: () => request("GET", "/api/auth/me"),
-    authConfig: () => request("GET", "/api/auth/config", { auth: false }),
+    authConfig: () => request("GET", "/api/auth/config"),
     version: () => request("GET", "/api/version"),
     changePassword: (current_password, new_password) =>
       request("POST", "/api/auth/change-password", { body: { current_password, new_password } }),
-    forgotPassword: (email) => request("POST", "/api/auth/forgot-password", { body: { email }, auth: false }),
+    forgotPassword: (email) => request("POST", "/api/auth/forgot-password", { body: { email } }),
     resetPassword: (token, new_password) =>
-      request("POST", "/api/auth/reset-password", { body: { token, new_password }, auth: false }),
+      request("POST", "/api/auth/reset-password", { body: { token, new_password } }),
 
     searchBeers: (q, breweryId) => {
       const params = new URLSearchParams();
@@ -237,11 +237,11 @@ const Api = (() => {
       return data;
     },
 
-    browseCellars: () => request("GET", "/api/public/cellars", { auth: false }),
+    browseCellars: () => request("GET", "/api/public/cellars"),
     recentActivity: () => request("GET", "/api/public/recent"),
-    publicCellar: (username) => request("GET", "/api/public/u/" + encodeURIComponent(username), { auth: false }),
+    publicCellar: (username) => request("GET", "/api/public/u/" + encodeURIComponent(username)),
     publicTrades: (username) =>
-      request("GET", "/api/public/u/" + encodeURIComponent(username) + "/trades", { auth: false }),
+      request("GET", "/api/public/u/" + encodeURIComponent(username) + "/trades"),
 
     addWanted: (payload) => request("POST", "/api/wanted", { body: payload }),
     deleteWanted: (id) => request("DELETE", `/api/wanted/${id}`),

@@ -1088,7 +1088,7 @@ const Pages = (() => {
     const cfg = ctx.authConfig;
     const oidcError = query && query.get("oidc_error");
     const errorBanner = oidcError
-      ? `<div class="form-error" style="margin-bottom:16px">SSO sign-in failed: ${escapeHtml(oidcError)}</div>`
+      ? `<div class="form-error" style="margin-bottom:16px">${escapeHtml(oidcError)}</div>`
       : "";
 
     if (!cfg.password_auth_enabled && !cfg.oidc_enabled) {
@@ -1136,7 +1136,7 @@ const Pages = (() => {
       errorBox.style.display = "none";
       const fd = new FormData(form);
       try {
-        const { access_token } = await Api.login(fd.get("username"), fd.get("password"));
+        await Api.login(fd.get("username"), fd.get("password"));
         await ctx.refreshUser();
         toast(`Welcome back, ${fd.get("username")}.`);
         location.hash = "#/cellar";
@@ -1171,7 +1171,7 @@ const Pages = (() => {
       errorBox.style.display = "none";
       const fd = new FormData(form);
       try {
-        const { access_token } = await Api.register(fd.get("username"), fd.get("email"), fd.get("password"));
+        await Api.register(fd.get("username"), fd.get("email"), fd.get("password"));
         await ctx.refreshUser();
         toast("Cellar created. Welcome!");
         location.hash = "#/cellar";
@@ -1258,7 +1258,7 @@ const Pages = (() => {
       const submitBtn = form.querySelector('button[type="submit"]');
       submitBtn.disabled = true;
       try {
-        const { access_token } = await Api.resetPassword(token, fd.get("new_password"));
+        await Api.resetPassword(token, fd.get("new_password"));
         await ctx.refreshUser();
         toast("Password set. You're logged in.");
         location.hash = "#/cellar";
@@ -1390,6 +1390,7 @@ const Pages = (() => {
 
     function renderEntries() {
       const container = root.querySelector("#entries");
+      if (!container) return; // left the cellar page before the list arrived
       const totalEl = root.querySelector("#cellar-total");
       if (!allEntries.length) {
         const emptyText = locationFilter === "fridge" ? "Your fridge is empty." : "Your cellar's empty.";
@@ -1821,8 +1822,8 @@ const Pages = (() => {
         pwError.style.display = "none";
         const fd = new FormData(pwForm);
         try {
-          const { access_token } = await Api.changePassword(fd.get("current_password"), fd.get("new_password"));
-            toast("Password updated.");
+          await Api.changePassword(fd.get("current_password"), fd.get("new_password"));
+          toast("Password updated.");
           pwForm.reset();
         } catch (err) {
           pwError.textContent = err.message;

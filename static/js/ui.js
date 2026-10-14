@@ -66,18 +66,14 @@ const UI = (() => {
     return Math.round(oz * 1000) / 1000;
   }
 
-  let modalStack = 0;
-
   function openModal(innerHtml, { onMount } = {}) {
     const backdrop = document.createElement("div");
     backdrop.className = "modal-backdrop";
     backdrop.innerHTML = `<div class="modal" role="dialog" aria-modal="true">${innerHtml}</div>`;
     document.body.appendChild(backdrop);
-    modalStack++;
 
     const close = () => {
       backdrop.remove();
-      modalStack--;
     };
     backdrop.addEventListener("mousedown", (e) => {
       if (e.target === backdrop) close();

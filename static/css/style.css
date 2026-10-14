@@ -1167,7 +1167,7 @@ textarea.input {
   border: none;
   cursor: pointer;
   padding: 2px;
-  color: var(--text-faint);
+  color: inherit;
   font-size: 20px;
   line-height: 1;
 }
@@ -1190,12 +1190,9 @@ textarea.input {
   overflow: hidden;
   color: var(--accent);
 }
-.stars button {
-  color: inherit;
-}
-/* Only the interactive picker grows. Each star is two hit zones now
-   (left half / right half), so at the read-only size a target would be
-   about 10px across - too small to hit reliably on a phone. */
+/* Only the interactive picker grows. Each star has two hit zones (left
+   half and right half), so at the read-only size a target would be
+   about 10px across, too small to hit reliably on a phone. */
 .stars.star-picker {
   gap: 6px;
 }

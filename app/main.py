@@ -1,12 +1,13 @@
 from app import logsetup  # noqa: F401  (first, so the log level is set before anything else logs)
 
+import asyncio
 import math
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.middleware.sessions import SessionMiddleware
@@ -14,7 +15,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app import auth, config
 from app.deps import get_current_user
 from app.database import Base, engine, run_migrations, SessionLocal
-from app import models  # noqa: F401  (ensures models are registered before create_all)
+from app import models  # also registers every table before create_all below
 from app.backup import apply_pending_restore_if_any
 from app.brewery_seed import seed_breweries_if_needed
 from app.beer_styles import migrate_beer_styles_if_needed, seed_beer_styles_if_needed
@@ -45,7 +46,25 @@ try:
 finally:
     _seed_db.close()
 
-app = FastAPI(title=config.APP_NAME, version=config.APP_VERSION)
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """Run the drink-by reminder loop for as long as the app is up.
+
+    Started here rather than at import time so it attaches to the running
+    event loop. It sends nothing unless a user has opted in.
+    """
+    from app.notifications import sweep_loop
+
+    # Held in a variable: the event loop keeps only a weak reference to
+    # tasks, so an unreferenced one can be garbage-collected mid-run.
+    sweep = asyncio.create_task(sweep_loop())
+    try:
+        yield
+    finally:
+        sweep.cancel()
+
+
+app = FastAPI(title=config.APP_NAME, version=config.APP_VERSION, lifespan=lifespan)
 
 # Only used to hold the short-lived state/nonce for the OIDC handshake (a
 # few seconds, during the redirect to and back from the identity provider).
@@ -163,20 +182,6 @@ def version(_user: models.User = Depends(get_current_user)):
     return {"name": config.APP_NAME, "version": config.APP_VERSION}
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
-
-@app.on_event("startup")
-async def _start_drinkby_sweep():
-    """Kick off the background drink-by reminder loop.
-
-    Started here rather than at import time so it attaches to the running
-    event loop. Sends nothing unless a user has actually opted in.
-    """
-    import asyncio
-
-    from app.notifications import sweep_loop
-
-    asyncio.create_task(sweep_loop())
-
 
 @app.get("/sw.js")
 def service_worker():

@@ -14,7 +14,7 @@ from app.database import eq_unicode, get_db, search_unicode
 from app.deps import require_admin
 from app.crypto import encrypt_secret
 from app.csv_utils import csv_safe
-from app.email import resolve_smtp_settings, send_test_email, send_welcome_email
+from app.email import is_smtp_enabled, resolve_smtp_settings, send_test_email, send_welcome_email
 from app.routers.beers import _get_or_create_brewery
 from app.uploads import read_upload_limited
 from app.url_utils import sanitize_url
@@ -138,7 +138,7 @@ def create_user(
         db.rollback()
         raise HTTPException(status_code=400, detail="That username or email is already taken.")
     db.refresh(user)
-    if payload.send_welcome_email and resolve_smtp_settings(db).enabled:
+    if payload.send_welcome_email and is_smtp_enabled(db):
         background_tasks.add_task(send_welcome_email, user.email, user.username, user.first_name)
     return _serialize_user(db, user)
 

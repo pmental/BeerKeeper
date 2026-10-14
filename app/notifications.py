@@ -6,7 +6,7 @@ per device. Both are opt-in and both are off until someone asks for them.
 
 Everything here is deliberately conservative about sending twice: each
 entry carries a drinkby_notified_at stamp, set once a reminder covering
-it has gone out, so the daily run doesn't repeat itself. The stamp lives
+it has gone out, so later sweeps don't repeat it. The stamp lives
 on the entry, so drinking or deleting the bottle takes it with them.
 """
 
@@ -23,9 +23,9 @@ from app.push import send_push
 
 log = logging.getLogger("cellar.notifications")
 
-# How often the loop wakes up. The sweep itself is idempotent per day, so
-# waking more often than daily costs nothing and means a server that
-# isn't up at midnight still sends within a few hours.
+# How often the loop wakes up. Each bottle is reminded about only once
+# (drinkby_notified_at), so sweeping several times a day costs nothing
+# and catches newly due bottles within a few hours.
 _SWEEP_INTERVAL_SECONDS = 6 * 60 * 60
 
 
@@ -123,7 +123,7 @@ def run_sweep(db: Session, now: "dt.datetime | None" = None) -> dict:
     Returns a small summary, which is what makes this testable without
     actually delivering anything.
     """
-    now = now or dt.datetime.utcnow()
+    now = now or models.utcnow()
     summary = {"users_notified": 0, "entries_flagged": 0, "emails": 0, "push_devices": 0, "undelivered": 0}
 
     smtp_ready = is_smtp_enabled(db)

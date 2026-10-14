@@ -202,7 +202,9 @@ async def oidc_callback(request: Request, background_tasks: BackgroundTasks):
 
     sub = userinfo.get("sub")
     if not sub:
-        return RedirectResponse(f"{config.BASE_URL}/#/login?oidc_error=missing_subject")
+        log.warning("OIDC login rejected: the provider returned no subject (sub) claim")
+        message = "The SSO provider didn't identify the user. Check the server logs for details."
+        return RedirectResponse(f"{config.BASE_URL}/#/login?oidc_error=" + quote(message, safe=""))
 
     email = userinfo.get("email")
     # Strict identity check, not bool(...): some providers send this as
