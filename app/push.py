@@ -16,6 +16,7 @@ import os
 import socket
 from urllib.parse import urlparse
 
+import requests
 from cryptography.hazmat.primitives import serialization
 from py_vapid import Vapid01
 from pywebpush import WebPushException, webpush
@@ -81,7 +82,9 @@ def endpoint_rejection_reason(raw: str) -> "str | None":
     infrastructure, and a stale allowlist would break real subscriptions.
 
     Checked at subscribe time and again before each send, so a host that
-    later resolves internally stops being sent to. This doesn't fully
+    later resolves internally stops being sent to. Redirects are refused
+    at send time, so the check can't be bypassed by a public endpoint that
+    redirects to an internal address. This doesn't fully
     close DNS rebinding: pywebpush resolves the name again when it
     connects, and closing that gap needs control of a socket the library
     owns.
@@ -129,6 +132,12 @@ def send_push(subscription: dict, payload: dict) -> str:
         return "failed"
 
     v = _load_or_create_vapid()
+    # pywebpush posts with requests, which follows redirects by default
+    # (a 307 is re-sent as a POST). Real push services don't redirect, so
+    # any redirect raises TooManyRedirects instead of being followed past
+    # the address check above.
+    session = requests.Session()
+    session.max_redirects = 0
     try:
         webpush(
             subscription_info=subscription,
@@ -136,8 +145,12 @@ def send_push(subscription: dict, payload: dict) -> str:
             vapid_private_key=v,
             vapid_claims={"sub": _VAPID_CLAIM_SUB},
             timeout=10,
+            requests_session=session,
         )
         return "sent"
+    except requests.TooManyRedirects:
+        log.warning("Refusing push: the endpoint answered with a redirect")
+        return "failed"
     except WebPushException as e:
         status = getattr(getattr(e, "response", None), "status_code", None)
         if status in (404, 410):
@@ -149,3 +162,5 @@ def send_push(subscription: dict, payload: dict) -> str:
     except Exception as e:  # noqa: BLE001 - never let delivery break the sweep
         log.warning("Push delivery error: %s", e)
         return "failed"
+    finally:
+        session.close()

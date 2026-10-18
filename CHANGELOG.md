@@ -1,5 +1,6 @@
 # Changelog
 
+- **0.98**: Push notifications refuse redirects from the push service, closing a way to aim them at internal addresses. Minor code and comment cleanup.
 - **0.97**: Minor code and comment cleanup, and clearer SSO sign-in error messages.
 - **0.96**: Emails greet you by first name when your account has one. On phones, a bottle's buttons share one row when they fit.
 - **0.95**: Security updates for dependencies, including a fix in the library used to send push notifications.
