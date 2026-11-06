@@ -1,6 +1,6 @@
 # BeerKeeper
 
-**Current version: 0.99.** See [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
+**Current version: 0.100.** See [CHANGELOG.md](CHANGELOG.md) for release history. Security measures are summarized in [SECURITY.md](SECURITY.md).
 
 A self-hosted tracker for a beer cellar and fridge: bottles, tasting
 notes, drinking history, and trading. A single Python backend, a SQLite
@@ -75,7 +75,7 @@ domain and HTTPS.
 
 ## Running without Docker
 
-Python 3.14.9+ recommended. The app is configured entirely through
+Python 3.14.10+ recommended. The app is configured entirely through
 environment variables, and the simplest way to supply them is one settings
 file passed to the start command.
 

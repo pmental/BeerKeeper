@@ -1,6 +1,7 @@
 # Changelog
 
-- **0.99**: Security update for the bundled certificate authorities, removing one whose keys were compromised. Updated dependencies, including Authlib, FastAPI, Starlette and SQLAlchemy. Python 3.14.9 is now recommended.
+- **0.100**: Security updates for dependencies, including Authlib, which handles SSO sign-in.
+- **0.99**: Security update for the bundled certificate authorities, removing one whose keys were compromised. Updated dependencies, including Authlib, FastAPI, Starlette and SQLAlchemy. Python 3.14.10 is now recommended.
 - **0.98**: Push notifications refuse redirects from the push service, closing a way to aim them at internal addresses. Minor code and comment cleanup.
 - **0.97**: Minor code and comment cleanup, and clearer SSO sign-in error messages.
 - **0.96**: Emails greet you by first name when your account has one. On phones, a bottle's buttons share one row when they fit.

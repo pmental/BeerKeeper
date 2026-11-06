@@ -46,9 +46,9 @@ PASSWORD_AUTH_ENABLED = _bool_env("CELLAR_PASSWORD_AUTH_ENABLED", True)
 PASSWORD_CHANGE_ENABLED = _bool_env("CELLAR_PASSWORD_CHANGE_ENABLED", True)
 
 APP_NAME = "BeerKeeper"
-# Bumped by 0.01 per release (0.95, 0.96, 0.97, ...) until told to bump
-# the major version instead.
-APP_VERSION = "0.99"
+# The number after "0." goes up by one per release (0.98, 0.99, 0.100,
+# ...) until told to bump the major version instead.
+APP_VERSION = "0.100"
 
 OIDC_ENABLED = _bool_env("CELLAR_OIDC_ENABLED", False)
 OIDC_ISSUER = _ensure_scheme(os.environ.get("CELLAR_OIDC_ISSUER", ""), "CELLAR_OIDC_ISSUER")
