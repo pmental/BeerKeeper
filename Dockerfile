@@ -1,10 +1,16 @@
 # Floating minor-version tag, not a pinned patch+codename - most of the
 # CVEs a scanner flags in this image are Debian/glibc-level OS package
-# issues, not the Python interpreter itself, and get fixed by the official
-# image maintainers' periodic rebuilds. Pinning to an exact patch version
-# would freeze this at whatever OS security patch level existed on the day
-# it was built, working against that. Rebuild with --pull to pick up fixes.
+# issues, not the Python interpreter itself. Pinning to an exact patch
+# version would freeze this at whatever OS security patch level existed on
+# the day it was built.
 FROM python:3.14-slim
+
+# Apply Debian security fixes released since the base image was built,
+# without waiting for the official image to be refreshed. Docker caches
+# this layer, so build with --pull --no-cache to fetch new fixes.
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
