@@ -9,11 +9,11 @@ const UI = (() => {
   }
 
   function firstName(fullName) {
-    // Wherever a display name is shown, we only want the first name -
-    // handles hyphenated first names correctly ("Mary-Jane Smith" -> "Mary-Jane")
-    // since it's just the first whitespace-separated token, and returns null
-    // (not an empty string) for anything blank so `firstName(x) || fallback`
-    // reads naturally at call sites.
+    // The first whitespace-separated word of a display name, so
+    // hyphenated first names survive ("Mary-Jane Smith" -> "Mary-Jane").
+    // Null rather than "" for anything blank, so `firstName(x) || fallback`
+    // reads naturally at call sites. Same rule as User.first_name on the
+    // server.
     if (!fullName) return null;
     const trimmed = String(fullName).trim();
     return trimmed ? trimmed.split(/\s+/)[0] : null;

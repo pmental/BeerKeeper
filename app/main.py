@@ -46,6 +46,7 @@ try:
 finally:
     _seed_db.close()
 
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     """Run the drink-by reminder loop for as long as the app is up.
@@ -87,12 +88,10 @@ app.add_middleware(GZipMiddleware, minimum_size=500)
 _CSP = (
     "default-src 'self'; "
     "script-src 'self'; "
-    # Every render site in this app builds HTML via inline style="..."
-    # attributes rather than CSS classes - blocking that would break the
-    # UI outright, so style-src allows it. script-src does not: that's
-    # the directive that actually matters for XSS (it also covers inline
-    # event-handler attributes like onclick=, not just <script> tags),
-    # and the app has no inline scripts or handlers left to accommodate.
+    # Many templates use inline style="..." attributes, so style-src
+    # allows them. script-src does not: that's the directive that matters
+    # for XSS (it also covers inline handlers like onclick=, not just
+    # <script> tags), and the app has no inline scripts or handlers.
     "style-src 'self' 'unsafe-inline'; "
     # OIDC profile pictures are hosted by whatever the identity provider
     # is (Google, a self-hosted IdP, ...), not this app - 'self' alone
@@ -181,7 +180,9 @@ def health():
 def version(_user: models.User = Depends(get_current_user)):
     return {"name": config.APP_NAME, "version": config.APP_VERSION}
 
+
 STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+
 
 @app.get("/sw.js")
 def service_worker():

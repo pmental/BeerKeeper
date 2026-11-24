@@ -21,6 +21,8 @@ audit trail.
 - Login, registration, and forgot-password are rate-limited per IP;
   forgot-password is also rate-limited per submitted email address, so
   spreading requests across many IPs can't be used to spam one inbox.
+  Behind a proxy, the limit uses the address the proxy saw, so a forged
+  `X-Forwarded-For` header can't be used to get around it.
 - OIDC account linking only auto-links to an existing local account when
   the provider marks the email `email_verified` - an unverified email
   claim can't be used to take over someone else's account.
@@ -40,6 +42,8 @@ audit trail.
 - Every API endpoint requires a valid session except the auth flow
   itself, static assets, and the deliberately public pages (Browse,
   public cellar/trade profiles).
+- Public pages show only a person's first name, never the full name an
+  SSO provider supplies.
 - All database access goes through SQLAlchemy's parameterized query
   builder; the only raw SQL is static DDL in schema migrations, never
   built from request input.

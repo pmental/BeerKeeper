@@ -21,6 +21,14 @@ def public_notes_for(user: models.User, notes: "str | None") -> "str | None":
     return notes if user.notes_public else None
 
 
+def public_name(user: models.User) -> "str | None":
+    """The name shown for someone on a public view: the first name only,
+    which is all the pages show. A display name comes from the SSO
+    provider and is often a full legal name, and these endpoints answer
+    anyone, signed in or not."""
+    return user.first_name
+
+
 @router.get("/cellars", response_model=list[schemas.PublicUserOut])
 def browse_cellars(db: Session = Depends(get_db)):
     users = db.query(models.User).filter(models.User.cellar_public.is_(True)).all()
@@ -37,7 +45,7 @@ def browse_cellars(db: Session = Depends(get_db)):
         out.append(
             schemas.PublicUserOut(
                 username=u.username,
-                display_name=u.display_name,
+                display_name=public_name(u),
                 cellar_count=counts.get(u.id, 0),
                 trading_enabled=u.trading_enabled,
             )
@@ -83,7 +91,7 @@ def recent_activity(
         notes_shown = own or log.user.notes_public
         return schemas.RecentConsumedOut(
             username=log.user.username,
-            display_name=log.user.display_name,
+            display_name=public_name(log.user),
             beer_name=log.beer.name,
             brewery_name=log.beer.brewery.name,
             reference_url=log.beer.reference_url,
@@ -155,7 +163,7 @@ def public_trades(username: str, db: Session = Depends(get_db)):
 
     return {
         "username": user.username,
-        "display_name": user.display_name,
+        "display_name": public_name(user),
         "for_trade": for_trade,
         "wanted": wanted,
     }
@@ -229,8 +237,7 @@ def public_cellar(username: str, db: Session = Depends(get_db)):
 
     return {
         "username": user.username,
-        "display_name": user.display_name,
-        "messaging_enabled": user.messaging_enabled,
+        "display_name": public_name(user),
         "trading_enabled": user.trading_enabled,
         "total_consumed": consumed_count,
         "entries": [serialize(e) for e in entries],

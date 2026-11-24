@@ -53,13 +53,11 @@ def _unique_username(db: Session, base: str) -> str:
 
 
 def _placeholder_email(username: str) -> str:
-    # Used when the OIDC provider doesn't release an email claim - just
-    # needs to be syntactically valid and non-colliding, since the account
-    # is genuinely never emailed. RFC 2606's ".invalid" would be the more
-    # "correct" choice semantically, but Pydantic's EmailStr rejects known
-    # special-use TLDs like .invalid/.test/.local outright, which broke
-    # every response returning this account (e.g. every /api/auth/me call)
-    # with a 500. This domain isn't on that reserved list.
+    # Used when the OIDC provider doesn't release an email claim. It only
+    # has to be valid and unique, since the account is never emailed. Not
+    # RFC 2606's ".invalid": Pydantic's EmailStr rejects special-use TLDs
+    # such as .invalid, .test and .local, so every response describing the
+    # account would fail validation.
     return f"{username}@no-reply.beerkeeper.internal"
 
 
@@ -178,17 +176,11 @@ async def oidc_callback(request: Request, background_tasks: BackgroundTasks):
         message = "SSO sign-in failed. Check the server logs for details."
         return RedirectResponse(f"{config.BASE_URL}/#/login?oidc_error=" + quote(message, safe=""))
 
-    # Some providers put a full claim set in the ID token; others put only
-    # the bare minimum there (sometimes just `sub`) and expect the rest
-    # (name, email, ...) to come from a separate call to the userinfo
-    # endpoint - so both are worth checking. But the two responses aren't
-    # always the same shape: a provider's userinfo endpoint can return a
-    # SPARSER set than its ID token (e.g. a custom claim only embedded in
-    # the token itself), so a naive merge that lets the endpoint's keys
-    # unconditionally win can silently overwrite a good value with a
-    # missing/null one. Prefer whichever source actually has a non-empty
-    # value for each field, with the (signed, more trustworthy) ID token
-    # winning if both happen to have one.
+    # Some providers put every claim in the ID token; others put little
+    # more than `sub` there and serve the rest from the userinfo endpoint,
+    # which in turn can be sparser than the token. Each field takes
+    # whichever source has a non-empty value, and the signed ID token wins
+    # when both do.
     id_token_info = dict(token.get("userinfo") or {})
     try:
         endpoint_info = await oauth.oidc.userinfo(token=token) or {}
@@ -207,13 +199,9 @@ async def oidc_callback(request: Request, background_tasks: BackgroundTasks):
         return RedirectResponse(f"{config.BASE_URL}/#/login?oidc_error=" + quote(message, safe=""))
 
     email = userinfo.get("email")
-    # Strict identity check, not bool(...): some providers send this as
-    # the literal string "false" instead of a real JSON boolean, and
-    # bool("false") is True in Python - a non-empty string is truthy
-    # regardless of its content. That would have silently treated an
-    # unverified email as verified, undermining the whole point of this
-    # check (see _find_or_create_user below, where this gates whether an
-    # OIDC identity gets auto-linked to an existing local account).
+    # `is True`, not bool(): some providers send the string "false", which
+    # is truthy. This gates linking to an existing local account by email
+    # (see _find_or_create_user), so an unverified email must never pass.
     email_verified = userinfo.get("email_verified") is True
     preferred_username = userinfo.get("preferred_username") or userinfo.get("nickname")
     # "name" is the standard OIDC claim for a full display name, but not
@@ -236,13 +224,10 @@ async def oidc_callback(request: Request, background_tasks: BackgroundTasks):
     if is_new and is_smtp_enabled() and user.email and not user.email.endswith("@no-reply.beerkeeper.internal"):
         background_tasks.add_task(send_welcome_email, user.email, user.username, user.first_name)
 
-    # Diagnostic line for exactly the situation that prompted adding it:
-    # "my provider has a name claim but the app isn't showing it." Doesn't
-    # print claim VALUES (some may be sensitive) beyond display_name itself,
-    # just which claim keys came back and what got resolved, so a
-    # `docker compose logs` after a login attempt is actually useful for
-    # tracking down provider-specific claim-shape issues without needing
-    # access to the real token.
+    # For diagnosing providers whose claims arrive in an unexpected shape.
+    # Logs which claim names came back and what was resolved from them,
+    # but no claim values beyond the display name, since some can be
+    # sensitive.
     log.info(
         "OIDC login: claims=%s resolved_display_name=%r resolved_username=%r",
         sorted(userinfo.keys()),

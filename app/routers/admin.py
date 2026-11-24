@@ -3,6 +3,7 @@ import datetime as dt
 import io
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response, StreamingResponse
 from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
@@ -16,7 +17,7 @@ from app.crypto import encrypt_secret
 from app.csv_utils import csv_safe
 from app.email import is_smtp_enabled, resolve_smtp_settings, send_test_email, send_welcome_email
 from app.routers.beers import _get_or_create_brewery
-from app.uploads import read_upload_limited
+from app.uploads import read_csv_upload, read_upload_limited
 from app.url_utils import sanitize_url
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -238,7 +239,8 @@ async def upload_restore(file: UploadFile = File(...), _admin: models.User = Dep
     data, so the actual swap happens at the next clean startup instead."""
     data = await read_upload_limited(file, max_bytes=200 * 1024 * 1024)  # 200 MB - generous for db + styles
     try:
-        backup.stage_restore(data)
+        # Off the event loop: the integrity check reads the whole database.
+        await run_in_threadpool(backup.stage_restore, data)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"pending": True}
@@ -367,13 +369,15 @@ async def import_breweries_admin(
     db: Session = Depends(get_db),
     _admin: models.User = Depends(require_admin),
 ):
-    raw_bytes = await read_upload_limited(file, max_bytes=5 * 1024 * 1024)  # 5 MB - generous for a brewery list
-    raw = raw_bytes.decode("utf-8-sig")
-    reader = csv.DictReader(io.StringIO(raw))
+    _, rows = await read_csv_upload(file, max_bytes=5 * 1024 * 1024)  # 5 MB - generous for a brewery list
+    return await run_in_threadpool(_import_brewery_rows, db, rows)
+
+
+def _import_brewery_rows(db: Session, rows: list[dict]) -> schemas.AdminBreweryImportResult:
     created, skipped = 0, 0
     errors = []
 
-    for i, row in enumerate(reader, start=2):  # row 1 is the header
+    for i, row in enumerate(rows, start=2):  # row 1 is the header
         name = (row.get("name") or "").strip()
         if not name:
             skipped += 1
@@ -385,6 +389,9 @@ async def import_breweries_admin(
             continue
         website = sanitize_url(row.get("website"))
         db.add(models.Brewery(name=name, website=website))
+        # The session doesn't autoflush, so without this the duplicate
+        # check above wouldn't see a name added earlier in the same file.
+        db.flush()
         created += 1
 
     db.commit()
@@ -578,13 +585,15 @@ async def import_beers_admin(
     db: Session = Depends(get_db),
     _admin: models.User = Depends(require_admin),
 ):
-    raw_bytes = await read_upload_limited(file, max_bytes=5 * 1024 * 1024)
-    raw = raw_bytes.decode("utf-8-sig")
-    reader = csv.DictReader(io.StringIO(raw))
+    _, rows = await read_csv_upload(file, max_bytes=5 * 1024 * 1024)
+    return await run_in_threadpool(_import_beer_rows, db, rows)
+
+
+def _import_beer_rows(db: Session, rows: list[dict]) -> schemas.AdminBreweryImportResult:
     created, skipped = 0, 0
     errors = []
 
-    for i, row in enumerate(reader, start=2):  # row 1 is the header
+    for i, row in enumerate(rows, start=2):  # row 1 is the header
         name = (row.get("name") or "").strip()
         brewery_name = (row.get("brewery") or "").strip()
         if not name or not brewery_name:
@@ -627,6 +636,7 @@ async def import_beers_admin(
                 reference_url=sanitize_url(valid.reference_url),
             )
         )
+        db.flush()  # so a repeat of this row later in the file is found above
         created += 1
 
     db.commit()

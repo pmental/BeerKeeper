@@ -41,9 +41,9 @@ def _client_ip(request: Request) -> str:
     """Who to charge this request to.
 
     X-Forwarded-For is only believed when CELLAR_TRUST_PROXY_HEADERS says
-    a proxy is definitely in front and overwriting it, because the header
-    is trivially forged - trusting it unconditionally would let anyone
-    send a fresh fake IP per request and never hit a limit at all.
+    a proxy is definitely in front, because the header is trivially forged
+    - trusting it unconditionally would let anyone send a fresh fake IP
+    per request and never hit a limit at all.
 
     Not trusting it has its own failure mode though, and it's the one most
     people will actually hit: behind a proxy or tunnel every request
@@ -53,9 +53,11 @@ def _client_ip(request: Request) -> str:
     if config.TRUST_PROXY_HEADERS:
         forwarded = request.headers.get("x-forwarded-for", "")
         if forwarded:
-            # Left-most entry is the original client; the rest are proxies
-            # it passed through.
-            return forwarded.split(",")[0].strip()
+            # The right-most entry is the address the proxy itself saw.
+            # Proxies such as Cloudflare and a stock nginx setup append to
+            # whatever the client sent, so everything to its left can be
+            # made up.
+            return forwarded.split(",")[-1].strip()
     return request.client.host if request.client else "unknown"
 
 

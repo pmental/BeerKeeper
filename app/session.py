@@ -77,14 +77,17 @@ def end_session(response: Response) -> None:
 def csrf_ok(request: Request) -> bool:
     """Double-submit check, for requests authenticated by cookie.
 
-    Only relevant when the browser supplied the credential on its own. A
-    request carrying an explicit Authorization header was assembled by
-    something that already had the token, which a cross-site page can't
-    do, so there's nothing to forge.
+    A request without the session cookie can only be authenticated by a
+    token the caller attached itself, which a cross-site page can't do,
+    so there's nothing to forge. One with the cookie is always checked,
+    even if it also has an Authorization header: browsers add some of
+    those on their own, such as cached credentials for a proxy's HTTP
+    Basic auth, and the cookie is what authenticates it (see
+    app/deps.py).
     """
-    if request.headers.get("authorization"):
-        return True
     if request.method in ("GET", "HEAD", "OPTIONS"):
+        return True
+    if not request.cookies.get(SESSION_COOKIE):
         return True
     sent = request.headers.get(CSRF_HEADER)
     stored = request.cookies.get(CSRF_COOKIE)

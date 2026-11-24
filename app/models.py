@@ -62,6 +62,8 @@ class User(Base):
     # you hear about it.
     notify_drinkby_email = Column(Boolean, default=False, nullable=False)
     notify_days_ahead = Column(Integer, default=30, nullable=False)
+    # Unused. Kept because existing databases have it as NOT NULL with no
+    # database-side default, so new rows still need a value for it.
     messaging_enabled = Column(Boolean, default=True, nullable=False)
 
     # Visibility / privacy
@@ -168,7 +170,7 @@ class CellarEntry(Base):
 
 class ConsumptionLog(Base):
     """A record of a beer being drunk. Stores the tasting note/rating independently
-    of any CellarEntry so history survives entry deletion, per the FAQ behavior."""
+    of any CellarEntry so history survives entry deletion."""
 
     __tablename__ = "consumption_logs"
 

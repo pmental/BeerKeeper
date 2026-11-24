@@ -46,13 +46,15 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  // Only ever navigate to a relative path on this origin. The payload
-  // comes from this app's own server; the check is defence in depth, so a
-  // bug that let an attacker influence the notification body couldn't
-  // turn a tapped reminder into a redirect to a site of their choosing. "//evil.example" is rejected too: it starts
-  // with a slash but is a protocol-relative absolute URL.
+  // Only ever navigate to a path on this origin. The payload comes from
+  // this app's own server; the check is defence in depth, so a bug that
+  // let an attacker influence the notification body couldn't turn a
+  // tapped reminder into a redirect to a site of their choosing.
+  // "//evil.example" and "/\evil.example" both start with a slash but are
+  // read as addresses on another host, so a second slash or a backslash
+  // after the first is refused.
   const raw = (event.notification.data && event.notification.data.url) || "/#/cellar";
-  const target = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/#/cellar";
+  const target = /^\/(?![/\\])/.test(raw) ? raw : "/#/cellar";
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       // Focus an already-open tab if there is one, rather than piling up

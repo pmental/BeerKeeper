@@ -19,6 +19,15 @@ def _check_password_byte_length(value: str) -> str:
 PasswordStr = Annotated[str, Field(min_length=8, max_length=200), AfterValidator(_check_password_byte_length)]
 
 
+def _not_null(value):
+    """For PATCH fields that can be left out but not cleared, because the
+    column behind them can't be empty. An explicit null would otherwise
+    reach the database and fail there as a server error."""
+    if value is None:
+        raise ValueError("can't be empty")
+    return value
+
+
 # ---------- Auth ----------
 
 class RegisterIn(BaseModel):
@@ -181,6 +190,8 @@ class CellarEntryPatch(BaseModel):
     batch_notes: Optional[str] = Field(default=None, max_length=4000)
     trade_status: Optional[str] = Field(default=None, pattern="^(none|ft|iso)$")
 
+    _required = field_validator("location", "quantity", "trade_status")(_not_null)
+
 
 class CellarEntryOut(BaseModel):
     id: int
@@ -239,6 +250,8 @@ class ConsumptionLogPatch(BaseModel):
     note: Optional[str] = Field(default=None, max_length=4000)
     rating: Optional[float] = Field(default=None, ge=0, le=5, multiple_of=0.5)
 
+    _required = field_validator("quantity", "consumed_on")(_not_null)
+
 
 # ---------- Wanted (not owned) ----------
 
@@ -271,7 +284,6 @@ class AccountOut(BaseModel):
     show_fridge_column: bool
     show_location_column: bool
     trading_enabled: bool
-    messaging_enabled: bool
     cellar_public: bool
     notes_public: bool
     drinkby_public: bool
@@ -287,7 +299,6 @@ class AccountPatch(BaseModel):
     show_fridge_column: Optional[bool] = None
     show_location_column: Optional[bool] = None
     trading_enabled: Optional[bool] = None
-    messaging_enabled: Optional[bool] = None
     cellar_public: Optional[bool] = None
     notes_public: Optional[bool] = None
     drinkby_public: Optional[bool] = None
@@ -299,12 +310,26 @@ class AccountPatch(BaseModel):
     # password-reset emails somewhere an attacker controls.
     current_password: Optional[str] = None
 
+    _required = field_validator(
+        "default_sort",
+        "unit_system",
+        "show_fridge_column",
+        "show_location_column",
+        "trading_enabled",
+        "cellar_public",
+        "notes_public",
+        "drinkby_public",
+        "notify_drinkby_email",
+        "notify_days_ahead",
+        "email",
+    )(_not_null)
+
 
 # ---------- Public ----------
 
 class PublicUserOut(BaseModel):
     username: str
-    display_name: Optional[str] = None
+    display_name: Optional[str] = None  # first name only on public views
     cellar_count: int
     trading_enabled: bool
 
@@ -346,6 +371,8 @@ class AdminUserCreateIn(BaseModel):
 
 class AdminUserPatch(BaseModel):
     is_admin: Optional[bool] = None
+
+    _required = field_validator("is_admin")(_not_null)
 
 
 class AdminPasswordResetIn(BaseModel):
@@ -389,6 +416,8 @@ class InstanceSettingsPatch(BaseModel):
     smtp_from_email: Optional[str] = Field(default=None, max_length=255)
     smtp_from_name: Optional[str] = Field(default=None, max_length=255)
     smtp_skip_cert_verify: Optional[bool] = None
+
+    _required = field_validator("registration_enabled")(_not_null)
 
 
 class SmtpTestIn(BaseModel):

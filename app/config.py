@@ -29,7 +29,7 @@ def _ensure_scheme(raw: str, var_name: str) -> str:
 
 
 # Set true only when this app genuinely sits behind a reverse proxy or
-# tunnel that overwrites X-Forwarded-For. Without it the rate limiter sees
+# tunnel that sets X-Forwarded-For. Without it the rate limiter sees
 # the proxy's address for every request and buckets all users together, so
 # one person hitting the login limit locks everyone out. With it wrongly
 # set on a directly-exposed instance, anyone could send a fake header and
@@ -48,7 +48,7 @@ PASSWORD_CHANGE_ENABLED = _bool_env("CELLAR_PASSWORD_CHANGE_ENABLED", True)
 APP_NAME = "BeerKeeper"
 # The number after "0." goes up by one per release (0.98, 0.99, 0.100,
 # ...) until told to bump the major version instead.
-APP_VERSION = "0.101"
+APP_VERSION = "0.102"
 
 OIDC_ENABLED = _bool_env("CELLAR_OIDC_ENABLED", False)
 OIDC_ISSUER = _ensure_scheme(os.environ.get("CELLAR_OIDC_ISSUER", ""), "CELLAR_OIDC_ISSUER")
@@ -73,11 +73,9 @@ if not PASSWORD_AUTH_ENABLED and not OIDC_ENABLED:
     )
 
 # Comma/whitespace-separated usernames that should always be admins,
-# re-applied on every boot. Mainly a recovery lever: if you ever end up
-# with zero admins (shouldn't happen - see the auto-promotion logic in
-# admin_bootstrap.py - but self-hosted things go sideways sometimes), set
-# this and restart to get back in, rather than needing to edit the
-# database by hand.
+# re-applied on every boot. A recovery lever for an instance that has
+# lost access to every admin account, so nobody has to edit the database
+# by hand.
 ADMIN_USERNAMES = [
     u.strip() for u in re.split(r"[,\s]+", os.environ.get("CELLAR_ADMIN_USERNAMES", "")) if u.strip()
 ]

@@ -135,18 +135,12 @@ def run_migrations():
                 )
             )
         elif "oidc_issuer" not in existing_cols:
-            # oidc_subject already exists and may already have real linked
-            # accounts on it. OIDC's `sub` is only guaranteed unique
-            # *within* a given issuer, so enforcing global uniqueness on
-            # subject alone (the old index below) is a latent correctness
-            # bug: if this instance ever switches OIDC providers, a new
-            # provider's subject value could coincidentally collide with
-            # an old, unrelated one already on file and link the wrong
-            # account. Backfill the currently-configured issuer onto
-            # already-linked accounts - correct for the overwhelming
-            # majority of installs, which never change providers - then
-            # replace the old single-column unique index with a composite
-            # one on (issuer, subject) together.
+            # oidc_subject already exists and may have linked accounts on
+            # it. A `sub` is only unique within its issuer, so the old
+            # subject-only unique index is replaced with one on (issuer,
+            # subject). Already-linked accounts get the currently
+            # configured issuer, which is right for any install that has
+            # never changed providers.
             conn.execute(text("ALTER TABLE users ADD COLUMN oidc_issuer VARCHAR(500)"))
             if config.OIDC_ISSUER:
                 conn.execute(
@@ -172,12 +166,10 @@ def run_migrations():
         if "avatar_url" not in existing_cols:
             conn.execute(text("ALTER TABLE users ADD COLUMN avatar_url VARCHAR(1024)"))
 
-        # Fix accounts stuck with an old OIDC placeholder email domain
-        # (@oidc.invalid) that Pydantic's EmailStr rejects outright - left
-        # in place, every response describing that account (starting with
-        # /api/auth/me right after login) would 500 forever. See
-        # oidc.py's _placeholder_email for the full story. Safe to run
-        # every boot: a no-op once no matching rows are left.
+        # Move accounts off the old placeholder email domain
+        # (@oidc.invalid), which Pydantic's EmailStr rejects, so responses
+        # describing them would fail (see _placeholder_email in oidc.py).
+        # A no-op once no matching rows are left.
         conn.execute(
             text(
                 "UPDATE users SET email = REPLACE(email, '@oidc.invalid', '@no-reply.beerkeeper.internal') "

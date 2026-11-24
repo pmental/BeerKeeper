@@ -4,6 +4,7 @@ import io
 import re
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 
@@ -14,13 +15,9 @@ from app.units import OZ_TO_ML
 from app.deps import get_current_user
 from app.routers.beers import _get_or_create_brewery
 from app.routers.cellar import find_matching_entry
-from app.uploads import read_upload_limited
+from app.uploads import read_csv_upload
 
 router = APIRouter(prefix="/api/cellar", tags=["import-export"])
-
-# Same constant and precision as the frontend's OZ_TO_ML (static/js/ui.js) -
-# keeping these in sync matters so a size that round-trips through the UI
-# and through a CSV export ends up meaning the same thing either way.
 
 CSV_COLUMNS = [
     "brewery",
@@ -322,19 +319,23 @@ async def import_cellar(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user),
 ):
-    raw_bytes = await read_upload_limited(file, max_bytes=10 * 1024 * 1024)  # 10 MB - generous for any CSV
-    raw = raw_bytes.decode("utf-8-sig")
-    reader = csv.DictReader(io.StringIO(raw))
+    fieldnames, rows = await read_csv_upload(file, max_bytes=10 * 1024 * 1024)  # 10 MB - generous for any CSV
+    # Every row costs a few queries, so a large file takes a while. Done in
+    # a worker thread so it doesn't hold up everyone else's requests.
+    return await run_in_threadpool(_import_rows, db, current_user, fieldnames, rows)
+
+
+def _import_rows(db: Session, current_user: models.User, fieldnames: list[str], rows: list[dict]) -> dict:
     # A cellar.beer export uses distinctly different, Title-Case column
     # names from this app's own format - a few of its most distinctive
     # ones being present is a reliable enough signal to tell the two
     # apart, so "Import CSV" can just handle either without the user
     # needing to know or pick which format they have.
-    is_cellarbeer = _CELLARBEER_SIGNATURE_COLUMNS.issubset(set(reader.fieldnames or []))
+    is_cellarbeer = _CELLARBEER_SIGNATURE_COLUMNS.issubset(set(fieldnames))
     created, merged, skipped = 0, 0, 0
     errors = []
 
-    for i, raw_row in enumerate(reader, start=2):  # row 1 is the header
+    for i, raw_row in enumerate(rows, start=2):  # row 1 is the header
         if is_cellarbeer:
             row, row_warnings = _normalize_cellarbeer_row(raw_row)
             errors.extend(f"Row {i}: {w}" for w in row_warnings)

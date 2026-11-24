@@ -9,6 +9,11 @@ from app.crypto import InvalidToken, decrypt_secret, encrypt_secret
 
 log = logging.getLogger("cellar.email")
 
+# Without a timeout, a mail server that accepts the connection and then
+# stops answering would hold the sending thread forever - including the
+# drink-by sweep, which would then never run again until a restart.
+_SMTP_TIMEOUT_SECONDS = 30
+
 
 @dataclass
 class ResolvedSmtp:
@@ -113,12 +118,14 @@ def send_email(to_email: str, subject: str, body_text: str, smtp: "ResolvedSmtp 
     msg.set_content(body_text)
 
     if smtp.security == "ssl":
-        with smtplib.SMTP_SSL(smtp.host, smtp.port, context=_tls_context(smtp.skip_cert_verify)) as server:
+        with smtplib.SMTP_SSL(
+            smtp.host, smtp.port, context=_tls_context(smtp.skip_cert_verify), timeout=_SMTP_TIMEOUT_SECONDS
+        ) as server:
             if smtp.username:
                 server.login(smtp.username, smtp.password)
             server.send_message(msg)
     else:
-        with smtplib.SMTP(smtp.host, smtp.port) as server:
+        with smtplib.SMTP(smtp.host, smtp.port, timeout=_SMTP_TIMEOUT_SECONDS) as server:
             if smtp.security == "starttls":
                 server.starttls(context=_tls_context(smtp.skip_cert_verify))
             if smtp.username:

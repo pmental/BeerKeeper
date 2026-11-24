@@ -1,5 +1,6 @@
 # Changelog
 
+- **0.102**: Security updates for dependencies, including Authlib, which handles SSO sign-in. Security fixes: behind a proxy, login rate limits can no longer be dodged with a forged address, and protection against forged requests now also holds when a proxy in front uses HTTP Basic auth. Public pages show only a person's first name, never the full name from SSO. Importing a large CSV no longer slows the app down for everyone else. A file that isn't UTF-8, or an admin import that repeats a name, now gets a clear result instead of an error. Email gives up on a mail server that stops responding instead of waiting forever. Minor code and comment cleanup.
 - **0.101**: Security updates for dependencies, including Authlib, which handles SSO sign-in. The Docker image installs Debian's latest security updates when it's built.
 - **0.100**: Security updates for dependencies, including Authlib, which handles SSO sign-in.
 - **0.99**: Security update for the bundled certificate authorities, removing one whose keys were compromised. Updated dependencies, including Authlib, FastAPI, Starlette and SQLAlchemy. Python 3.14.10 is now recommended.

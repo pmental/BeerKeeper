@@ -53,19 +53,14 @@ def _user_brewery_recency(db: Session, user_id: int) -> dict[int, object]:
 
 
 def _search_with_recency(query, model, recency: dict):
-    """Shared by search_breweries and search_beers below - a generous but
-    bounded limit on the general/alphabetical candidate set, since
-    fetching literally everything doesn't scale once the catalog is in
-    the thousands (each search allocates and sorts the whole matching set
-    in Python). But a flat limit alone would silently reintroduce the
-    exact bug this app already fixed once: at 10,000+ rows, a plain
-    alphabetical LIMIT 500 only ever covers names starting with roughly
-    A-D, so anything the user used that happens to sort later than that
-    would never even reach the recency re-sort below, however recently
-    they used it. So anything in the user's own recency set is fetched
-    separately and guaranteed a spot, regardless of where it falls
-    alphabetically or how large the catalog gets; the cap only ever trims
-    the generic "everything else" candidates."""
+    """Shared by search_breweries and search_beers below.
+
+    The alphabetical candidate set is capped, since sorting a catalog of
+    thousands in Python on every keystroke doesn't scale. A cap alone
+    would hide anything the user has used that sorts past it (with 10,000
+    names, the first 500 only reach about "D"), so their own recently used
+    rows are fetched separately and always included; the cap only trims
+    everything else."""
     results = query.order_by(model.name).limit(500).all()
     if recency:
         seen_ids = {r.id for r in results}
